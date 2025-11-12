@@ -1,44 +1,68 @@
-
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '../types';
+import { supabase } from '../integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
-  login: (role: UserRole) => void;
   logout: () => void;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock Users
-const mockUsers: Record<UserRole, User> = {
-  [UserRole.ADMIN]: { id: 'user_admin_1', email: 'admin@barberpro.app', role: UserRole.ADMIN },
-  [UserRole.BARBEARIA]: { id: 'user_barbearia_1', email: 'dono@navalha.com', role: UserRole.BARBEARIA, barbeariaId: '1' },
-  [UserRole.BARBEIRO]: { id: 'user_barbeiro_1', email: 'joao.silva@navalha.com', role: UserRole.BARBEIRO, barbeariaId: '1', barbeiroId: 'b1' },
-  [UserRole.CLIENTE]: { id: 'user_cliente_1', email: 'cliente@email.com', role: UserRole.CLIENTE }, // Not used for login
-};
-
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const login = (role: UserRole) => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setUser(mockUsers[role]);
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const sessionUser = session.user;
+        const appUser: User = {
+          id: sessionUser.id,
+          email: sessionUser.email!,
+          role: sessionUser.user_metadata.role as UserRole,
+          barbeariaId: sessionUser.user_metadata.barbeariaId,
+          barbeiroId: sessionUser.user_metadata.barbeiroId,
+        };
+        setUser(appUser);
+      }
       setLoading(false);
-    }, 500);
-  };
+    };
 
-  const logout = () => {
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
+      if (session) {
+        const sessionUser = session.user;
+        const appUser: User = {
+          id: sessionUser.id,
+          email: sessionUser.email!,
+          role: sessionUser.user_metadata.role as UserRole,
+          barbeariaId: sessionUser.user_metadata.barbeariaId,
+          barbeiroId: sessionUser.user_metadata.barbeiroId,
+        };
+        setUser(appUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

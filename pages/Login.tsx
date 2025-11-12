@@ -1,9 +1,11 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { ScissorsIcon } from '../components/icons';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from '../integrations/supabase/client';
 
 const roleRedirects: Record<UserRole, string> = {
   [UserRole.ADMIN]: '/admin/dashboard',
@@ -13,18 +15,27 @@ const roleRedirects: Record<UserRole, string> = {
 };
 
 const Login = () => {
-  const { login, user, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      navigate(roleRedirects[user.role]);
+      const redirectPath = roleRedirects[user.role] || '/';
+      navigate(redirectPath);
     }
   }, [user, navigate]);
 
-  const handleLogin = (role: UserRole) => {
-    login(role);
-  };
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center h-screen bg-brand-dark">
+            <div className="text-brand-gold text-xl">Carregando...</div>
+        </div>
+    );
+  }
+
+  if (user) {
+    return null; // Evita piscar a tela de login se já estiver logado
+  }
 
   return (
     <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">
@@ -34,35 +45,58 @@ const Login = () => {
             <ScissorsIcon className="h-10 w-10 text-brand-gold" />
           </div>
           <h1 className="text-3xl font-bold text-white">BarberPro SaaS</h1>
-          <p className="text-gray-400 mt-2">Selecione seu perfil para entrar</p>
+          <p className="text-gray-400 mt-2">Acesse seu painel</p>
         </div>
         
-        <div className="space-y-4">
-          <button
-            onClick={() => handleLogin(UserRole.ADMIN)}
-            disabled={loading}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:opacity-50"
-          >
-            {loading ? 'Entrando...' : 'Entrar como Administrador'}
-          </button>
-          <button
-            onClick={() => handleLogin(UserRole.BARBEARIA)}
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:opacity-50"
-          >
-            {loading ? 'Entrando...' : 'Entrar como Dono de Barbearia'}
-          </button>
-          <button
-            onClick={() => handleLogin(UserRole.BARBEIRO)}
-            disabled={loading}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:opacity-50"
-          >
-            {loading ? 'Entrando...' : 'Entrar como Barbeiro'}
-          </button>
-        </div>
-        <p className="text-center text-gray-500 text-xs mt-8">
-            Este é um painel de simulação. Clique em um perfil para acessar o dashboard correspondente.
-        </p>
+        <Auth
+          supabaseClient={supabase}
+          appearance={{ 
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: '#D4AF37',
+                  brandAccent: '#b89a30',
+                  defaultButtonBackground: '#111111',
+                  defaultButtonBackgroundHover: '#222222',
+                  inputText: '#FFFFFF',
+                  inputBackground: '#111111',
+                  inputBorder: '#4b5563',
+                  inputPlaceholder: '#9ca3af',
+                },
+                radii: {
+                  borderRadiusButton: '0.5rem',
+                  inputBorderRadius: '0.5rem',
+                }
+              }
+            }
+          }}
+          providers={[]}
+          localization={{
+            variables: {
+              sign_in: {
+                email_label: 'Seu e-mail',
+                password_label: 'Sua senha',
+                email_input_placeholder: 'seu@email.com',
+                password_input_placeholder: 'Sua senha',
+                button_label: 'Entrar',
+                social_provider_text: 'Entrar com {{provider}}',
+                link_text: 'Já tem uma conta? Entre',
+              },
+              sign_up: {
+                email_label: 'Seu e-mail',
+                password_label: 'Sua senha',
+                button_label: 'Cadastrar',
+                link_text: 'Não tem uma conta? Cadastre-se',
+              },
+              forgotten_password: {
+                email_label: 'Seu e-mail',
+                button_label: 'Enviar instruções',
+                link_text: 'Esqueceu sua senha?',
+              },
+            },
+          }}
+        />
       </div>
     </div>
   );
