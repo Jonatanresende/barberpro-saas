@@ -5,7 +5,7 @@ import { UserRole } from '../types';
 import { ScissorsIcon } from '../components/icons';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '@/src/integrations/supabase/client';
 
 const roleRedirects: Record<UserRole, string> = {
   [UserRole.ADMIN]: '/admin/dashboard',
