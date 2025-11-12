@@ -25,7 +25,8 @@ const getNavItems = (role: UserRole) => {
   switch (role) {
     case UserRole.ADMIN:
       return [
-        { to: "/admin/dashboard", icon: <StoreIcon className="w-5 h-5" />, label: "Barbearias" },
+        { to: "/admin/dashboard", icon: <UsersIcon className="w-5 h-5" />, label: "Dashboard" },
+        { to: "/admin/barbershops", icon: <StoreIcon className="w-5 h-5" />, label: "Barbearias" },
         { to: "/admin/plans", icon: <ClipboardListIcon className="w-5 h-5" />, label: "Planos" },
       ];
     case UserRole.BARBEARIA:

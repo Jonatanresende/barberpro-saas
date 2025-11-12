@@ -1,8 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Barbearia } from '../../types';
-import { StoreIcon, UsersIcon, ScissorsIcon } from '../../components/icons';
+import { ScissorsIcon, StoreIcon, UsersIcon } from '../../components/icons';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center">
@@ -109,25 +109,44 @@ const Plans = () => (
 );
 
 const AdminPage = () => {
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const location = useLocation();
     
     const renderContent = () => {
-        switch (activeTab) {
-            case 'dashboard': return <AdminDashboard />;
-            case 'barbershops': return <ManageBarbershops />;
-            case 'plans': return <Plans />;
-            default: return <AdminDashboard />;
+        const path = location.pathname;
+        if (path.endsWith('/barbershops')) {
+            return <ManageBarbershops />;
         }
+        if (path.endsWith('/plans')) {
+            return <Plans />;
+        }
+        return <AdminDashboard />;
     };
 
     return (
         <div className="space-y-6">
             <div className="flex border-b border-brand-gray">
-                <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
-                <button onClick={() => setActiveTab('barbershops')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'barbershops' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbearias</button>
-                <button onClick={() => setActiveTab('plans')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'plans' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Planos</button>
+                <NavLink 
+                    to="/admin/dashboard" 
+                    className={({ isActive }) => `px-4 py-2 text-sm font-medium ${isActive ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}
+                >
+                    Dashboard
+                </NavLink>
+                <NavLink 
+                    to="/admin/barbershops" 
+                    className={({ isActive }) => `px-4 py-2 text-sm font-medium ${isActive ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}
+                >
+                    Barbearias
+                </NavLink>
+                <NavLink 
+                    to="/admin/plans" 
+                    className={({ isActive }) => `px-4 py-2 text-sm font-medium ${isActive ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}
+                >
+                    Planos
+                </NavLink>
             </div>
-            {renderContent()}
+            <div className="mt-6">
+                {renderContent()}
+            </div>
         </div>
     );
 };

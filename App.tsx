@@ -31,6 +31,7 @@ const AppRoutes = () => {
           } />
         }>
             <Route path="dashboard" element={<AdminPage />} />
+            <Route path="barbershops" element={<AdminPage />} />
             <Route path="plans" element={<AdminPage />} />
             <Route index element={<Navigate to="dashboard" />} />
         </Route>
