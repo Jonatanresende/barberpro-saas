@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Barbearia } from '../../types';
 import { ScissorsIcon, StoreIcon, UsersIcon } from '../../components/icons';
+import SettingsPage from './SettingsPage';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center">
@@ -119,12 +120,15 @@ const AdminPage = () => {
         if (path.endsWith('/plans')) {
             return <Plans />;
         }
+        if (path.endsWith('/settings')) {
+            return <SettingsPage />;
+        }
         return <AdminDashboard />;
     };
 
     return (
         <div className="space-y-6">
-            <div className="flex border-b border-brand-gray">
+            <div className="flex border-b border-brand-gray flex-wrap">
                 <NavLink 
                     to="/admin/dashboard" 
                     className={({ isActive }) => `px-4 py-2 text-sm font-medium ${isActive ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}
@@ -142,6 +146,12 @@ const AdminPage = () => {
                     className={({ isActive }) => `px-4 py-2 text-sm font-medium ${isActive ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}
                 >
                     Planos
+                </NavLink>
+                <NavLink 
+                    to="/admin/settings" 
+                    className={({ isActive }) => `px-4 py-2 text-sm font-medium ${isActive ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}
+                >
+                    Configurações
                 </NavLink>
             </div>
             <div className="mt-6">
