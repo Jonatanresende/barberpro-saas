@@ -1,0 +1,5 @@
+{
+  "name": "BarberPro SaaS",
+  "description": "Um sistema SaaS simples e escalável para gerenciamento de barbearias, construído com React e Supabase. Ele apresenta níveis de acesso distintos para administradores, proprietários de barbearias, barbeiros e clientes. ",
+  "requestFramePermissions": []
+}
