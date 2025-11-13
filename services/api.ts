@@ -1,5 +1,5 @@
 import { supabase } from '@/src/integrations/supabase/client';
-import { Agendamento, Barbearia, Barbeiro, Servico } from '../types';
+import { Agendamento, Barbearia, Barbeiro, Servico, User } from '../types';
 
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
@@ -102,6 +102,40 @@ export const api = {
     
     return data;
   },
+
+  // ADMIN - Users
+  getAdminUsers: async (): Promise<User[]> => {
+    const { data, error } = await supabase.functions.invoke('get-admin-users');
+    if (error) throw new Error(error.message);
+    return data.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      full_name: u.user_metadata.full_name,
+      role: u.user_metadata.role,
+    }));
+  },
+
+  createAdminUser: async (email: string, password: string, fullName: string): Promise<User> => {
+    const { data, error } = await supabase.functions.invoke('create-admin-user', {
+      body: { email, password, fullName },
+    });
+    if (error) throw new Error(data?.error || error.message);
+    return {
+      id: data.id,
+      email: data.email,
+      full_name: data.user_metadata.full_name,
+      role: data.user_metadata.role,
+    };
+  },
+
+  deleteAdminUser: async (userId: string): Promise<boolean> => {
+    const { data, error } = await supabase.functions.invoke('delete-admin-user', {
+      body: { userId },
+    });
+    if (error) throw new Error(data?.error || error.message);
+    return data.success;
+  },
+
 
   // BARBEARIA - Dashboard
   getBarbeariaDashboardStats: async (barbeariaId: string) => {
