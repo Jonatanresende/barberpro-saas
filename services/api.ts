@@ -15,7 +15,7 @@ const uploadPhoto = async (photoFile: File): Promise<string | null> => {
 
   if (uploadError) {
     console.error('Error uploading photo:', uploadError);
-    throw uploadError;
+    throw new Error(uploadError.message);
   }
 
   const { data: urlData } = supabase.storage
@@ -33,7 +33,7 @@ export const api = {
       .from('barbearias')
       .select('*')
       .order('criado_em', { ascending: false });
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data as Barbearia[];
   },
 
@@ -142,7 +142,7 @@ export const api = {
       .from('barbeiros')
       .select('*')
       .eq('barbearia_id', barbeariaId);
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data;
   },
 
@@ -152,7 +152,7 @@ export const api = {
       .from('servicos')
       .select('*')
       .eq('barbearia_id', barbeariaId);
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data;
   },
 
@@ -163,7 +163,7 @@ export const api = {
       .select('*')
       .eq('barbearia_id', barbeariaId)
       .order('data', { ascending: false });
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data;
   },
 
@@ -174,7 +174,7 @@ export const api = {
       .select('*')
       .eq('barbeiro_id', barbeiroId)
       .order('data', { ascending: false });
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data;
   },
 
@@ -186,7 +186,7 @@ export const api = {
       .eq('link_personalizado', slug)
       .single();
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found, which is fine
-      throw error;
+      throw new Error(error.message);
     }
     return data;
   },
@@ -197,7 +197,7 @@ export const api = {
       .insert([agendamentoData])
       .select()
       .single();
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data;
   },
 };
