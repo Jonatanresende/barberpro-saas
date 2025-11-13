@@ -28,47 +28,63 @@ serve(async (req) => {
   try {
     const { barbeariaData, password, photoUrl } = await req.json()
 
-    // Cria um cliente Supabase com permissões de administrador (seguro para usar no backend)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Cria o usuário (dono da barbearia)
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // --- LÓGICA ROBUSTA DE 2 ETAPAS ---
+
+    // 1. Cria o usuário primeiro, sem tentar confirmar o e-mail inicialmente.
+    const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: barbeariaData.dono_email,
       password: password,
-      email_confirm: true, // A CORREÇÃO PRINCIPAL: O e-mail já vem confirmado!
       user_metadata: {
         role: 'barbearia',
         full_name: barbeariaData.dono_nome,
       },
     })
 
-    if (authError) {
-      console.error('Erro de autenticação:', authError.message)
-      const errorMessage = authError.message.includes('unique constraint')
+    if (createError) {
+      console.error('Erro na criação do usuário:', createError.message)
+      const errorMessage = createError.message.includes('unique constraint')
         ? 'Este e-mail já está em uso.'
-        : `Falha ao criar usuário: ${authError.message}`;
+        : `Falha ao criar usuário: ${createError.message}`;
       return new Response(JSON.stringify({ error: errorMessage }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
+    if (!createData.user) throw new Error('Criação do usuário falhou silenciosamente.');
+    const userId = createData.user.id;
 
-    if (!authData.user) {
-      throw new Error('Criação do usuário falhou silenciosamente.');
+    // 2. IMEDIATAMENTE atualiza o usuário para confirmar o e-mail.
+    const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      userId,
+      { email_confirm: true }
+    )
+
+    if (updateError) {
+        console.error('Erro ao confirmar e-mail do usuário:', updateError.message);
+        // Limpeza: se não for possível confirmar o e-mail, exclui o usuário recém-criado.
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        return new Response(JSON.stringify({ error: `Falha ao confirmar e-mail do novo usuário: ${updateError.message}` }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+        });
     }
+    
+    const user = updateData.user;
 
-    // 2. Gera o link personalizado
+    // 3. Gera o link personalizado
     const slug = generateSlug(barbeariaData.nome);
 
-    // 3. Cria o registro da barbearia no banco de dados
+    // 4. Cria o registro da barbearia no banco de dados
     const { data: barbearia, error: dbError } = await supabaseAdmin
       .from('barbearias')
       .insert([{ 
         ...barbeariaData, 
-        dono_id: authData.user.id,
+        dono_id: user.id,
         foto_url: photoUrl,
         link_personalizado: slug,
       }])
@@ -77,8 +93,8 @@ serve(async (req) => {
       
     if (dbError) {
       console.error('Erro de banco de dados:', dbError)
-      // Se a criação da barbearia falhar, remove o usuário criado para não deixar lixo
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      // Limpeza: se a criação da barbearia falhar, exclui o usuário.
+      await supabaseAdmin.auth.admin.deleteUser(user.id)
       return new Response(JSON.stringify({ error: `Falha ao criar barbearia no banco de dados: ${dbError.message}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
