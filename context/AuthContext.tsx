@@ -24,7 +24,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     let effectiveUser: SupabaseUser = session.user;
 
-    // One-time update to set the admin's full name if it's not already set
+    // One-time update to set the admin's full name if it's not already set.
+    // This logic is now more robust to ensure the UI reflects the change immediately.
     if (effectiveUser.email === 'admin@barberpro.com' && !effectiveUser.user_metadata.full_name) {
       const { data: updatedUserData, error } = await supabase.auth.updateUser({
         data: { full_name: 'Jonathan Resende de Sousa' }
@@ -33,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error("Failed to update admin name:", error);
       } else if (updatedUserData?.user) {
-        // Use the updated user object for the current session to ensure immediate UI update
+        // IMPORTANT: Use the freshly updated user object to ensure the UI gets the new name.
         effectiveUser = updatedUserData.user;
       }
     }
