@@ -62,7 +62,7 @@ const ManageBarbershops = () => {
 
     const handleSave = async (barbeariaData: any, password?: string, photoFile?: File) => {
         const promise = barbeariaToEdit
-            ? api.updateBarbearia(barbeariaToEdit.id, barbeariaData, photoFile)
+            ? api.updateBarbearia(barbeariaToEdit.id, barbeariaToEdit.dono_id!, barbeariaData, photoFile)
             : api.createBarbeariaAndOwner(barbeariaData, password!, photoFile);
 
         toast.promise(promise, {
@@ -78,27 +78,27 @@ const ManageBarbershops = () => {
 
     const handleToggleStatus = async (barbearia: Barbearia) => {
         const newStatus = barbearia.status === 'ativa' ? 'inativa' : 'ativa';
-        const promise = api.updateBarbearia(barbearia.id, { status: newStatus });
+        const promise = api.updateBarbearia(barbearia.id, barbearia.dono_id!, { status: newStatus });
         toast.promise(promise, {
             loading: 'Atualizando status...',
             success: () => {
                 fetchBarbearias();
                 return 'Status atualizado com sucesso!';
             },
-            error: 'Falha ao atualizar status.',
+            error: (err) => `Falha ao atualizar status: ${err.message}`,
         });
     };
 
-    const handleDelete = (id: string) => {
-        if (window.confirm('Tem certeza que deseja excluir esta barbearia? A conta do dono não será removida.')) {
-            const promise = api.deleteBarbearia(id);
+    const handleDelete = (barbearia: Barbearia) => {
+        if (window.confirm('Tem certeza que deseja excluir esta barbearia e a conta do proprietário? Esta ação não pode ser desfeita.')) {
+            const promise = api.deleteBarbearia(barbearia.id, barbearia.dono_id!);
             toast.promise(promise, {
                 loading: 'Excluindo...',
                 success: () => {
-                    setBarbearias(prev => prev.filter(b => b.id !== id));
-                    return 'Barbearia excluída com sucesso!';
+                    setBarbearias(prev => prev.filter(b => b.id !== barbearia.id));
+                    return 'Barbearia e proprietário excluídos com sucesso!';
                 },
-                error: 'Falha ao excluir barbearia.',
+                error: (err) => `Falha ao excluir: ${err.message}`,
             });
         }
     };
@@ -144,7 +144,7 @@ const ManageBarbershops = () => {
                                         <td className="px-6 py-4 flex space-x-2">
                                             <button onClick={() => handleOpenEditModal(b)} className="text-blue-400 hover:text-blue-300">Editar</button>
                                             <button onClick={() => handleToggleStatus(b)} className="text-yellow-400 hover:text-yellow-300">{b.status === 'ativa' ? 'Desativar' : 'Ativar'}</button>
-                                            <button onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300">Excluir</button>
+                                            <button onClick={() => handleDelete(b)} className="text-red-400 hover:text-red-300">Excluir</button>
                                         </td>
                                     </tr>
                                 ))}

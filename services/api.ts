@@ -5,19 +5,6 @@ import { UserRole } from '../types';
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
 
-// Helper function to generate a URL-friendly slug
-const generateSlug = (name: string) => {
-  return name
-    .toLowerCase()
-    .normalize("NFD") // remove accents
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, '-') // replace spaces with -
-    .replace(/[^\w\-]+/g, '') // remove all non-word chars
-    .replace(/\-\-+/g, '-') // replace multiple - with single -
-    .replace(/^-+/, '') // trim - from start of text
-    .replace(/-+$/, ''); // trim - from end of text
-};
-
 // Helper function to upload photo and get URL
 const uploadPhoto = async (photoFile: File): Promise<string | null> => {
   if (!photoFile) return null;
@@ -52,66 +39,58 @@ export const api = {
   },
 
   createBarbeariaAndOwner: async (barbeariaData: any, password: string, photoFile?: File) => {
-    // 1. Create the user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: barbeariaData.dono_email,
-      password: password,
-      options: {
-        data: {
-          role: UserRole.BARBEARIA,
-        }
-      }
+    // Usando a função de backend que já garante a confirmação do e-mail
+    let photoUrl = null;
+    if (photoFile) {
+      photoUrl = await uploadPhoto(photoFile);
+    }
+
+    const { data, error } = await supabase.functions.invoke('create-barbershop', {
+      body: { barbeariaData, password, photoUrl },
     });
 
-    if (authError) throw authError;
-    if (!authData.user) throw new Error('User creation failed.');
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
+    }
 
-    // 2. Upload photo if it exists
-    let photoUrl = null;
+    return data as Barbearia;
+  },
+
+  updateBarbearia: async (id: string, dono_id: string, updates: BarbeariaUpdate, photoFile?: File) => {
+    let photoUrl = updates.foto_url || null;
     if (photoFile) {
       photoUrl = await uploadPhoto(photoFile);
     }
 
-    // 3. Generate slug
-    const slug = generateSlug(barbeariaData.nome);
+    const finalUpdates = { ...updates, foto_url: photoUrl };
 
-    // 4. Create the barbearia record
-    const { data, error } = await supabase
-      .from('barbearias')
-      .insert([{ 
-        ...barbeariaData, 
-        dono_id: authData.user.id,
-        foto_url: photoUrl,
-        link_personalizado: slug,
-      }])
-      .select();
-      
-    if (error) throw error;
-    return data[0] as Barbearia;
-  },
+    const { data, error } = await supabase.functions.invoke('update-barbershop', {
+      body: { 
+        barbeariaId: id,
+        ownerId: dono_id,
+        updates: finalUpdates
+      },
+    });
 
-  updateBarbearia: async (id: string, updates: BarbeariaUpdate, photoFile?: File) => {
-    let photoUrl = null;
-    if (photoFile) {
-      photoUrl = await uploadPhoto(photoFile);
-      updates.foto_url = photoUrl;
+    if (error) {
+        const errorMessage = data?.error || error.message;
+        throw new Error(errorMessage);
     }
-
-    const { data, error } = await supabase
-      .from('barbearias')
-      .update(updates)
-      .eq('id', id)
-      .select();
-    if (error) throw error;
-    return data[0] as Barbearia;
+    return data as Barbearia;
   },
 
-  deleteBarbearia: async (id: string) => {
-    const { error } = await supabase
-      .from('barbearias')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+  deleteBarbearia: async (id: string, dono_id: string) => {
+    const { error, data } = await supabase.functions.invoke('delete-barbershop', {
+      body: {
+        barbeariaId: id,
+        ownerId: dono_id,
+      }
+    });
+    if (error) {
+        const errorMessage = data?.error || error.message;
+        throw new Error(errorMessage);
+    }
     return true;
   },
 
