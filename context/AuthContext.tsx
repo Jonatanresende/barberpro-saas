@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { supabase } from '@/src/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -22,26 +22,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const sessionUser = session.user;
+    let effectiveUser: SupabaseUser = session.user;
 
     // One-time update to set the admin's full name if it's not already set
-    if (sessionUser.email === 'admin@barberpro.com' && !sessionUser.user_metadata.full_name) {
-      const { data: updatedUser, error } = await supabase.auth.updateUser({
+    if (effectiveUser.email === 'admin@barberpro.com' && !effectiveUser.user_metadata.full_name) {
+      const { data: updatedUserData, error } = await supabase.auth.updateUser({
         data: { full_name: 'Jonathan Resende de Sousa' }
       });
+
       if (error) {
         console.error("Failed to update admin name:", error);
-      } else if (updatedUser.user) {
-        // Use the updated user object for the current session
-        Object.assign(sessionUser, updatedUser.user);
+      } else if (updatedUserData?.user) {
+        // Use the updated user object for the current session to ensure immediate UI update
+        effectiveUser = updatedUserData.user;
       }
     }
 
     const baseUser: User = {
-      id: sessionUser.id,
-      email: sessionUser.email!,
-      role: sessionUser.user_metadata.role as UserRole,
-      full_name: sessionUser.user_metadata.full_name,
+      id: effectiveUser.id,
+      email: effectiveUser.email!,
+      role: effectiveUser.user_metadata.role as UserRole,
+      full_name: effectiveUser.user_metadata.full_name,
     };
 
     // If the user is a barbershop owner, find their barbershop to get the ID and slug
@@ -49,12 +50,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data: barbearia, error } = await supabase
         .from('barbearias')
         .select('id, link_personalizado')
-        .eq('dono_id', sessionUser.id)
+        .eq('dono_id', effectiveUser.id)
         .single();
 
       if (error) {
         console.error("Could not find barbershop for owner:", error);
-        // Log them out if their barbershop isn't found, as they can't do anything
         logout();
         return;
       }
@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         baseUser.link_personalizado = barbearia.link_personalizado;
       }
     }
-    // TODO: Add similar logic for BARBEIRO role if needed
 
     setUser(baseUser);
     setLoading(false);
