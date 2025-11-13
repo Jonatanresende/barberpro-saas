@@ -176,6 +176,38 @@ const SettingsPage = () => {
     return (
         <div className="space-y-8">
             <AccountSettings />
+
+            <SettingsCard title="Sistema">
+                <InputField label="Nome do Sistema" type="text" id="system-name" value="BarberPro SaaS" />
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Logotipo</label>
+                    <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-brand-gray rounded-md flex items-center justify-center">
+                            <span className="text-gray-400 text-xs">Logo</span>
+                        </div>
+                        <input type="file" id="logo-upload" className="hidden" />
+                        <label htmlFor="logo-upload" className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Fazer Upload
+                        </label>
+                    </div>
+                </div>
+                <InputField label="E-mail de Suporte" type="email" id="support-email" value="suporte@barberpro.com" />
+                 <div className="pt-4">
+                    <button className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </SettingsCard>
+
+            <SettingsCard title="Suporte">
+                <InputField label="E-mail de Contato" type="email" id="contact-email" value="contato@barberpro.com" />
+                <InputField label="Link para Termos de Uso / Política de Privacidade" type="url" id="tos-link" value="https://barberpro.com/termos" />
+                 <div className="pt-4">
+                    <button className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </SettingsCard>
         </div>
     );
 };
