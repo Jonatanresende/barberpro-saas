@@ -24,14 +24,21 @@ const AppRoutes = () => {
     );
   }
   
+  const getHomeRoute = () => {
+    if (!user) return '/login';
+    if (user.role === UserRole.BARBEARIA && user.link_personalizado) {
+      return `/${user.link_personalizado}`;
+    }
+    return `/${user.role}/dashboard`;
+  };
+
   return (
      <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/confirmation" element={<ConfirmationPage />} />
-        {/* Public booking page is now at /agendar/:slug */}
         <Route path="/agendar/:slug" element={<PublicBookingPage />} />
-        <Route path="/" element={user ? <Navigate to={`/${user.role}/dashboard`} /> : <Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to={getHomeRoute()} replace />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={
@@ -78,12 +85,12 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <HashRouter>
+    <HashRouter>
+      <AuthProvider>
         <ToastProvider />
         <AppRoutes />
-      </HashRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </HashRouter>
   );
 };
 
