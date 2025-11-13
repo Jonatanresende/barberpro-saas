@@ -1,4 +1,3 @@
-
 export enum UserRole {
   ADMIN = 'admin',
   BARBEARIA = 'barbearia',
@@ -26,6 +25,7 @@ export interface Barbearia {
   nome: string;
   dono_id: string;
   dono_email: string;
+  plano: 'Básico' | 'Premium' | 'Pro';
   link_personalizado: string;
   endereco: string;
   criado_em: string;

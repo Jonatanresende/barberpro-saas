@@ -11,6 +11,7 @@ import { BarbeariaPage } from './pages/barbearia/BarbeariaPage';
 import { BarbeiroPage } from './pages/barbeiro/BarbeiroPage';
 import PublicBookingPage from './pages/cliente/PublicBookingPage';
 import ConfirmationPage from './pages/cliente/ConfirmationPage';
+import ToastProvider from './components/ToastProvider';
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -75,6 +76,7 @@ const App = () => {
     <AuthProvider
       children={
         <HashRouter>
+          <ToastProvider />
           <AppRoutes />
         </HashRouter>
       }
