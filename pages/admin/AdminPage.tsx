@@ -60,10 +60,10 @@ const ManageBarbershops = () => {
         setIsModalOpen(true);
     };
 
-    const handleSave = async (barbeariaData: any) => {
+    const handleSave = async (barbeariaData: any, password?: string, photoFile?: File) => {
         const promise = barbeariaToEdit
-            ? api.updateBarbearia(barbeariaToEdit.id, barbeariaData)
-            : api.createBarbearia(barbeariaData);
+            ? api.updateBarbearia(barbeariaToEdit.id, barbeariaData, photoFile)
+            : api.createBarbeariaAndOwner(barbeariaData, password!, photoFile);
 
         toast.promise(promise, {
             loading: 'Salvando...',
@@ -72,7 +72,7 @@ const ManageBarbershops = () => {
                 setIsModalOpen(false);
                 return `Barbearia ${barbeariaToEdit ? 'atualizada' : 'cadastrada'} com sucesso!`;
             },
-            error: `Falha ao ${barbeariaToEdit ? 'atualizar' : 'cadastrar'} barbearia.`,
+            error: (err) => `Falha ao salvar: ${err.message}`,
         });
     };
 
@@ -90,7 +90,7 @@ const ManageBarbershops = () => {
     };
 
     const handleDelete = (id: string) => {
-        if (window.confirm('Tem certeza que deseja excluir esta barbearia?')) {
+        if (window.confirm('Tem certeza que deseja excluir esta barbearia? A conta do dono não será removida.')) {
             const promise = api.deleteBarbearia(id);
             toast.promise(promise, {
                 loading: 'Excluindo...',
@@ -117,6 +117,7 @@ const ManageBarbershops = () => {
                         <table className="w-full text-left text-sm text-gray-300">
                             <thead className="bg-brand-gray text-xs uppercase">
                                 <tr>
+                                    <th className="px-6 py-3">Foto</th>
                                     <th className="px-6 py-3">Nome</th>
                                     <th className="px-6 py-3">Dono</th>
                                     <th className="px-6 py-3">Plano</th>
@@ -128,6 +129,9 @@ const ManageBarbershops = () => {
                             <tbody>
                                 {barbearias.map(b => (
                                     <tr key={b.id} className="border-b border-brand-gray hover:bg-brand-gray">
+                                        <td className="px-6 py-4">
+                                            <img src={b.foto_url || 'https://via.placeholder.com/40'} alt={b.nome} className="w-10 h-10 rounded-full object-cover" />
+                                        </td>
                                         <td className="px-6 py-4 font-medium text-white">{b.nome}</td>
                                         <td className="px-6 py-4">{b.dono_email}</td>
                                         <td className="px-6 py-4">{b.plano}</td>

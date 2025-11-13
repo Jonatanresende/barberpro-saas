@@ -30,6 +30,7 @@ export interface Barbearia {
   endereco: string;
   criado_em: string;
   status: 'ativa' | 'inativa';
+  foto_url?: string;
 }
 
 export interface Barbeiro {
