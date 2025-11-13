@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
@@ -34,15 +33,20 @@ const PublicBookingPage = () => {
         e.preventDefault();
         if (!barbearia) return;
 
-        // Mock client data
+        const selectedBarbeiroObj = barbeiros.find(b => b.id === selectedBarbeiro);
+        const selectedServicoObj = servicos.find(s => s.id === selectedServico);
+
         const cliente_nome = (e.currentTarget.querySelector('input[name="name"]') as HTMLInputElement).value;
         const cliente_email = (e.currentTarget.querySelector('input[name="email"]') as HTMLInputElement).value;
 
         await api.createAgendamento({
             cliente_id: 'mock_client_id_' + Date.now(),
             cliente_nome,
+            cliente_email,
             barbeiro_id: selectedBarbeiro,
+            barbeiro_nome: selectedBarbeiroObj?.nome,
             servico_id: selectedServico,
+            servico_nome: selectedServicoObj?.nome,
             barbearia_id: barbearia.id,
             data: selectedDate,
             hora: selectedTime,

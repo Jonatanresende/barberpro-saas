@@ -64,6 +64,7 @@ export interface Agendamento {
   id: string;
   cliente_id: string;
   cliente_nome?: string;
+  cliente_email?: string;
   barbeiro_id: string;
   barbeiro_nome?: string;
   servico_id: string;
