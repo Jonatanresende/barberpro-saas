@@ -92,14 +92,15 @@ export const api = {
     return true;
   },
 
-  getAdminDashboardStats: async () => {
-    const { count, error } = await supabase.from('barbearias').select('*', { count: 'exact', head: true });
-    if (error) console.error("Error fetching stats", error);
-    return {
-      totalBarbearias: count ?? 0,
-      usuariosAtivos: 150, // mock
-      totalBarbeiros: 0, // mock
-    };
+  getAdminDashboardData: async () => {
+    const { data, error } = await supabase.functions.invoke('get-admin-dashboard');
+    
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
+    }
+    
+    return data;
   },
 
   // BARBEARIA - Dashboard

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 type IconProps = {
@@ -74,5 +73,18 @@ export const ClipboardListIcon = ({ className = 'w-6 h-6' }: IconProps) => (
         <path d="M12 16h4"/>
         <path d="M8 11h.01"/>
         <path d="M8 16h.01"/>
+    </svg>
+);
+
+export const DollarSignIcon = ({ className = 'w-6 h-6' }: IconProps) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23" />
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+);
+
+export const ActivityIcon = ({ className = 'w-6 h-6' }: IconProps) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
     </svg>
 );

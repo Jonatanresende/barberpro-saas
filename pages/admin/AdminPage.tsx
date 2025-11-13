@@ -1,15 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { api } from '../../services/api';
 import { Barbearia } from '../../types';
-import { ScissorsIcon, StoreIcon, UsersIcon } from '../../components/icons';
+import { ActivityIcon, DollarSignIcon, StoreIcon, UsersIcon } from '../../components/icons';
 import SettingsPage from './SettingsPage';
 import Modal from '../../components/Modal';
 import BarbershopModal from './BarbershopModal';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
-  <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center">
+  <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">
     <div className="p-3 rounded-full bg-brand-gray mr-4">{icon}</div>
     <div>
       <p className="text-sm text-gray-400">{title}</p>
@@ -19,13 +20,120 @@ const StatCard = ({ title, value, icon }: { title: string, value: string | numbe
 );
 
 const AdminDashboard = () => {
-    const [stats, setStats] = useState({ totalBarbearias: 0, usuariosAtivos: 0, totalBarbeiros: 0 });
-    useEffect(() => { api.getAdminDashboardStats().then(setStats); }, []);
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [dateTime, setDateTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setDateTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const dashboardData = await api.getAdminDashboardData();
+                setData(dashboardData);
+                setError(null);
+            } catch (err: any) {
+                const errorMessage = err.message || 'Falha ao carregar dados do dashboard.';
+                setError(errorMessage);
+                toast.error(errorMessage);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return <div className="text-center py-10 text-gray-400">Carregando dados do dashboard...</div>;
+    }
+
+    if (error) {
+        return <div className="text-center py-10 text-red-400">Erro: {error}</div>;
+    }
+
+    if (!data) return null;
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <StatCard title="Total de Barbearias" value={stats.totalBarbearias} icon={<StoreIcon className="w-6 h-6 text-brand-gold" />} />
-            <StatCard title="Usuários Ativos" value={stats.usuariosAtivos} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
-            <StatCard title="Total de Barbeiros" value={stats.totalBarbeiros} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
+        <div className="space-y-8">
+            <div className="flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-white">Dashboard Geral</h2>
+                    <p className="text-gray-400">Bem-vindo ao painel de administrador.</p>
+                </div>
+                <div className="text-right bg-brand-dark p-3 rounded-lg border border-brand-gray">
+                    <p className="text-lg font-semibold text-white">{dateTime.toLocaleTimeString('pt-BR')}</p>
+                    <p className="text-sm text-gray-400">{dateTime.toLocaleDateString('pt-BR', { dateStyle: 'full' })}</p>
+                </div>
+            </div>
+
+            <div className="bg-brand-dark p-4 rounded-lg border border-brand-gray">
+                <p className="text-sm text-gray-300">
+                    🔔 Última atividade: Novo usuário registrado - <span className="font-semibold text-brand-gold">{data.latestUsers[0]?.email}</span>
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard title="Receita Total" value={`R$ ${data.totalRevenue.toFixed(2)}`} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Planos Vendidos" value={data.totalPlansSold} icon={<StoreIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Total de Usuários" value={data.totalUsers} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Usuários Ativos (Mês)" value={data.activeUsersLastMonth} icon={<ActivityIcon className="w-6 h-6 text-brand-gold" />} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
+                    <h3 className="text-lg font-semibold text-white mb-4">Crescimento de Usuários</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={data.userGrowthChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                            <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                            <YAxis stroke="#9ca3af" fontSize={12} />
+                            <Tooltip contentStyle={{ backgroundColor: '#111111', border: '1px solid #374151' }} />
+                            <Legend />
+                            <Line type="monotone" dataKey="Usuários" stroke="#D4AF37" strokeWidth={2} activeDot={{ r: 8 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
+                    <h3 className="text-lg font-semibold text-white mb-4">Receita Mensal (R$)</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={data.monthlyRevenueChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                            <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                            <YAxis stroke="#9ca3af" fontSize={12} />
+                            <Tooltip contentStyle={{ backgroundColor: '#111111', border: '1px solid #374151' }} />
+                            <Legend />
+                            <Bar dataKey="Receita" fill="#D4AF37" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
+                <h3 className="text-lg font-semibold text-white mb-4">Últimos Usuários Cadastrados</h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-gray-300">
+                        <thead className="bg-brand-gray text-xs uppercase">
+                            <tr>
+                                <th className="px-6 py-3">E-mail</th>
+                                <th className="px-6 py-3">Data de Cadastro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.latestUsers.map((user: any, index: number) => (
+                                <tr key={index} className="border-b border-brand-gray hover:bg-brand-gray">
+                                    <td className="px-6 py-4 font-medium text-white">{user.email}</td>
+                                    <td className="px-6 py-4">{new Date(user.created_at).toLocaleString('pt-BR')}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };
