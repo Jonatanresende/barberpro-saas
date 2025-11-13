@@ -24,10 +24,12 @@ export interface Barbearia {
   id: string;
   nome: string;
   dono_id: string;
+  dono_nome?: string;
   dono_email: string;
   plano: 'Básico' | 'Premium' | 'Pro';
   link_personalizado: string;
   endereco: string;
+  documento?: string;
   criado_em: string;
   status: 'ativa' | 'inativa';
   foto_url?: string;
