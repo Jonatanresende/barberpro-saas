@@ -128,6 +128,19 @@ export const api = {
     };
   },
 
+  updateAdminUser: async (userId: string, userData: { email: string; full_name: string }): Promise<User> => {
+    const { data, error } = await supabase.functions.invoke('update-admin-user', {
+      body: { userId, email: userData.email, fullName: userData.full_name },
+    });
+    if (error) throw new Error(data?.error || error.message);
+    return {
+      id: data.id,
+      email: data.email,
+      full_name: data.user_metadata.full_name,
+      role: data.user_metadata.role,
+    };
+  },
+
   deleteAdminUser: async (userId: string): Promise<boolean> => {
     const { data, error } = await supabase.functions.invoke('delete-admin-user', {
       body: { userId },

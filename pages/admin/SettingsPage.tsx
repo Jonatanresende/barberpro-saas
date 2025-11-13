@@ -34,7 +34,6 @@ const AccountSettings = () => {
         if (!user) return;
         try {
             const admins = await api.getAdminUsers();
-            // Filtra o próprio usuário da lista de "outros admins"
             setOtherAdmins(admins.filter(admin => admin.id !== user.id));
         } catch (error: any) {
             toast.error(`Falha ao carregar administradores: ${error.message}`);
@@ -72,9 +71,14 @@ const AccountSettings = () => {
         setIsUserModalOpen(true);
     };
 
+    const handleOpenEditUserModal = (admin: User) => {
+        setUserToEdit(admin);
+        setIsUserModalOpen(true);
+    };
+
     const handleSaveAdminUser = async (userData: any, password?: string) => {
         const promise = userToEdit
-            ? supabase.auth.admin.updateUserById(userToEdit.id, { email: userData.email, user_metadata: { full_name: userData.full_name }})
+            ? api.updateAdminUser(userToEdit.id, userData)
             : api.createAdminUser(userData.email, password!, userData.full_name);
 
         toast.promise(promise, {
@@ -147,6 +151,7 @@ const AccountSettings = () => {
                                     <p className="text-sm text-gray-400">{admin.email}</p>
                                 </div>
                                 <div className="flex space-x-3">
+                                    <button onClick={() => handleOpenEditUserModal(admin)} className="text-blue-400 hover:text-blue-300 font-semibold">Editar</button>
                                     <button onClick={() => handleDeleteAdmin(admin)} className="text-red-400 hover:text-red-300 font-semibold">Remover</button>
                                 </div>
                             </div>
