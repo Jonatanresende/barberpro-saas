@@ -23,10 +23,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const sessionUser = session.user;
+
+    // One-time update to set the admin's full name if it's not already set
+    if (sessionUser.email === 'admin@barberpro.com' && !sessionUser.user_metadata.full_name) {
+      const { data: updatedUser, error } = await supabase.auth.updateUser({
+        data: { full_name: 'Jonathan Resende de Sousa' }
+      });
+      if (error) {
+        console.error("Failed to update admin name:", error);
+      } else if (updatedUser.user) {
+        // Use the updated user object for the current session
+        Object.assign(sessionUser, updatedUser.user);
+      }
+    }
+
     const baseUser: User = {
       id: sessionUser.id,
       email: sessionUser.email!,
       role: sessionUser.user_metadata.role as UserRole,
+      full_name: sessionUser.user_metadata.full_name,
     };
 
     // If the user is a barbershop owner, find their barbershop to get the ID and slug

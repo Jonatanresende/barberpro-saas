@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogoutIcon, MenuIcon } from './icons';
@@ -10,6 +9,11 @@ interface HeaderProps {
 
 const Header = ({ title, onMenuClick }: HeaderProps) => {
   const { user, logout } = useAuth();
+
+  // Display the first two names if available, otherwise fall back to the email
+  const displayName = user?.full_name
+    ? user.full_name.split(' ').slice(0, 2).join(' ')
+    : user?.email;
 
   return (
     <header className="bg-brand-dark border-b border-brand-gray sticky top-0 z-20">
@@ -26,7 +30,7 @@ const Header = ({ title, onMenuClick }: HeaderProps) => {
             <h1 className="text-xl font-semibold text-white">{title}</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-300 hidden sm:block">{user?.email}</span>
+            <span className="text-sm text-gray-300 hidden sm:block">{displayName}</span>
             <button
               onClick={logout}
               className="flex items-center text-sm text-gray-300 hover:text-brand-gold transition-colors"
