@@ -7,20 +7,28 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '@/src/integrations/supabase/client';
 
-const roleRedirects: Record<UserRole, string> = {
-  [UserRole.ADMIN]: '/admin/dashboard',
-  [UserRole.BARBEARIA]: '/barbearia/dashboard',
-  [UserRole.BARBEIRO]: '/barbeiro/dashboard',
-  [UserRole.CLIENTE]: '/',
-};
-
 const Login = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      const redirectPath = roleRedirects[user.role] || '/';
+      let redirectPath = '/';
+      switch (user.role) {
+        case UserRole.ADMIN:
+          redirectPath = '/admin/dashboard';
+          break;
+        case UserRole.BARBEARIA:
+          // Redirect to the custom slug URL
+          redirectPath = `/${user.link_personalizado}`;
+          break;
+        case UserRole.BARBEIRO:
+          redirectPath = '/barbeiro/dashboard';
+          break;
+        case UserRole.CLIENTE:
+          redirectPath = '/';
+          break;
+      }
       navigate(redirectPath);
     }
   }, [user, navigate]);
@@ -34,7 +42,7 @@ const Login = () => {
   }
 
   if (user) {
-    return null; // Evita piscar a tela de login se já estiver logado
+    return null; // Avoids flashing the login screen if already logged in
   }
 
   return (

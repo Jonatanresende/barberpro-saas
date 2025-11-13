@@ -14,22 +14,30 @@ import ConfirmationPage from './pages/cliente/ConfirmationPage';
 import ToastProvider from './components/ToastProvider';
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-brand-dark">
+        <div className="text-brand-gold text-xl">Carregando...</div>
+      </div>
+    );
+  }
   
   return (
      <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/confirmation" element={<ConfirmationPage />} />
-        <Route path="/:slug" element={<PublicBookingPage />} />
+        {/* Public booking page is now at /agendar/:slug */}
+        <Route path="/agendar/:slug" element={<PublicBookingPage />} />
         <Route path="/" element={user ? <Navigate to={`/${user.role}/dashboard`} /> : <Navigate to="/login" />} />
 
         {/* Admin Routes */}
-        {/* FIX: Pass children as an explicit prop to work around a TypeScript error where it was not being detected. */}
         <Route path="/admin" element={
-          <ProtectedRoute allowedRoles={[UserRole.ADMIN]} children={
+          <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
             <DashboardLayout title="Painel do Administrador" />
-          } />
+          </ProtectedRoute>
         }>
             <Route path="dashboard" element={<AdminPage />} />
             <Route path="barbershops" element={<AdminPage />} />
@@ -38,27 +46,25 @@ const AppRoutes = () => {
             <Route index element={<Navigate to="dashboard" />} />
         </Route>
 
-        {/* Barbearia Routes */}
-        {/* FIX: Pass children as an explicit prop to work around a TypeScript error where it was not being detected. */}
-        <Route path="/barbearia" element={
-           <ProtectedRoute allowedRoles={[UserRole.BARBEARIA]} children={
+        {/* Barbearia Routes with custom slug */}
+        <Route path="/:slug" element={
+           <ProtectedRoute allowedRoles={[UserRole.BARBEARIA]}>
             <DashboardLayout title="Painel da Barbearia" />
-          } />
+          </ProtectedRoute>
         }>
+            <Route path="" element={<BarbeariaPage />} />
             <Route path="dashboard" element={<BarbeariaPage />} />
             <Route path="barbers" element={<BarbeariaPage />} />
             <Route path="services" element={<BarbeariaPage />} />
             <Route path="appointments" element={<BarbeariaPage />} />
             <Route path="settings" element={<BarbeariaPage />} />
-            <Route index element={<Navigate to="dashboard" />} />
         </Route>
 
         {/* Barbeiro Routes */}
-        {/* FIX: Pass children as an explicit prop to work around a TypeScript error where it was not being detected. */}
         <Route path="/barbeiro" element={
-            <ProtectedRoute allowedRoles={[UserRole.BARBEIRO]} children={
+            <ProtectedRoute allowedRoles={[UserRole.BARBEIRO]}>
                 <DashboardLayout title="Painel do Barbeiro" />
-            } />
+            </ProtectedRoute>
         }>
             <Route path="dashboard" element={<BarbeiroPage />} />
             <Route index element={<Navigate to="dashboard" />} />
@@ -72,15 +78,12 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    // FIX: Pass children as an explicit prop to work around a TypeScript error where it was not being detected.
-    <AuthProvider
-      children={
-        <HashRouter>
-          <ToastProvider />
-          <AppRoutes />
-        </HashRouter>
-      }
-    />
+    <AuthProvider>
+      <HashRouter>
+        <ToastProvider />
+        <AppRoutes />
+      </HashRouter>
+    </AuthProvider>
   );
 };
 

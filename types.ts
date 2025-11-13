@@ -16,8 +16,9 @@ export interface User {
   id: string;
   email: string;
   role: UserRole;
-  barbeariaId?: string; // For 'barbearia' and 'barbeiro' roles
-  barbeiroId?: string; // For 'barbeiro' role
+  barbeariaId?: string;
+  barbeiroId?: string;
+  link_personalizado?: string; // For barbershop owners
 }
 
 export interface Barbearia {

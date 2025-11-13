@@ -15,40 +15,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserAndBarbearia = async (session: Session | null) => {
+    if (!session) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    const sessionUser = session.user;
+    const baseUser: User = {
+      id: sessionUser.id,
+      email: sessionUser.email!,
+      role: sessionUser.user_metadata.role as UserRole,
+    };
+
+    // If the user is a barbershop owner, find their barbershop to get the ID and slug
+    if (baseUser.role === UserRole.BARBEARIA) {
+      const { data: barbearia, error } = await supabase
+        .from('barbearias')
+        .select('id, link_personalizado')
+        .eq('dono_id', sessionUser.id)
+        .single();
+
+      if (error) {
+        console.error("Could not find barbershop for owner:", error);
+        // Log them out if their barbershop isn't found, as they can't do anything
+        logout();
+        return;
+      }
+
+      if (barbearia) {
+        baseUser.barbeariaId = barbearia.id;
+        baseUser.link_personalizado = barbearia.link_personalizado;
+      }
+    }
+    // TODO: Add similar logic for BARBEIRO role if needed
+
+    setUser(baseUser);
+    setLoading(false);
+  };
+
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const sessionUser = session.user;
-        const appUser: User = {
-          id: sessionUser.id,
-          email: sessionUser.email!,
-          role: sessionUser.user_metadata.role as UserRole,
-          barbeariaId: sessionUser.user_metadata.barbeariaId,
-          barbeiroId: sessionUser.user_metadata.barbeiroId,
-        };
-        setUser(appUser);
-      }
-      setLoading(false);
+      await fetchUserAndBarbearia(session);
     };
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
-      if (session) {
-        const sessionUser = session.user;
-        const appUser: User = {
-          id: sessionUser.id,
-          email: sessionUser.email!,
-          role: sessionUser.user_metadata.role as UserRole,
-          barbeariaId: sessionUser.user_metadata.barbeariaId,
-          barbeiroId: sessionUser.user_metadata.barbeiroId,
-        };
-        setUser(appUser);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      fetchUserAndBarbearia(session);
     });
 
     return () => {

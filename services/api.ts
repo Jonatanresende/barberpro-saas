@@ -5,6 +5,19 @@ import { UserRole } from '../types';
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
 
+// Helper function to generate a URL-friendly slug
+const generateSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .normalize("NFD") // remove accents
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, '-') // replace spaces with -
+    .replace(/[^\w\-]+/g, '') // remove all non-word chars
+    .replace(/\-\-+/g, '-') // replace multiple - with single -
+    .replace(/^-+/, '') // trim - from start of text
+    .replace(/-+$/, ''); // trim - from end of text
+};
+
 // Helper function to upload photo and get URL
 const uploadPhoto = async (photoFile: File): Promise<string | null> => {
   if (!photoFile) return null;
@@ -59,13 +72,17 @@ export const api = {
       photoUrl = await uploadPhoto(photoFile);
     }
 
-    // 3. Create the barbearia record
+    // 3. Generate slug
+    const slug = generateSlug(barbeariaData.nome);
+
+    // 4. Create the barbearia record
     const { data, error } = await supabase
       .from('barbearias')
       .insert([{ 
         ...barbeariaData, 
         dono_id: authData.user.id,
         foto_url: photoUrl,
+        link_personalizado: slug,
       }])
       .select();
       
@@ -90,9 +107,6 @@ export const api = {
   },
 
   deleteBarbearia: async (id: string) => {
-    // Note: This only deletes the barbearia record. 
-    // The owner's auth user is not deleted automatically.
-    // Deleting auth users should be a separate, deliberate action.
     const { error } = await supabase
       .from('barbearias')
       .delete()
@@ -101,7 +115,6 @@ export const api = {
     return true;
   },
 
-  // Mocked stats for now
   getAdminDashboardStats: async () => {
     const { count, error } = await supabase.from('barbearias').select('*', { count: 'exact', head: true });
     if (error) console.error("Error fetching stats", error);
