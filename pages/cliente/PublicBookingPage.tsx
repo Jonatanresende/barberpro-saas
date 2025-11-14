@@ -64,6 +64,7 @@ const PublicBookingPage = () => {
 
     const availableTimes = useMemo(() => {
         if (!barbearia?.start_time || !barbearia?.end_time) return [];
+        
         const times = [];
         const [startHour, startMinute] = barbearia.start_time.split(':').map(Number);
         const [endHour, endMinute] = barbearia.end_time.split(':').map(Number);
@@ -71,12 +72,28 @@ const PublicBookingPage = () => {
         currentTime.setHours(startHour, startMinute, 0, 0);
         let endTime = new Date();
         endTime.setHours(endHour, endMinute, 0, 0);
+
         while (currentTime < endTime) {
             times.push(currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
             currentTime.setMinutes(currentTime.getMinutes() + 30);
         }
+
+        if (!selectedDate) return times;
+
+        const isToday = selectedDate.toDateString() === new Date().toDateString();
+
+        if (isToday) {
+            const now = new Date();
+            return times.filter(time => {
+                const [hour, minute] = time.split(':').map(Number);
+                const slotTime = new Date(selectedDate);
+                slotTime.setHours(hour, minute, 0, 0);
+                return slotTime > now;
+            });
+        }
+
         return times;
-    }, [barbearia]);
+    }, [barbearia, selectedDate]);
 
     const bookedTimes = useMemo(() => {
         if (!selectedBarbeiro || !selectedDate) return [];
