@@ -411,12 +411,17 @@ export const api = {
     return data;
   },
 
-  getAgendamentosByDate: async (barbeariaId: string, date: string): Promise<Pick<Agendamento, 'hora' | 'barbeiro_id'>[]> => {
+  getAgendamentosByMonth: async (barbeariaId: string, year: number, month: number): Promise<Pick<Agendamento, 'data' | 'hora' | 'barbeiro_id'>[]> => {
+    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+
     const { data, error } = await supabase
       .from('agendamentos')
-      .select('hora, barbeiro_id')
+      .select('data, hora, barbeiro_id')
       .eq('barbearia_id', barbeariaId)
-      .eq('data', date);
+      .gte('data', startDate)
+      .lte('data', endDate);
+      
     if (error) throw new Error(error.message);
     return data;
   },

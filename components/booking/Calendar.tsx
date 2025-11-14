@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface CalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
   operatingDays: number[]; // 0=Sun, 1=Mon, etc.
+  fullyBookedDays: string[]; // YYYY-MM-DD
+  onMonthChange: (date: Date) => void;
+  currentMonth: Date;
 }
 
-const Calendar = ({ selectedDate, onDateSelect, operatingDays }: CalendarProps) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+const Calendar = ({ selectedDate, onDateSelect, operatingDays, fullyBookedDays, onMonthChange, currentMonth }: CalendarProps) => {
 
-  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
   const startDay = startOfMonth.getDay();
   const daysInMonth = endOfMonth.getDate();
 
@@ -19,20 +21,22 @@ const Calendar = ({ selectedDate, onDateSelect, operatingDays }: CalendarProps) 
     days.push(<div key={`empty-${i}`} className="w-10 h-10"></div>);
   }
   for (let i = 1; i <= daysInMonth; i++) {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i);
+    const dateString = date.toISOString().split('T')[0];
     const dayOfWeek = date.getDay();
     const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
     const isPast = date < new Date() && date.toDateString() !== new Date().toDateString();
     const isClosed = !operatingDays.includes(dayOfWeek);
+    const isFullyBooked = fullyBookedDays.includes(dateString);
     
     days.push(
       <button
         key={i}
-        disabled={isPast || isClosed}
+        disabled={isPast || isClosed || isFullyBooked}
         onClick={() => onDateSelect(date)}
         className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${
           isSelected ? 'bg-brand-gold text-brand-dark font-bold' : 
-          isPast || isClosed ? 'text-gray-600 cursor-not-allowed' : 
+          isPast || isClosed || isFullyBooked ? 'text-gray-600 cursor-not-allowed line-through' : 
           'text-white hover:bg-brand-gray'
         }`}
       >
@@ -42,7 +46,7 @@ const Calendar = ({ selectedDate, onDateSelect, operatingDays }: CalendarProps) 
   }
 
   const changeMonth = (amount: number) => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
+    onMonthChange(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
   };
 
   return (
@@ -50,7 +54,7 @@ const Calendar = ({ selectedDate, onDateSelect, operatingDays }: CalendarProps) 
       <div className="flex justify-between items-center mb-4">
         <button onClick={() => changeMonth(-1)}>&lt;</button>
         <div className="font-bold text-white">
-          {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+          {currentMonth.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
         </div>
         <button onClick={() => changeMonth(1)}>&gt;</button>
       </div>
