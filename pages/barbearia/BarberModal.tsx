@@ -78,48 +78,50 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit }: BarberModalProps
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={barberToEdit ? 'Editar Barbeiro' : 'Adicionar Barbeiro'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Foto do Barbeiro</label>
-          <div className="flex items-center space-x-4">
-            <div className="w-20 h-20 bg-brand-gray rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-600">
-              {photoPreview ? (
-                <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-              ) : (
-                <UsersIcon className="w-10 h-10 text-gray-500" />
-              )}
-            </div>
-            <input type="file" accept="image/*" onChange={handlePhotoChange} ref={fileInputRef} className="hidden" />
-            <button type="button" onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-lg bg-brand-gray hover:bg-gray-700 text-white font-semibold">
-              Escolher Foto
-            </button>
-          </div>
-        </div>
-        <div>
-          <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-1">Nome Completo</label>
-          <input type="text" id="nome" value={nome} onChange={e => setNome(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
-        </div>
-         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">E-mail de Acesso</label>
-          <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={!!barberToEdit} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white disabled:opacity-50" />
-        </div>
-        <div>
-          <label htmlFor="telefone" className="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
-          <input type="tel" id="telefone" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(XX) XXXXX-XXXX" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
-        </div>
-        {!barberToEdit && (
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4 overflow-y-auto pr-4 -mr-4" style={{ maxHeight: '65vh' }}>
             <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
-                <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            <label className="block text-sm font-medium text-gray-300 mb-2">Foto do Barbeiro</label>
+            <div className="flex items-center space-x-4">
+                <div className="w-20 h-20 bg-brand-gray rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-600">
+                {photoPreview ? (
+                    <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                    <UsersIcon className="w-10 h-10 text-gray-500" />
+                )}
+                </div>
+                <input type="file" accept="image/*" onChange={handlePhotoChange} ref={fileInputRef} className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-lg bg-brand-gray hover:bg-gray-700 text-white font-semibold">
+                Escolher Foto
+                </button>
             </div>
-        )}
-        <div>
-          <label htmlFor="especialidade" className="block text-sm font-medium text-gray-300 mb-1">Especialidade</label>
-          <input type="text" id="especialidade" value={especialidade} onChange={e => setEspecialidade(e.target.value)} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
-        </div>
-        <div className="flex items-center">
-          <input id="ativo" type="checkbox" checked={ativo} onChange={e => setAtivo(e.target.checked)} className="h-4 w-4 rounded border-gray-600 bg-brand-gray text-brand-gold focus:ring-brand-gold" />
-          <label htmlFor="ativo" className="ml-2 block text-sm text-gray-300">Ativo</label>
+            </div>
+            <div>
+            <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-1">Nome Completo</label>
+            <input type="text" id="nome" value={nome} onChange={e => setNome(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            </div>
+            <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">E-mail de Acesso</label>
+            <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={!!barberToEdit} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white disabled:opacity-50" />
+            </div>
+            <div>
+            <label htmlFor="telefone" className="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
+            <input type="tel" id="telefone" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(XX) XXXXX-XXXX" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            </div>
+            {!barberToEdit && (
+                <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
+                    <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+                </div>
+            )}
+            <div>
+            <label htmlFor="especialidade" className="block text-sm font-medium text-gray-300 mb-1">Especialidade</label>
+            <input type="text" id="especialidade" value={especialidade} onChange={e => setEspecialidade(e.target.value)} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            </div>
+            <div className="flex items-center">
+            <input id="ativo" type="checkbox" checked={ativo} onChange={e => setAtivo(e.target.checked)} className="h-4 w-4 rounded border-gray-600 bg-brand-gray text-brand-gold focus:ring-brand-gold" />
+            <label htmlFor="ativo" className="ml-2 block text-sm text-gray-300">Ativo</label>
+            </div>
         </div>
         <div className="flex justify-end space-x-3 pt-4 mt-4 border-t border-brand-gray">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-brand-gray hover:bg-gray-700 text-white font-semibold">Cancelar</button>

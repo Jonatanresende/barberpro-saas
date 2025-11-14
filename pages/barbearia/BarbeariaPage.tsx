@@ -78,7 +78,7 @@ const ManageBarbers = () => {
         if (!user?.barbeariaId) return;
         
         const promise = barberToEdit
-            ? api.updateBarbeiro(barberToEdit.id, barberToEdit.user_id!, barberData, photoFile)
+            ? api.updateBarbeiro(barberToEdit.id, barberToEdit.user_id, barberData, photoFile)
             : api.createBarbeiro(barberData, user.barbeariaId, password!, photoFile);
 
         toast.promise(promise, {

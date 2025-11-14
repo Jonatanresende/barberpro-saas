@@ -315,7 +315,7 @@ export const api = {
     return data as Barbeiro;
   },
 
-  updateBarbeiro: async (id: string, userId: string, barbeiroData: any, photoFile?: File): Promise<Barbeiro> => {
+  updateBarbeiro: async (id: string, userId: string | undefined, barbeiroData: any, photoFile?: File): Promise<Barbeiro> => {
     let finalUpdates = { ...barbeiroData };
     delete finalUpdates.email;
     if (photoFile) {

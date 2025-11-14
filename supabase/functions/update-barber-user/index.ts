@@ -14,8 +14,8 @@ serve(async (req) => {
   try {
     const { barberId, userId, updates } = await req.json()
 
-    if (!barberId || !userId || !updates) {
-      throw new Error('Parâmetros obrigatórios ausentes: barberId, userId ou updates.');
+    if (!barberId || !updates) {
+      throw new Error('Parâmetros obrigatórios ausentes: barberId ou updates.');
     }
 
     const supabaseAdmin = createClient(
@@ -23,12 +23,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Update the user in Supabase Auth if name is changed
-    if (updates.nome) {
-      await supabaseAdmin.auth.admin.updateUserById(
+    // 1. Update the user in Supabase Auth if userId is provided and name is changed
+    if (userId && updates.nome) {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
         userId,
         { user_metadata: { full_name: updates.nome } }
       )
+      if (authError) {
+        // Log the error but don't stop the execution, as updating the DB is more critical.
+        console.error('Falha ao atualizar o nome do usuário no Auth:', authError.message);
+      }
     }
 
     // 2. Update the barber record in the database
