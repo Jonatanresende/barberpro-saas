@@ -7,6 +7,7 @@ import { User } from '../../types';
 import Modal from '../../components/Modal';
 import PasswordChangeModal from './PasswordChangeModal';
 import AdminUserModal from './AdminUserModal';
+import { useSettings } from '../../context/SettingsContext';
 
 const SettingsCard = ({ title, children, actions }: { title: string, children: React.ReactNode, actions?: React.ReactNode }) => (
     <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
@@ -175,26 +176,22 @@ const AccountSettings = () => {
 };
 
 const SystemSettings = () => {
-    const [settings, setSettings] = useState({ system_name: '', support_email: '', logo_url: '' });
+    const { settings: globalSettings, updateSettings, loading } = useSettings();
+    const [localSettings, setLocalSettings] = useState({ system_name: '', support_email: '' });
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const data = await api.getSystemSettings();
-                if (data) {
-                    setSettings(data);
-                    setLogoPreview(data.logo_url);
-                }
-            } catch (error: any) {
-                toast.error(`Falha ao carregar configurações do sistema: ${error.message}`);
-            }
-        };
-        fetchSettings();
-    }, []);
+        if (globalSettings) {
+            setLocalSettings({
+                system_name: globalSettings.system_name || '',
+                support_email: globalSettings.support_email || '',
+            });
+            setLogoPreview(globalSettings.logo_url || null);
+        }
+    }, [globalSettings]);
 
     const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -210,34 +207,36 @@ const SystemSettings = () => {
 
     const handleSave = async () => {
         setIsSaving(true);
-        const updates = {
-            system_name: settings.system_name,
-            support_email: settings.support_email,
-        };
+        const promise = updateSettings(localSettings, logoFile || undefined);
 
-        try {
-            const updatedSettings = await api.updateSystemSettings(updates, logoFile || undefined);
-            setSettings(updatedSettings); // Update state with returned data
-            setLogoPreview(updatedSettings.logo_url); // Ensure preview is updated
-            setLogoFile(null); // Clear the file input
-            toast.success('Configurações do sistema salvas com sucesso!');
-        } catch (error: any) {
-            toast.error(`Falha ao salvar: ${error.message}`);
-        } finally {
-            setIsSaving(false);
-        }
+        toast.promise(promise, {
+            loading: 'Salvando configurações...',
+            success: () => {
+                setLogoFile(null);
+                setIsSaving(false);
+                return 'Configurações salvas com sucesso!';
+            },
+            error: (err) => {
+                setIsSaving(false);
+                return `Falha ao salvar: ${err.message}`;
+            },
+        });
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setSettings(prev => ({ ...prev, [name]: value }));
+        setLocalSettings(prev => ({ ...prev, [name]: value }));
     };
+
+    if (loading) {
+        return <div className="text-center py-10">Carregando configurações...</div>;
+    }
 
     return (
         <SettingsCard title="Sistema">
             <div>
                 <label htmlFor="system_name" className="block text-sm font-medium text-gray-300 mb-2">Nome do Sistema</label>
-                <input type="text" id="system_name" name="system_name" value={settings.system_name || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+                <input type="text" id="system_name" name="system_name" value={localSettings.system_name} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Logotipo</label>
@@ -257,7 +256,7 @@ const SystemSettings = () => {
             </div>
             <div>
                 <label htmlFor="support_email" className="block text-sm font-medium text-gray-300 mb-2">E-mail de Suporte</label>
-                <input type="email" id="support_email" name="support_email" value={settings.support_email || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+                <input type="email" id="support_email" name="support_email" value={localSettings.support_email} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
             </div>
             <div className="pt-4">
                 <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import DashboardLayout from './components/DashboardLayout';
@@ -87,8 +88,10 @@ const App = () => {
   return (
     <HashRouter>
       <AuthProvider>
-        <ToastProvider />
-        <AppRoutes />
+        <SettingsProvider>
+          <ToastProvider />
+          <AppRoutes />
+        </SettingsProvider>
       </AuthProvider>
     </HashRouter>
   );
