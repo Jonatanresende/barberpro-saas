@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
@@ -331,14 +331,20 @@ const ManageAppointments = () => {
 const Settings = () => {
     const { user } = useAuth();
     const [barbearia, setBarbearia] = useState<Partial<Barbearia>>({});
+    const [heroFile, setHeroFile] = useState<File | null>(null);
+    const [heroPreview, setHeroPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const heroFileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (user?.barbeariaId) {
             setLoading(true);
             api.getBarbeariaById(user.barbeariaId)
-                .then(data => setBarbearia(data))
+                .then(data => {
+                    setBarbearia(data);
+                    setHeroPreview(data.hero_image_url || null);
+                })
                 .catch(() => toast.error("Falha ao carregar dados da barbearia."))
                 .finally(() => setLoading(false));
         }
@@ -347,6 +353,18 @@ const Settings = () => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setBarbearia(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setHeroFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setHeroPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleSave = () => {
@@ -358,13 +376,20 @@ const Settings = () => {
             link_personalizado: barbearia.link_personalizado,
             instagram_url: barbearia.instagram_url,
             whatsapp_url: barbearia.whatsapp_url,
+            hero_title: barbearia.hero_title,
+            hero_subtitle: barbearia.hero_subtitle,
+            services_title: barbearia.services_title,
+            social_title: barbearia.social_title,
+            social_subtitle: barbearia.social_subtitle,
         };
 
         setIsSaving(true);
-        toast.promise(api.updateBarbearia(user.barbeariaId, user.id, updates), {
+        toast.promise(api.updateBarbearia(user.barbeariaId, user.id, updates, undefined, heroFile || undefined), {
             loading: 'Salvando alterações...',
-            success: () => {
+            success: (updatedBarbearia) => {
                 setIsSaving(false);
+                setHeroFile(null);
+                setHeroPreview(updatedBarbearia.hero_image_url || null);
                 return 'Configurações salvas com sucesso!';
             },
             error: (err) => {
@@ -377,36 +402,75 @@ const Settings = () => {
     if (loading) return <p className="text-center text-gray-400">Carregando...</p>;
 
     return (
-        <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray max-w-2xl space-y-4">
-             <h2 className="text-xl font-semibold text-white mb-4">Configurações da Barbearia</h2>
-             <div>
-                <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-2">Nome da Barbearia</label>
-                <input type="text" id="nome" name="nome" value={barbearia.nome || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
-             </div>
-             <div>
-                <label htmlFor="endereco" className="block text-sm font-medium text-gray-300 mb-2">Endereço</label>
-                <input type="text" id="endereco" name="endereco" value={barbearia.endereco || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
-             </div>
-             <div>
-                <label htmlFor="link_personalizado" className="block text-sm font-medium text-gray-300 mb-2">Link Personalizado</label>
-                <div className="flex items-center">
-                    <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-l-md border border-r-0 border-gray-600">barberpro.app/</span>
-                    <input type="text" id="link_personalizado" name="link_personalizado" value={barbearia.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-r-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+        <div className="space-y-8">
+            <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray max-w-3xl space-y-4">
+                <h2 className="text-xl font-semibold text-white mb-4">Configurações da Barbearia</h2>
+                <div>
+                    <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-2">Nome da Barbearia</label>
+                    <input type="text" id="nome" name="nome" value={barbearia.nome || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
-             </div>
-             <div>
-                <label htmlFor="instagram_url" className="block text-sm font-medium text-gray-300 mb-2">URL do Instagram</label>
-                <input type="url" id="instagram_url" name="instagram_url" value={barbearia.instagram_url || ''} onChange={handleInputChange} placeholder="https://instagram.com/suabarbearia" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
-             </div>
-             <div>
-                <label htmlFor="whatsapp_url" className="block text-sm font-medium text-gray-300 mb-2">Link do WhatsApp</label>
-                <input type="url" id="whatsapp_url" name="whatsapp_url" value={barbearia.whatsapp_url || ''} onChange={handleInputChange} placeholder="https://wa.me/5511999999999" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
-             </div>
-             <div className="pt-4">
-                <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 disabled:opacity-50">
-                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                <div>
+                    <label htmlFor="endereco" className="block text-sm font-medium text-gray-300 mb-2">Endereço</label>
+                    <input type="text" id="endereco" name="endereco" value={barbearia.endereco || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+                <div>
+                    <label htmlFor="link_personalizado" className="block text-sm font-medium text-gray-300 mb-2">Link Personalizado</label>
+                    <div className="flex items-center">
+                        <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-l-md border border-r-0 border-gray-600">barberpro.app/</span>
+                        <input type="text" id="link_personalizado" name="link_personalizado" value={barbearia.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-r-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="instagram_url" className="block text-sm font-medium text-gray-300 mb-2">URL do Instagram</label>
+                    <input type="url" id="instagram_url" name="instagram_url" value={barbearia.instagram_url || ''} onChange={handleInputChange} placeholder="https://instagram.com/suabarbearia" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+                <div>
+                    <label htmlFor="whatsapp_url" className="block text-sm font-medium text-gray-300 mb-2">Link do WhatsApp</label>
+                    <input type="url" id="whatsapp_url" name="whatsapp_url" value={barbearia.whatsapp_url || ''} onChange={handleInputChange} placeholder="https://wa.me/5511999999999" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+            </div>
+
+            <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray max-w-3xl space-y-4">
+                <h2 className="text-xl font-semibold text-white mb-4">Personalização da Página Pública</h2>
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Imagem de Fundo (Banner)</label>
+                    <div className="flex items-center space-x-4">
+                        <div className="w-32 h-20 bg-brand-gray rounded-md flex items-center justify-center overflow-hidden border-2 border-gray-600">
+                            {heroPreview ? <img src={heroPreview} alt="Banner Preview" className="w-full h-full object-cover" /> : <span className="text-gray-400 text-xs">Banner</span>}
+                        </div>
+                        <input type="file" id="hero-upload" ref={heroFileInputRef} onChange={handleHeroFileChange} accept="image/*" className="hidden" />
+                        <button type="button" onClick={() => heroFileInputRef.current?.click()} className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Fazer Upload
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="hero_title" className="block text-sm font-medium text-gray-300 mb-2">Título Principal</label>
+                    <input type="text" id="hero_title" name="hero_title" value={barbearia.hero_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+                <div>
+                    <label htmlFor="hero_subtitle" className="block text-sm font-medium text-gray-300 mb-2">Frase de Destaque</label>
+                    <input type="text" id="hero_subtitle" name="hero_subtitle" value={barbearia.hero_subtitle || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+                <div>
+                    <label htmlFor="services_title" className="block text-sm font-medium text-gray-300 mb-2">Título da Seção de Serviços</label>
+                    <input type="text" id="services_title" name="services_title" value={barbearia.services_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+                <div>
+                    <label htmlFor="social_title" className="block text-sm font-medium text-gray-300 mb-2">Título da Seção Social</label>
+                    <input type="text" id="social_title" name="social_title" value={barbearia.social_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+                <div>
+                    <label htmlFor="social_subtitle" className="block text-sm font-medium text-gray-300 mb-2">Subtítulo da Seção Social</label>
+                    <input type="text" id="social_subtitle" name="social_subtitle" value={barbearia.social_subtitle || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+            </div>
+
+            <div className="max-w-3xl">
+                <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50">
+                    {isSaving ? 'Salvando...' : 'Salvar Todas as Alterações'}
                 </button>
-             </div>
+            </div>
         </div>
     )
 };

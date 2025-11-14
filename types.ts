@@ -47,6 +47,12 @@ export interface Barbearia {
   foto_url?: string;
   instagram_url?: string;
   whatsapp_url?: string;
+  hero_image_url?: string;
+  hero_title?: string;
+  hero_subtitle?: string;
+  services_title?: string;
+  social_title?: string;
+  social_subtitle?: string;
 }
 
 export interface Barbeiro {

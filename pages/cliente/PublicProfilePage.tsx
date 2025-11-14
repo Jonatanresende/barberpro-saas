@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { Barbearia, Servico } from '../../types';
-import { InstagramIcon, WhatsAppIcon, ScissorsIcon } from '../../components/icons';
+import { InstagramIcon, WhatsAppIcon, ScissorsIcon, CalendarIcon } from '../../components/icons';
 
 const PublicProfilePage = () => {
     const { slug } = useParams<{ slug: string }>();
-    const navigate = useNavigate();
     const [barbearia, setBarbearia] = useState<Barbearia | null>(null);
     const [servicos, setServicos] = useState<Servico[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,6 +41,8 @@ const PublicProfilePage = () => {
         return <div className="flex items-center justify-center h-screen bg-black text-white">Barbearia não encontrada.</div>;
     }
 
+    const defaultHeroImage = 'https://images.unsplash.com/photo-1585749425332-9b175015e5d0?q=80&w=2070&auto=format&fit=crop';
+
     return (
         <div className="bg-[#121212] text-white font-sans">
             {/* Header */}
@@ -56,13 +57,13 @@ const PublicProfilePage = () => {
             </header>
 
             {/* Hero Section */}
-            <section className="relative h-[60vh] flex items-center justify-center text-center bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1585749425332-9b175015e5d0?q=80&w=2070&auto=format&fit=crop')" }}>
+            <section className="relative h-[60vh] flex items-center justify-center text-center bg-cover bg-center" style={{ backgroundImage: `url(${barbearia.hero_image_url || defaultHeroImage})` }}>
                 <div className="absolute inset-0 bg-black/60"></div>
-                <div className="relative z-10 flex flex-col items-center">
+                <div className="relative z-10 flex flex-col items-center p-4">
                     <img src={barbearia.foto_url} alt={`Logo ${barbearia.nome}`} className="w-40 h-40 rounded-full object-cover border-4 border-brand-gold mb-4" />
                     <h1 className="text-4xl md:text-5xl font-bold">{barbearia.nome}</h1>
-                    <p className="text-brand-gold mt-1">AGENDE SEU HORÁRIO</p>
-                    <p className="mt-4 max-w-md">Escolha o seu estilo que a gente capricha!</p>
+                    <p className="text-brand-gold mt-1">{barbearia.hero_title}</p>
+                    <p className="mt-4 max-w-md">{barbearia.hero_subtitle}</p>
                     <Link to={`/${slug}/agendamento`} className="mt-6 bg-orange-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2">
                         <CalendarIcon className="w-5 h-5" />
                         AGENDAR HORÁRIO
@@ -73,7 +74,7 @@ const PublicProfilePage = () => {
             {/* Services Section */}
             <section className="py-16 bg-cover bg-center" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/brick-wall.png')" }}>
                  <div className="container mx-auto px-4 text-center">
-                    <h2 className="text-4xl font-bold mb-2">Nossos serviços</h2>
+                    <h2 className="text-4xl font-bold mb-2">{barbearia.services_title}</h2>
                     <div className="w-24 h-1 bg-orange-500 mx-auto mb-12"></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                         {servicos.map(servico => (
@@ -95,15 +96,19 @@ const PublicProfilePage = () => {
             {/* Social Section */}
             <section className="py-16 bg-[#f5f5f5] text-black">
                 <div className="container mx-auto px-4 text-center">
-                    <h2 className="text-4xl font-bold">SIGA-NOS!</h2>
-                    <p className="text-gray-600 mt-2 mb-8">Acompanhe nossa rede social</p>
+                    <h2 className="text-4xl font-bold">{barbearia.social_title}</h2>
+                    <p className="text-gray-600 mt-2 mb-8">{barbearia.social_subtitle}</p>
                     <div className="flex justify-center items-center gap-6">
-                        <a href={barbearia.instagram_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 bg-black rounded-full flex items-center justify-center text-white hover:opacity-80 transition-opacity">
-                            <InstagramIcon className="w-8 h-8" />
-                        </a>
-                        <a href={barbearia.whatsapp_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white hover:opacity-80 transition-opacity">
-                            <WhatsAppIcon className="w-8 h-8" />
-                        </a>
+                        {barbearia.instagram_url && (
+                            <a href={barbearia.instagram_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 bg-black rounded-full flex items-center justify-center text-white hover:opacity-80 transition-opacity">
+                                <InstagramIcon className="w-8 h-8" />
+                            </a>
+                        )}
+                        {barbearia.whatsapp_url && (
+                            <a href={barbearia.whatsapp_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white hover:opacity-80 transition-opacity">
+                                <WhatsAppIcon className="w-8 h-8" />
+                            </a>
+                        )}
                     </div>
                 </div>
             </section>
