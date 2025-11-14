@@ -250,7 +250,7 @@ const ManageBarbershops = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">{new Date(b.criado_em).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 flex space-x-2">
+                                        <td className="px-6 py-4 flex items-center space-x-2">
                                             <button onClick={() => handleOpenEditModal(b)} className="text-blue-400 hover:text-blue-300">Editar</button>
                                             <button onClick={() => handleToggleStatus(b)} className="text-yellow-400 hover:text-yellow-300">{b.status === 'ativa' ? 'Desativar' : 'Ativar'}</button>
                                             <button onClick={() => handleDelete(b)} className="text-red-400 hover:text-red-300">Excluir</button>
