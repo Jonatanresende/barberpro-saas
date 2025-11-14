@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { UserRole } from '../types';
-import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon } from './icons';
+import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon, ActivityIcon } from './icons';
 import { useSettings } from '../context/SettingsContext';
 
 interface SidebarProps {
   role: UserRole;
+  slug?: string;
   isSidebarOpen: boolean;
 }
 
@@ -22,7 +23,7 @@ const NavItem = ({ to, icon, label }: { to: string, icon: React.ReactNode, label
   </NavLink>
 );
 
-const getNavItems = (role: UserRole) => {
+const getNavItems = (role: UserRole, slug?: string) => {
   switch (role) {
     case UserRole.ADMIN:
       return [
@@ -32,11 +33,13 @@ const getNavItems = (role: UserRole) => {
         { to: "/admin/settings", icon: <SettingsIcon className="w-5 h-5" />, label: "Configurações" },
       ];
     case UserRole.BARBEARIA:
+      if (!slug) return [];
       return [
-        { to: "/barbearia/dashboard", icon: <CalendarIcon className="w-5 h-5" />, label: "Agendamentos" },
-        { to: "/barbearia/barbers", icon: <ScissorsIcon className="w-5 h-5" />, label: "Barbeiros" },
-        { to: "/barbearia/services", icon: <ClipboardListIcon className="w-5 h-5" />, label: "Serviços" },
-        { to: "/barbearia/settings", icon: <SettingsIcon className="w-5 h-5" />, label: "Configurações" },
+        { to: `/${slug}/dashboard`, icon: <ActivityIcon className="w-5 h-5" />, label: "Dashboard" },
+        { to: `/${slug}/appointments`, icon: <CalendarIcon className="w-5 h-5" />, label: "Agendamentos" },
+        { to: `/${slug}/barbers`, icon: <ScissorsIcon className="w-5 h-5" />, label: "Barbeiros" },
+        { to: `/${slug}/services`, icon: <ClipboardListIcon className="w-5 h-5" />, label: "Serviços" },
+        { to: `/${slug}/settings`, icon: <SettingsIcon className="w-5 h-5" />, label: "Configurações" },
       ];
     case UserRole.BARBEIRO:
       return [
@@ -47,8 +50,8 @@ const getNavItems = (role: UserRole) => {
   }
 };
 
-const Sidebar = ({ role, isSidebarOpen }: SidebarProps) => {
-  const navItems = getNavItems(role);
+const Sidebar = ({ role, slug, isSidebarOpen }: SidebarProps) => {
+  const navItems = getNavItems(role, slug);
   const { settings } = useSettings();
 
   return (

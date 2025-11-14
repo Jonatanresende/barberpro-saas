@@ -18,6 +18,7 @@ export interface User {
   role: UserRole;
   full_name?: string;
   barbeariaId?: string;
+  barbeariaNome?: string;
   barbeiroId?: string;
   link_personalizado?: string; // For barbershop owners
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogoutIcon, MenuIcon } from './icons';
+import { UserRole } from '../types';
 
 interface HeaderProps {
   title: string;
@@ -10,10 +11,18 @@ interface HeaderProps {
 const Header = ({ title, onMenuClick }: HeaderProps) => {
   const { user, logout } = useAuth();
 
-  // Display the first two names if available, otherwise fall back to the email
-  const displayName = user?.full_name
-    ? user.full_name.split(' ').slice(0, 2).join(' ')
-    : user?.email;
+  const getDisplayName = () => {
+    if (!user) return '';
+    if (user.role === UserRole.BARBEARIA) {
+      return user.barbeariaNome || user.email;
+    }
+    if (user.full_name) {
+      return user.full_name.split(' ').slice(0, 2).join(' ');
+    }
+    return user.email;
+  };
+
+  const displayName = getDisplayName();
 
   return (
     <header className="bg-brand-dark border-b border-brand-gray sticky top-0 z-20">

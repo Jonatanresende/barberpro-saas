@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Barbeiro, Servico, Agendamento, AppointmentStatus } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -171,7 +171,33 @@ const Settings = () => {
 
 
 export const BarbeariaPage = () => {
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { slug } = useParams();
+
+    const determineActiveTab = () => {
+        const pathParts = location.pathname.split('/');
+        const lastPart = pathParts[pathParts.length - 1];
+        const validTabs = ['dashboard', 'appointments', 'barbers', 'services', 'settings'];
+        
+        if (validTabs.includes(lastPart)) {
+            return lastPart;
+        }
+        if (lastPart === slug || lastPart === '') {
+            return 'dashboard';
+        }
+        return 'dashboard';
+    };
+
+    const [activeTab, setActiveTab] = useState(determineActiveTab());
+
+    useEffect(() => {
+        setActiveTab(determineActiveTab());
+    }, [location.pathname]);
+
+    const handleTabChange = (tab: string) => {
+        navigate(`/${slug}/${tab}`);
+    };
     
     const renderContent = () => {
         switch (activeTab) {
@@ -187,11 +213,11 @@ export const BarbeariaPage = () => {
     return (
         <div className="space-y-6">
             <div className="flex border-b border-brand-gray flex-wrap">
-                <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
-                <button onClick={() => setActiveTab('appointments')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Agendamentos</button>
-                <button onClick={() => setActiveTab('barbers')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'barbers' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbeiros</button>
-                <button onClick={() => setActiveTab('services')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'services' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Serviços</button>
-                <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
+                <button onClick={() => handleTabChange('dashboard')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
+                <button onClick={() => handleTabChange('appointments')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Agendamentos</button>
+                <button onClick={() => handleTabChange('barbers')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'barbers' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbeiros</button>
+                <button onClick={() => handleTabChange('services')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'services' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Serviços</button>
+                <button onClick={() => handleTabChange('settings')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
             </div>
             {renderContent()}
         </div>

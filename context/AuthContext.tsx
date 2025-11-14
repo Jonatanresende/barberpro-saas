@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (baseUser.role === UserRole.BARBEARIA) {
       const { data: barbearia, error } = await supabase
         .from('barbearias')
-        .select('id, link_personalizado')
+        .select('id, nome, link_personalizado')
         .eq('dono_id', effectiveUser.id)
         .single();
 
@@ -61,6 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (barbearia) {
         baseUser.barbeariaId = barbearia.id;
+        baseUser.barbeariaNome = barbearia.nome;
         baseUser.link_personalizado = barbearia.link_personalizado;
       }
     }

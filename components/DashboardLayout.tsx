@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -20,7 +19,11 @@ const DashboardLayout = ({ title }: DashboardLayoutProps) => {
 
   return (
     <div className="flex h-screen bg-brand-dark text-brand-light">
-      <Sidebar role={user.role as UserRole} isSidebarOpen={isSidebarOpen} />
+      <Sidebar 
+        role={user.role as UserRole} 
+        slug={user.link_personalizado} 
+        isSidebarOpen={isSidebarOpen} 
+      />
        {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black opacity-50 z-20 md:hidden" 
