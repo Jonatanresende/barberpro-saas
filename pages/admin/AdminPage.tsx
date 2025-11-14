@@ -80,9 +80,9 @@ const AdminDashboard = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Receita Total" value={`R$ ${data.totalRevenue.toFixed(2)}`} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Planos Vendidos" value={data.totalPlansSold} icon={<StoreIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Total de Usuários" value={data.totalUsers} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Usuários Ativos (Mês)" value={data.activeUsersLastMonth} icon={<ActivityIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Total de Barbearias" value={data.totalBarbearias} icon={<StoreIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Total de Usuários" value={data.totalBarbershopUsers} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Barbearias Ativas" value={data.activeBarbearias} icon={<ActivityIcon className="w-6 h-6 text-brand-gold" />} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

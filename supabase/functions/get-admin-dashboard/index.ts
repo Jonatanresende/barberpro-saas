@@ -6,13 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Definição de preços dos planos para cálculo da receita
-const PLAN_PRICES: { [key: string]: number } = {
-  'Básico': 49,
-  'Premium': 99,
-  'Pro': 99, // Baseado no componente de Planos existente
-};
-
 // Função auxiliar para agregar dados por mês de forma ordenada
 const aggregateByMonth = (items: any[], dateField: string, valueField?: string, valueMap?: { [key: string]: number }) => {
   const monthlyData: { [key: string]: { value: number, date: Date } } = {};
@@ -58,32 +51,45 @@ serve(async (req) => {
     const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 10000 });
     if (usersError) throw usersError;
 
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    
-    const activeUsersLastMonth = users.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at) > oneMonthAgo).length;
+    // Filtra para obter apenas usuários donos de barbearia
+    const barbershopUsers = users.filter(u => u.user_metadata?.role === 'barbearia');
+    const totalBarbershopUsers = barbershopUsers.length;
 
+    // --- Busca de Dados de Barbearias e Planos ---
+    const { data: barbearias, error: barbeariasError } = await supabaseAdmin.from('barbearias').select('plano, status, criado_em');
+    if (barbeariasError) throw barbeariasError;
+    
+    const { data: planos, error: planosError } = await supabaseAdmin.from('planos').select('nome, preco');
+    if (planosError) throw planosError;
+
+    // --- Cálculos das Métricas ---
+    const totalBarbearias = barbearias.length;
+    const activeBarbearias = barbearias.filter(b => b.status === 'ativa').length;
+
+    // Cria um mapa de preços a partir da tabela de planos para o cálculo da receita
+    const planPricesMap = planos.reduce((acc, plan) => {
+      acc[plan.nome] = plan.preco;
+      return acc;
+    }, {} as { [key: string]: number });
+
+    const totalRevenue = barbearias.reduce((sum, b) => sum + (planPricesMap[b.plano] || 0), 0);
+
+    // --- Dados Adicionais ---
     const latestUsers = users
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5)
       .map(u => ({ email: u.email, created_at: u.created_at }));
 
-    // --- Busca de Dados de Barbearias e Receita ---
-    const { data: barbearias, error: barbeariasError } = await supabaseAdmin.from('barbearias').select('plano, criado_em');
-    if (barbeariasError) throw barbeariasError;
-
-    const totalRevenue = barbearias.reduce((sum, b) => sum + (PLAN_PRICES[b.plano] || 0), 0);
-
     // --- Preparação dos Dados para Gráficos ---
-    const userGrowthChartData = aggregateByMonth(users, 'created_at').map(d => ({ name: d.name, Usuários: d.value }));
-    const monthlyRevenueChartData = aggregateByMonth(barbearias, 'criado_em', 'plano', PLAN_PRICES).map(d => ({ name: d.name, Receita: d.value }));
+    const userGrowthChartData = aggregateByMonth(barbershopUsers, 'created_at').map(d => ({ name: d.name, Usuários: d.value }));
+    const monthlyRevenueChartData = aggregateByMonth(barbearias, 'criado_em', 'plano', planPricesMap).map(d => ({ name: d.name, Receita: d.value }));
 
     // --- Resposta Final ---
     const response = {
-      totalUsers: users.length,
-      activeUsersLastMonth,
-      totalPlansSold: barbearias.length,
       totalRevenue,
+      totalBarbershopUsers,
+      totalBarbearias,
+      activeBarbearias,
       latestUsers,
       userGrowthChartData,
       monthlyRevenueChartData,
