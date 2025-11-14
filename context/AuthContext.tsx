@@ -64,6 +64,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         baseUser.barbeariaNome = barbearia.nome;
         baseUser.link_personalizado = barbearia.link_personalizado;
       }
+    } else if (baseUser.role === UserRole.BARBEIRO) {
+      const { data: barbeiro, error } = await supabase
+        .from('barbeiros')
+        .select('id')
+        .eq('user_id', effectiveUser.id)
+        .single();
+
+      if (error) {
+        console.error("Could not find barber profile for user:", error);
+        logout(); // Log out if the barber profile is missing
+        return;
+      }
+
+      if (barbeiro) {
+        baseUser.barbeiroId = barbeiro.id;
+      }
     }
 
     setUser(baseUser);

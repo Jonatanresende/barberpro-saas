@@ -1,5 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { Agendamento, AppointmentStatus } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -7,12 +7,40 @@ import { useAuth } from '../../context/AuthContext';
 export const BarbeiroPage = () => {
     const { user } = useAuth();
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    const fetchAgendamentos = useCallback(async () => {
         if (user?.barbeiroId) {
-            api.getAgendamentosByBarbeiro(user.barbeiroId).then(setAgendamentos);
+            setLoading(true);
+            try {
+                const data = await api.getAgendamentosByBarbeiro(user.barbeiroId);
+                setAgendamentos(data);
+            } catch (error) {
+                toast.error("Falha ao carregar agendamentos.");
+            } finally {
+                setLoading(false);
+            }
+        } else if (user && !user.barbeiroId) {
+            // Handle case where user is logged in but barbeiroId is not yet available
+            setLoading(true);
         }
     }, [user]);
+
+    useEffect(() => {
+        fetchAgendamentos();
+    }, [fetchAgendamentos]);
+
+    const handleUpdateStatus = async (id: string, status: AppointmentStatus) => {
+        const promise = api.updateAgendamento(id, { status });
+        toast.promise(promise, {
+            loading: 'Atualizando status...',
+            success: () => {
+                fetchAgendamentos();
+                return 'Status atualizado com sucesso!';
+            },
+            error: (err) => `Falha ao atualizar: ${err.message}`,
+        });
+    };
 
     const getStatusClass = (status: AppointmentStatus) => {
         switch (status) {
@@ -23,6 +51,14 @@ export const BarbeiroPage = () => {
             default: return 'bg-yellow-500/20 text-yellow-400';
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-brand-gold text-xl">Carregando agendamentos...</div>
+            </div>
+        );
+    }
     
     return (
         <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
@@ -39,26 +75,35 @@ export const BarbeiroPage = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {agendamentos.map(ag => (
-                            <tr key={ag.id} className="border-b border-brand-gray hover:bg-brand-gray">
-                                <td className="px-6 py-4 font-medium text-white">{ag.cliente_nome}</td>
-                                <td className="px-6 py-4">{ag.servico_nome}</td>
-                                <td className="px-6 py-4">{new Date(ag.data).toLocaleDateString()} - {ag.hora}</td>
-                                <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(ag.status)}`}>
-                                        {ag.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 flex space-x-2">
-                                    {ag.status === AppointmentStatus.CONFIRMADO && (
-                                        <button className="text-green-400 hover:text-green-300 text-xs">Corte Realizado</button>
-                                    )}
-                                    {ag.status !== AppointmentStatus.CONCLUIDO && ag.status !== AppointmentStatus.CANCELADO && (
-                                        <button className="text-red-400 hover:text-red-300 text-xs">Cancelar</button>
-                                    )}
-                                </td>
+                        {agendamentos.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="text-center py-8 text-gray-400">Nenhum agendamento encontrado.</td>
                             </tr>
-                        ))}
+                        ) : (
+                            agendamentos.map(ag => (
+                                <tr key={ag.id} className="border-b border-brand-gray hover:bg-brand-gray">
+                                    <td className="px-6 py-4 font-medium text-white">{ag.cliente_nome}</td>
+                                    <td className="px-6 py-4">{ag.servico_nome}</td>
+                                    <td className="px-6 py-4">{new Date(ag.data).toLocaleDateString('pt-BR', {timeZone: 'UTC'})} - {ag.hora}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(ag.status)}`}>
+                                            {ag.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 flex items-center space-x-4">
+                                        {ag.status === AppointmentStatus.CONFIRMADO && (
+                                            <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CONCLUIDO)} className="text-green-400 hover:text-green-300 text-xs font-semibold">Finalizar</button>
+                                        )}
+                                        {(ag.status === AppointmentStatus.PENDENTE || ag.status === AppointmentStatus.CONFIRMADO) && (
+                                            <>
+                                                <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CANCELADO)} className="text-yellow-400 hover:text-yellow-300 text-xs font-semibold">Cliente Faltou</button>
+                                                <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CANCELADO)} className="text-red-400 hover:text-red-300 text-xs font-semibold">Cancelar</button>
+                                            </>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
