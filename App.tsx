@@ -38,7 +38,7 @@ const AppRoutes = () => {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/confirmation" element={<ConfirmationPage />} />
-        <Route path="/agendar/:slug" element={<PublicBookingPage />} />
+        <Route path="/:slug/agendamento" element={<PublicBookingPage />} />
         <Route path="/" element={<Navigate to={getHomeRoute()} replace />} />
 
         {/* Admin Routes */}

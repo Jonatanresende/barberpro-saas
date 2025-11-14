@@ -401,6 +401,16 @@ export const api = {
     return data;
   },
 
+  getAgendamentosByDate: async (barbeariaId: string, date: string): Promise<Pick<Agendamento, 'hora' | 'barbeiro_id'>[]> => {
+    const { data, error } = await supabase
+      .from('agendamentos')
+      .select('hora, barbeiro_id')
+      .eq('barbearia_id', barbeariaId)
+      .eq('data', date);
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   createAgendamento: async (agendamentoData: Partial<Agendamento>): Promise<Agendamento> => {
     const { data, error } = await supabase
       .from('agendamentos')
