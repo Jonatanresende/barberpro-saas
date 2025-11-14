@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import { UserRole } from '../types';
 import { ScissorsIcon } from '../components/icons';
 import { Auth } from '@supabase/auth-ui-react';
@@ -9,6 +10,7 @@ import { supabase } from '@/src/integrations/supabase/client';
 
 const Login = () => {
   const { user, loading } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,10 +51,14 @@ const Login = () => {
     <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-brand-gray rounded-xl shadow-lg p-8 border border-gray-700">
         <div className="text-center mb-8">
-          <div className="inline-block p-4 bg-brand-dark rounded-full mb-4">
-            <ScissorsIcon className="h-10 w-10 text-brand-gold" />
-          </div>
-          <h1 className="text-3xl font-bold text-white">BarberPro SaaS</h1>
+          {settings?.logo_url ? (
+            <img src={settings.logo_url} alt="Logo" className="h-16 max-w-xs mx-auto mb-4" />
+          ) : (
+            <div className="inline-block p-4 bg-brand-dark rounded-full mb-4">
+              <ScissorsIcon className="h-10 w-10 text-brand-gold" />
+            </div>
+          )}
+          <h1 className="text-3xl font-bold text-white">{settings?.system_name || 'BarberPro SaaS'}</h1>
           <p className="text-gray-400 mt-2">Acesse seu painel</p>
         </div>
         
