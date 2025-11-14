@@ -3,11 +3,12 @@ import { NavLink, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { api } from '../../services/api';
-import { Barbearia } from '../../types';
+import { Barbearia, Plano } from '../../types';
 import { ActivityIcon, DollarSignIcon, StoreIcon, UsersIcon } from '../../components/icons';
 import SettingsPage from './SettingsPage';
 import Modal from '../../components/Modal';
 import BarbershopModal from './BarbershopModal';
+import PlanModal from './PlanModal';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">
@@ -268,26 +269,99 @@ const ManageBarbershops = () => {
     );
 };
 
-const Plans = () => (
-    <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-        <h2 className="text-xl font-semibold mb-4 text-white">Planos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="border border-brand-gray rounded-lg p-6 text-center">
-                <h3 className="text-2xl font-bold text-brand-gold">Básico</h3>
-                <p className="text-4xl font-extrabold my-4">R$49<span className="text-base font-medium text-gray-400">/mês</span></p>
-                <ul className="space-y-2 text-gray-300"><li>Até 3 Barbeiros</li><li>Agendamento Online</li><li>Página Personalizada</li></ul>
-                <button className="mt-6 w-full bg-brand-gold text-brand-dark font-bold py-2 rounded-lg">Selecionar Plano</button>
+const Plans = () => {
+    const [planos, setPlanos] = useState<Plano[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [planToEdit, setPlanToEdit] = useState<Plano | null>(null);
+
+    const fetchPlanos = useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await api.getPlanos();
+            setPlanos(data);
+        } catch (error) {
+            toast.error('Falha ao carregar planos.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { fetchPlanos(); }, [fetchPlanos]);
+
+    const handleOpenCreateModal = () => {
+        setPlanToEdit(null);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEditModal = (plano: Plano) => {
+        setPlanToEdit(plano);
+        setIsModalOpen(true);
+    };
+
+    const handleSave = async (planoData: any) => {
+        const promise = planToEdit
+            ? api.updatePlano(planToEdit.id, planoData)
+            : api.createPlano(planoData);
+
+        toast.promise(promise, {
+            loading: 'Salvando plano...',
+            success: () => {
+                fetchPlanos();
+                setIsModalOpen(false);
+                return `Plano ${planToEdit ? 'atualizado' : 'criado'} com sucesso!`;
+            },
+            error: (err) => `Falha ao salvar: ${err.message}`,
+        });
+    };
+
+    const handleDelete = (plano: Plano) => {
+        if (window.confirm(`Tem certeza que deseja excluir o plano "${plano.nome}"?`)) {
+            toast.promise(api.deletePlano(plano.id), {
+                loading: 'Excluindo...',
+                success: () => {
+                    fetchPlanos();
+                    return 'Plano excluído com sucesso!';
+                },
+                error: (err) => `Falha ao excluir: ${err.message}`,
+            });
+        }
+    };
+
+    return (
+        <>
+            <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-semibold text-white">Gerenciar Planos</h2>
+                    <button onClick={handleOpenCreateModal} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90">
+                        Criar Novo Plano
+                    </button>
+                </div>
+                {loading ? <p className="text-center text-gray-400">Carregando planos...</p> : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {planos.map(plano => (
+                            <div key={plano.id} className={`border rounded-lg p-6 text-center flex flex-col ${plano.popular ? 'border-2 border-brand-gold' : 'border-brand-gray'}`}>
+                                {plano.popular && <span className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-brand-gold text-brand-dark px-3 py-1 text-sm font-bold rounded-full">POPULAR</span>}
+                                <h3 className="text-2xl font-bold text-brand-gold">{plano.nome}</h3>
+                                <p className="text-4xl font-extrabold my-4">R${plano.preco.toFixed(2)}<span className="text-base font-medium text-gray-400">/mês</span></p>
+                                <ul className="space-y-2 text-gray-300 text-left flex-grow">
+                                    {plano.features.map((feature, index) => <li key={index}>- {feature}</li>)}
+                                </ul>
+                                <div className="mt-6 flex justify-center space-x-2">
+                                    <button onClick={() => handleOpenEditModal(plano)} className="text-blue-400 hover:text-blue-300 font-semibold">Editar</button>
+                                    <button onClick={() => handleDelete(plano)} className="text-red-400 hover:text-red-300 font-semibold">Excluir</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
-            <div className="border-2 border-brand-gold rounded-lg p-6 text-center relative">
-                <span className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-brand-gold text-brand-dark px-3 py-1 text-sm font-bold rounded-full">POPULAR</span>
-                <h3 className="text-2xl font-bold text-brand-gold">Premium</h3>
-                <p className="text-4xl font-extrabold my-4">R$99<span className="text-base font-medium text-gray-400">/mês</span></p>
-                <ul className="space-y-2 text-gray-300"><li>Barbeiros Ilimitados</li><li>Tudo do Básico</li><li>Relatórios Avançados</li><li>Suporte Prioritário</li></ul>
-                <button className="mt-6 w-full bg-brand-gold text-brand-dark font-bold py-2 rounded-lg">Selecionar Plano</button>
-            </div>
-        </div>
-    </div>
-);
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={planToEdit ? 'Editar Plano' : 'Criar Novo Plano'}>
+                <PlanModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} planToEdit={planToEdit} />
+            </Modal>
+        </>
+    );
+};
 
 const AdminPage = () => {
     const location = useLocation();

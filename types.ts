@@ -22,13 +22,22 @@ export interface User {
   link_personalizado?: string; // For barbershop owners
 }
 
+export interface Plano {
+  id: string;
+  nome: string;
+  preco: number;
+  features: string[];
+  ativo: boolean;
+  popular: boolean;
+}
+
 export interface Barbearia {
   id: string;
   nome: string;
   dono_id: string;
   dono_nome?: string;
   dono_email: string;
-  plano: 'Básico' | 'Premium' | 'Pro';
+  plano: string; // Changed from enum to string to support dynamic plans
   link_personalizado: string;
   endereco: string;
   documento?: string;

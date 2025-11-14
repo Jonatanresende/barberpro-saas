@@ -1,5 +1,5 @@
 import { supabase } from '@/src/integrations/supabase/client';
-import { Agendamento, Barbearia, Barbeiro, Servico, User } from '../types';
+import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano } from '../types';
 
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
@@ -87,6 +87,45 @@ export const api = {
     
     if (error) throw new Error(error.message);
     return data;
+  },
+
+  // Planos
+  getPlanos: async (): Promise<Plano[]> => {
+    const { data, error } = await supabase
+      .from('planos')
+      .select('*')
+      .order('preco', { ascending: true });
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  createPlano: async (planoData: Omit<Plano, 'id'>): Promise<Plano> => {
+    const { data, error } = await supabase
+      .from('planos')
+      .insert([planoData])
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  updatePlano: async (id: string, planoData: Partial<Omit<Plano, 'id'>>): Promise<Plano> => {
+    const { data, error } = await supabase
+      .from('planos')
+      .update(planoData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  deletePlano: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('planos')
+      .delete()
+      .eq('id', id);
+    if (error) throw new Error(error.message);
   },
 
   // ADMIN - Barbearias

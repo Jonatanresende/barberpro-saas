@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Barbearia } from '../../types';
+import { Barbearia, Plano } from '../../types';
 import { UsersIcon } from '../../components/icons';
+import { api } from '../../services/api';
+import toast from 'react-hot-toast';
 
 interface BarbershopModalProps {
   isOpen: boolean;
@@ -30,12 +32,30 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
   const [password, setPassword] = useState('');
   const [endereco, setEndereco] = useState('');
   const [documento, setDocumento] = useState('');
-  const [plano, setPlano] = useState<'Básico' | 'Premium' | 'Pro'>('Básico');
+  const [plano, setPlano] = useState('');
   const [status, setStatus] = useState<'ativa' | 'inativa'>('ativa');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState<Plano[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+        try {
+            const plans = await api.getPlanos();
+            setAvailablePlans(plans);
+            if (!barbeariaToEdit && plans.length > 0) {
+                setPlano(plans[0].nome); // Default to the first plan for new barbershops
+            }
+        } catch (error) {
+            toast.error("Falha ao carregar os planos disponíveis.");
+        }
+    };
+    if (isOpen) {
+        fetchPlans();
+    }
+  }, [isOpen, barbeariaToEdit]);
 
   useEffect(() => {
     if (barbeariaToEdit) {
@@ -57,12 +77,12 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
       setPassword('');
       setEndereco('');
       setDocumento('');
-      setPlano('Básico');
+      setPlano(availablePlans.length > 0 ? availablePlans[0].nome : '');
       setStatus('ativa');
       setPhotoFile(null);
       setPhotoPreview(null);
     }
-  }, [barbeariaToEdit, isOpen]);
+  }, [barbeariaToEdit, isOpen, availablePlans]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -127,10 +147,10 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
 
         <div>
           <label htmlFor="plano" className="block text-sm font-medium text-gray-300 mb-1">Plano</label>
-          <select id="plano" value={plano} onChange={e => setPlano(e.target.value as any)} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white">
-            <option value="Básico">Básico</option>
-            <option value="Premium">Premium</option>
-            <option value="Pro">Pro</option>
+          <select id="plano" value={plano} onChange={e => setPlano(e.target.value)} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white">
+            {availablePlans.map(p => (
+                <option key={p.id} value={p.nome}>{p.nome} - R${p.preco.toFixed(2)}</option>
+            ))}
           </select>
         </div>
         <div>
