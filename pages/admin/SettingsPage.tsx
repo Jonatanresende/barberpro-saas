@@ -151,8 +151,13 @@ const AccountSettings = () => {
                                     <p className="text-sm text-gray-400">{admin.email}</p>
                                 </div>
                                 <div className="flex space-x-3">
-                                    <button onClick={() => handleOpenEditUserModal(admin)} className="text-blue-400 hover:text-blue-300 font-semibold">Editar</button>
-                                    <button onClick={() => handleDeleteAdmin(admin)} className="text-red-400 hover:text-red-300 font-semibold">Remover</button>
+                                    {/* Lógica de proteção: só mostra os botões se o e-mail não for o do admin principal */}
+                                    {admin.email !== 'jonne.obr@gmail.com' && (
+                                        <>
+                                            <button onClick={() => handleOpenEditUserModal(admin)} className="text-blue-400 hover:text-blue-300 font-semibold">Editar</button>
+                                            <button onClick={() => handleDeleteAdmin(admin)} className="text-red-400 hover:text-red-300 font-semibold">Remover</button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ))}

@@ -22,6 +22,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Camada de segurança: Busca o usuário alvo para verificar o e-mail
+    const { data: { user: targetUser }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (getUserError) throw getUserError;
+
+    // Impede a alteração se for o admin principal
+    if (targetUser && targetUser.email === 'jonne.obr@gmail.com') {
+      throw new Error('A conta de administrador principal não pode ser modificada por esta função.');
+    }
+
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
       email: email,
       user_metadata: { full_name: fullName },
