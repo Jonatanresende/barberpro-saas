@@ -249,37 +249,15 @@ export const api = {
 
 
   // BARBEARIA - Dashboard
-  getBarbeariaDashboardStats: async (barbeariaId: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    const { count: agendamentosCount, error: agendamentosError } = await supabase
-      .from('agendamentos')
-      .select('*', { count: 'exact', head: true })
-      .eq('barbearia_id', barbeariaId)
-      .eq('data', today);
-
-    if (agendamentosError) console.error("Error fetching appointments count", agendamentosError);
-
-    const { count: barbeirosCount, error: barbeirosError } = await supabase
-      .from('barbeiros')
-      .select('*', { count: 'exact', head: true })
-      .eq('barbearia_id', barbeariaId);
-
-    if (barbeirosError) console.error("Error fetching barbers count", barbeirosError);
-
-    const { data: clientes, error: clientesError } = await supabase
-      .from('agendamentos')
-      .select('cliente_id')
-      .eq('barbearia_id', barbeariaId);
-
-    if (clientesError) console.error("Error fetching clients", clientesError);
-    
-    const uniqueClients = new Set(clientes?.map(a => a.cliente_id) || []);
-
-    return {
-      totalAgendamentos: agendamentosCount ?? 0,
-      totalBarbeiros: barbeirosCount ?? 0,
-      totalClientes: uniqueClients.size,
-    };
+  getBarbeariaDashboardData: async (barbeariaId: string) => {
+    const { data, error } = await supabase.functions.invoke('get-barbershop-dashboard', {
+      body: { barbeariaId },
+    });
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
+    }
+    return data;
   },
 
   getBarbeariaById: async (barbeariaId: string): Promise<Barbearia> => {

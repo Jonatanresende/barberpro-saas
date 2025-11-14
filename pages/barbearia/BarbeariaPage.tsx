@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarIcon, ScissorsIcon, UsersIcon } from '../../components/icons';
+import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon } from '../../components/icons';
 import BarberModal from './BarberModal';
 import ServiceModal from './ServiceModal';
 
@@ -20,13 +20,13 @@ const StatCard = ({ title, value, icon }: { title: string, value: string | numbe
 
 const BarbeariaDashboard = () => {
     const { user } = useAuth();
-    const [stats, setStats] = useState({ totalAgendamentos: 0, totalBarbeiros: 0, totalClientes: 0 });
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if(user?.barbeariaId) {
             setLoading(true);
-            api.getBarbeariaDashboardStats(user.barbeariaId)
+            api.getBarbeariaDashboardData(user.barbeariaId)
                 .then(setStats)
                 .catch(() => toast.error("Falha ao carregar estatísticas."))
                 .finally(() => setLoading(false));
@@ -34,10 +34,16 @@ const BarbeariaDashboard = () => {
     }, [user]);
     
     if (loading) return <p className="text-center text-gray-400">Carregando...</p>;
+    if (!stats) return <p className="text-center text-gray-400">Não foi possível carregar os dados.</p>;
+
+    const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <StatCard title="Agendamentos Hoje" value={stats.totalAgendamentos} icon={<CalendarIcon className="w-6 h-6 text-brand-gold" />} />
+            <StatCard title="Renda de Hoje" value={formatCurrency(stats.rendaDiaria)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+            <StatCard title="Renda da Semana" value={formatCurrency(stats.rendaSemanal)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+            <StatCard title="Renda do Mês" value={formatCurrency(stats.rendaMensal)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+            <StatCard title="Agendamentos Hoje" value={stats.totalAgendamentosHoje} icon={<CalendarIcon className="w-6 h-6 text-brand-gold" />} />
             <StatCard title="Total de Barbeiros" value={stats.totalBarbeiros} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
             <StatCard title="Total de Clientes" value={stats.totalClientes} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
         </div>
