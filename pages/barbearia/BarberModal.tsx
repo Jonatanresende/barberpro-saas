@@ -2,17 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Barbeiro } from '../../types';
 import Modal from '../../components/Modal';
 import { UsersIcon } from '../../components/icons';
+import toast from 'react-hot-toast';
 
 interface BarberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (barberData: any, photoFile?: File) => Promise<void>;
+  onSave: (barberData: any, password?: string, photoFile?: File) => Promise<void>;
   barberToEdit: Barbeiro | null;
 }
 
 const BarberModal = ({ isOpen, onClose, onSave, barberToEdit }: BarberModalProps) => {
   const [nome, setNome] = useState('');
   const [especialidade, setEspecialidade] = useState('');
+  const [email, setEmail] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [password, setPassword] = useState('');
   const [ativo, setAtivo] = useState(true);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -23,12 +27,18 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit }: BarberModalProps
     if (barberToEdit) {
       setNome(barberToEdit.nome);
       setEspecialidade(barberToEdit.especialidade || '');
+      setEmail(barberToEdit.email || '');
+      setTelefone(barberToEdit.telefone || '');
       setAtivo(barberToEdit.ativo);
       setPhotoPreview(barberToEdit.foto_url || null);
       setPhotoFile(null);
+      setPassword('');
     } else {
       setNome('');
       setEspecialidade('');
+      setEmail('');
+      setTelefone('');
+      setPassword('');
       setAtivo(true);
       setPhotoFile(null);
       setPhotoPreview(null);
@@ -49,14 +59,20 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit }: BarberModalProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!barberToEdit && !password) {
+      toast.error("A senha é obrigatória para criar um novo barbeiro.");
+      return;
+    }
     setIsSaving(true);
     const barberData = {
       nome,
       especialidade,
+      email,
+      telefone,
       ativo,
-      foto_url: photoPreview, // Passa a URL existente para não perdê-la se não houver nova foto
+      foto_url: photoPreview,
     };
-    await onSave(barberData, photoFile || undefined);
+    await onSave(barberData, password, photoFile || undefined);
     setIsSaving(false);
   };
 
@@ -80,9 +96,23 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit }: BarberModalProps
           </div>
         </div>
         <div>
-          <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
+          <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-1">Nome Completo</label>
           <input type="text" id="nome" value={nome} onChange={e => setNome(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
         </div>
+         <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">E-mail de Acesso</label>
+          <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={!!barberToEdit} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white disabled:opacity-50" />
+        </div>
+        <div>
+          <label htmlFor="telefone" className="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
+          <input type="tel" id="telefone" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(XX) XXXXX-XXXX" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+        </div>
+        {!barberToEdit && (
+            <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
+                <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            </div>
+        )}
         <div>
           <label htmlFor="especialidade" className="block text-sm font-medium text-gray-300 mb-1">Especialidade</label>
           <input type="text" id="especialidade" value={especialidade} onChange={e => setEspecialidade(e.target.value)} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />

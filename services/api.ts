@@ -302,36 +302,43 @@ export const api = {
     return data;
   },
 
-  createBarbeiro: async (barbeiroData: any, barbeariaId: string, photoFile?: File): Promise<Barbeiro> => {
-    const foto_url = await uploadPhoto(photoFile!, 'fotos-barbeiros');
-    const { data, error } = await supabase
-      .from('barbeiros')
-      .insert([{ ...barbeiroData, barbearia_id: barbeariaId, foto_url }])
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return data;
-  },
-
-  updateBarbeiro: async (id: string, barbeiroData: any, photoFile?: File): Promise<Barbeiro> => {
-    let finalData = { ...barbeiroData };
-    if (photoFile) {
-      const foto_url = await uploadPhoto(photoFile, 'fotos-barbeiros');
-      finalData.foto_url = foto_url;
+  createBarbeiro: async (barberData: any, barbeariaId: string, password: string, photoFile?: File): Promise<Barbeiro> => {
+    const photoUrl = await uploadPhoto(photoFile!, 'fotos-barbeiros');
+    const finalBarberData = { ...barberData, barbearia_id: barbeariaId };
+    const { data, error } = await supabase.functions.invoke('create-barber-user', {
+      body: { barberData: finalBarberData, password, photoUrl },
+    });
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
     }
-    const { data, error } = await supabase
-      .from('barbeiros')
-      .update(finalData)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return data;
+    return data as Barbeiro;
   },
 
-  deleteBarbeiro: async (id: string): Promise<void> => {
-    const { error } = await supabase.from('barbeiros').delete().eq('id', id);
-    if (error) throw new Error(error.message);
+  updateBarbeiro: async (id: string, userId: string, barbeiroData: any, photoFile?: File): Promise<Barbeiro> => {
+    let finalUpdates = { ...barbeiroData };
+    delete finalUpdates.email;
+    if (photoFile) {
+      finalUpdates.foto_url = await uploadPhoto(photoFile, 'fotos-barbeiros');
+    }
+    const { data, error } = await supabase.functions.invoke('update-barber-user', {
+      body: { barberId: id, userId, updates: finalUpdates },
+    });
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
+    }
+    return data as Barbeiro;
+  },
+
+  deleteBarbeiro: async (id: string, userId?: string): Promise<void> => {
+    const { data, error } = await supabase.functions.invoke('delete-barber-user', {
+      body: { barberId: id, userId: userId },
+    });
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
+    }
   },
 
   // BARBEARIA - Serviços

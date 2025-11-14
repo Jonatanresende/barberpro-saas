@@ -74,11 +74,12 @@ const ManageBarbers = () => {
         setIsModalOpen(true);
     };
 
-    const handleSave = async (barberData: any, photoFile?: File) => {
+    const handleSave = async (barberData: any, password?: string, photoFile?: File) => {
         if (!user?.barbeariaId) return;
+        
         const promise = barberToEdit
-            ? api.updateBarbeiro(barberToEdit.id, barberData, photoFile)
-            : api.createBarbeiro(barberData, user.barbeariaId, photoFile);
+            ? api.updateBarbeiro(barberToEdit.id, barberToEdit.user_id!, barberData, photoFile)
+            : api.createBarbeiro(barberData, user.barbeariaId, password!, photoFile);
 
         toast.promise(promise, {
             loading: 'Salvando barbeiro...',
@@ -91,9 +92,9 @@ const ManageBarbers = () => {
         });
     };
 
-    const handleDelete = (id: string) => {
-        if (window.confirm("Tem certeza que deseja remover este barbeiro?")) {
-            toast.promise(api.deleteBarbeiro(id), {
+    const handleDelete = (barbeiro: Barbeiro) => {
+        if (window.confirm("Tem certeza que deseja remover este barbeiro? A conta de acesso dele também será excluída.")) {
+            toast.promise(api.deleteBarbeiro(barbeiro.id, barbeiro.user_id), {
                 loading: 'Removendo...',
                 success: () => {
                     fetchBarbers();
@@ -123,7 +124,7 @@ const ManageBarbers = () => {
                                 </span>
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col space-y-1">
                                     <button onClick={() => handleOpenModal(barbeiro)} className="text-xs bg-blue-500/50 text-white p-1 rounded">Editar</button>
-                                    <button onClick={() => handleDelete(barbeiro.id)} className="text-xs bg-red-500/50 text-white p-1 rounded">Excluir</button>
+                                    <button onClick={() => handleDelete(barbeiro)} className="text-xs bg-red-500/50 text-white p-1 rounded">Excluir</button>
                                 </div>
                             </div>
                         ))}

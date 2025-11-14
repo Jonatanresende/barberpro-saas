@@ -49,8 +49,11 @@ export interface Barbearia {
 
 export interface Barbeiro {
   id: string;
+  user_id?: string;
   barbearia_id: string;
   nome: string;
+  email?: string;
+  telefone?: string;
   especialidade: string;
   foto_url: string;
   ativo: boolean;
