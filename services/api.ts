@@ -25,8 +25,70 @@ const uploadPhoto = async (photoFile: File): Promise<string | null> => {
   return urlData.publicUrl;
 };
 
+// Helper function to upload system assets like the logo
+const uploadSystemAsset = async (assetFile: File): Promise<string | null> => {
+  if (!assetFile) return null;
+
+  const fileExtension = assetFile.name.split('.').pop();
+  // Using a consistent name overwrites the old logo, saving storage space.
+  const filePath = `public/logo.${fileExtension}`; 
+
+  const { error: uploadError } = await supabase.storage
+    .from('system-assets')
+    .upload(filePath, assetFile, { upsert: true });
+
+  if (uploadError) {
+    console.error('Error uploading system asset:', uploadError);
+    throw new Error(uploadError.message);
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('system-assets')
+    .getPublicUrl(filePath);
+  
+  // Appending a timestamp forces the browser to reload the image, bypassing cache.
+  return `${urlData.publicUrl}?t=${new Date().getTime()}`;
+};
+
 
 export const api = {
+  // System Settings
+  getSystemSettings: async () => {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('*')
+      .eq('id', 1)
+      .single();
+    if (error && error.code !== 'PGRST116') { // Ignore "no rows found" error on first load
+        throw new Error(error.message);
+    }
+    return data;
+  },
+
+  updateSystemSettings: async (updates: { system_name?: string; support_email?: string }, logoFile?: File) => {
+    let logo_url;
+    if (logoFile) {
+      logo_url = await uploadSystemAsset(logoFile);
+    }
+
+    const finalUpdates: any = { ...updates };
+    if (logo_url) {
+      finalUpdates.logo_url = logo_url;
+    }
+    
+    finalUpdates.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('system_settings')
+      .update(finalUpdates)
+      .eq('id', 1)
+      .select()
+      .single();
+    
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   // ADMIN - Barbearias
   getBarbearias: async (): Promise<Barbearia[]> => {
     const { data, error } = await supabase

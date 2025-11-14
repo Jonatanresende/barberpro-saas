@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/src/integrations/supabase/client';
@@ -151,7 +151,6 @@ const AccountSettings = () => {
                                     <p className="text-sm text-gray-400">{admin.email}</p>
                                 </div>
                                 <div className="flex space-x-3">
-                                    {/* Lógica de proteção: só mostra os botões se o e-mail não for o do admin principal */}
                                     {admin.email !== 'jonne.obr@gmail.com' && (
                                         <>
                                             <button onClick={() => handleOpenEditUserModal(admin)} className="text-blue-400 hover:text-blue-300 font-semibold">Editar</button>
@@ -175,6 +174,100 @@ const AccountSettings = () => {
     );
 };
 
+const SystemSettings = () => {
+    const [settings, setSettings] = useState({ system_name: '', support_email: '', logo_url: '' });
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const data = await api.getSystemSettings();
+                if (data) {
+                    setSettings(data);
+                    setLogoPreview(data.logo_url);
+                }
+            } catch (error: any) {
+                toast.error(`Falha ao carregar configurações do sistema: ${error.message}`);
+            }
+        };
+        fetchSettings();
+    }, []);
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setLogoFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        const updates = {
+            system_name: settings.system_name,
+            support_email: settings.support_email,
+        };
+
+        try {
+            const updatedSettings = await api.updateSystemSettings(updates, logoFile || undefined);
+            setSettings(updatedSettings); // Update state with returned data
+            setLogoPreview(updatedSettings.logo_url); // Ensure preview is updated
+            setLogoFile(null); // Clear the file input
+            toast.success('Configurações do sistema salvas com sucesso!');
+        } catch (error: any) {
+            toast.error(`Falha ao salvar: ${error.message}`);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setSettings(prev => ({ ...prev, [name]: value }));
+    };
+
+    return (
+        <SettingsCard title="Sistema">
+            <div>
+                <label htmlFor="system_name" className="block text-sm font-medium text-gray-300 mb-2">Nome do Sistema</label>
+                <input type="text" id="system_name" name="system_name" value={settings.system_name || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Logotipo</label>
+                <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-brand-gray rounded-md flex items-center justify-center overflow-hidden border-2 border-gray-600">
+                        {logoPreview ? (
+                            <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-contain" />
+                        ) : (
+                            <span className="text-gray-400 text-xs">Logo</span>
+                        )}
+                    </div>
+                    <input type="file" id="logo-upload" ref={fileInputRef} onChange={handleLogoChange} accept="image/*" className="hidden" />
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        Fazer Upload
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label htmlFor="support_email" className="block text-sm font-medium text-gray-300 mb-2">E-mail de Suporte</label>
+                <input type="email" id="support_email" name="support_email" value={settings.support_email || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            </div>
+            <div className="pt-4">
+                <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50">
+                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+            </div>
+        </SettingsCard>
+    );
+};
+
 const InputField = ({ label, type, id, value, placeholder }: { label: string, type: string, id: string, value?: string, placeholder?: string }) => (
     <div>
         <label htmlFor={id} className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
@@ -186,29 +279,7 @@ const SettingsPage = () => {
     return (
         <div className="space-y-8">
             <AccountSettings />
-
-            <SettingsCard title="Sistema">
-                <InputField label="Nome do Sistema" type="text" id="system-name" value="BarberPro SaaS" />
-                <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Logotipo</label>
-                    <div className="flex items-center space-x-4">
-                        <div className="w-16 h-16 bg-brand-gray rounded-md flex items-center justify-center">
-                            <span className="text-gray-400 text-xs">Logo</span>
-                        </div>
-                        <input type="file" id="logo-upload" className="hidden" />
-                        <label htmlFor="logo-upload" className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                            Fazer Upload
-                        </label>
-                    </div>
-                </div>
-                <InputField label="E-mail de Suporte" type="email" id="support-email" value="suporte@barberpro.com" />
-                 <div className="pt-4">
-                    <button className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90">
-                        Salvar Alterações
-                    </button>
-                </div>
-            </SettingsCard>
-
+            <SystemSettings />
             <SettingsCard title="Suporte">
                 <InputField label="E-mail de Contato" type="email" id="contact-email" value="contato@barberpro.com" />
                 <InputField label="Link para Termos de Uso / Política de Privacidade" type="url" id="tos-link" value="https://barberpro.com/termos" />
