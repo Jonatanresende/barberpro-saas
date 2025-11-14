@@ -53,6 +53,9 @@ export interface Barbearia {
   services_title?: string;
   social_title?: string;
   social_subtitle?: string;
+  operating_days?: number[]; // 0=Dom, 1=Seg, etc.
+  start_time?: string; // "HH:MM"
+  end_time?: string; // "HH:MM"
 }
 
 export interface Barbeiro {

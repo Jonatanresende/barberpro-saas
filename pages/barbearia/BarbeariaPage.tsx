@@ -330,12 +330,18 @@ const ManageAppointments = () => {
 
 const Settings = () => {
     const { user } = useAuth();
-    const [barbearia, setBarbearia] = useState<Partial<Barbearia>>({});
+    const [barbearia, setBarbearia] = useState<Partial<Barbearia>>({ operating_days: [] });
     const [heroFile, setHeroFile] = useState<File | null>(null);
     const [heroPreview, setHeroPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const heroFileInputRef = useRef<HTMLInputElement>(null);
+
+    const daysOfWeek = [
+        { label: 'Dom', value: 0 }, { label: 'Seg', value: 1 }, { label: 'Ter', value: 2 },
+        { label: 'Qua', value: 3 }, { label: 'Qui', value: 4 }, { label: 'Sex', value: 5 },
+        { label: 'Sáb', value: 6 }
+    ];
 
     useEffect(() => {
         if (user?.barbeariaId) {
@@ -350,9 +356,19 @@ const Settings = () => {
         }
     }, [user]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setBarbearia(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleDayToggle = (dayValue: number) => {
+        setBarbearia(prev => {
+            const currentDays = prev.operating_days || [];
+            const newDays = currentDays.includes(dayValue)
+                ? currentDays.filter(d => d !== dayValue)
+                : [...currentDays, dayValue];
+            return { ...prev, operating_days: newDays.sort() };
+        });
     };
 
     const handleHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -381,6 +397,9 @@ const Settings = () => {
             services_title: barbearia.services_title,
             social_title: barbearia.social_title,
             social_subtitle: barbearia.social_subtitle,
+            operating_days: barbearia.operating_days,
+            start_time: barbearia.start_time,
+            end_time: barbearia.end_time,
         };
 
         setIsSaving(true);
@@ -427,6 +446,38 @@ const Settings = () => {
                 <div>
                     <label htmlFor="whatsapp_url" className="block text-sm font-medium text-gray-300 mb-2">Link do WhatsApp</label>
                     <input type="url" id="whatsapp_url" name="whatsapp_url" value={barbearia.whatsapp_url || ''} onChange={handleInputChange} placeholder="https://wa.me/5511999999999" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+            </div>
+
+            <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray max-w-3xl space-y-4">
+                <h2 className="text-xl font-semibold text-white mb-4">Horário de Funcionamento</h2>
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Dias da Semana</label>
+                    <div className="flex flex-wrap gap-2">
+                        {daysOfWeek.map(day => (
+                            <button
+                                key={day.value}
+                                onClick={() => handleDayToggle(day.value)}
+                                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                                    barbearia.operating_days?.includes(day.value)
+                                        ? 'bg-brand-gold text-brand-dark'
+                                        : 'bg-brand-gray text-white hover:bg-gray-700'
+                                }`}
+                            >
+                                {day.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="start_time" className="block text-sm font-medium text-gray-300 mb-2">Horário de Abertura</label>
+                        <input type="time" id="start_time" name="start_time" value={barbearia.start_time || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    </div>
+                    <div>
+                        <label htmlFor="end_time" className="block text-sm font-medium text-gray-300 mb-2">Horário de Fechamento</label>
+                        <input type="time" id="end_time" name="end_time" value={barbearia.end_time || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    </div>
                 </div>
             </div>
 

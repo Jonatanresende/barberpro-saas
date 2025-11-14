@@ -63,13 +63,27 @@ const PublicBookingPage = () => {
     }, [selectedDate, barbearia]);
 
     const availableTimes = useMemo(() => {
+        if (!barbearia?.start_time || !barbearia?.end_time) return [];
+
         const times = [];
-        for (let i = 9; i <= 18; i++) {
-            times.push(`${String(i).padStart(2, '0')}:00`);
-            if (i < 18) times.push(`${String(i).padStart(2, '0')}:30`);
+        const [startHour, startMinute] = barbearia.start_time.split(':').map(Number);
+        const [endHour, endMinute] = barbearia.end_time.split(':').map(Number);
+        
+        const startTime = new Date();
+        startTime.setHours(startHour, startMinute, 0, 0);
+
+        const endTime = new Date();
+        endTime.setHours(endHour, endMinute, 0, 0);
+
+        let currentTime = new Date(startTime);
+
+        while (currentTime < endTime) {
+            times.push(currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+            currentTime.setMinutes(currentTime.getMinutes() + 30);
         }
+
         return times;
-    }, []);
+    }, [barbearia]);
 
     const bookedTimes = useMemo(() => {
         if (!selectedBarbeiro) return [];
@@ -152,7 +166,7 @@ const PublicBookingPage = () => {
                     <div className="space-y-8">
                         <section>
                             <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha a Data</h3>
-                            <Calendar selectedDate={selectedDate} onDateSelect={(date) => { setSelectedDate(date); setSelectedTime(null); }} />
+                            <Calendar selectedDate={selectedDate} onDateSelect={(date) => { setSelectedDate(date); setSelectedTime(null); }} operatingDays={barbearia.operating_days || []} />
                         </section>
                         {selectedDate && selectedBarbeiro && (
                             <section>

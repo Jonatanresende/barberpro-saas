@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 interface CalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
+  operatingDays: number[]; // 0=Sun, 1=Mon, etc.
 }
 
-const Calendar = ({ selectedDate, onDateSelect }: CalendarProps) => {
+const Calendar = ({ selectedDate, onDateSelect, operatingDays }: CalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -19,17 +20,19 @@ const Calendar = ({ selectedDate, onDateSelect }: CalendarProps) => {
   }
   for (let i = 1; i <= daysInMonth; i++) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+    const dayOfWeek = date.getDay();
     const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
     const isPast = date < new Date() && date.toDateString() !== new Date().toDateString();
+    const isClosed = !operatingDays.includes(dayOfWeek);
     
     days.push(
       <button
         key={i}
-        disabled={isPast}
+        disabled={isPast || isClosed}
         onClick={() => onDateSelect(date)}
         className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${
           isSelected ? 'bg-brand-gold text-brand-dark font-bold' : 
-          isPast ? 'text-gray-600 cursor-not-allowed' : 
+          isPast || isClosed ? 'text-gray-600 cursor-not-allowed' : 
           'text-white hover:bg-brand-gray'
         }`}
       >
