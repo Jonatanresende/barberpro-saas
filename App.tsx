@@ -11,7 +11,8 @@ import AdminPage from './pages/admin/AdminPage';
 import { BarbeariaPage } from './pages/barbearia/BarbeariaPage';
 import { BarbeiroPage } from './pages/barbeiro/BarbeiroPage';
 import PublicBookingPage from './pages/cliente/PublicBookingPage';
-import ConfirmationPage from './pages/cliente/ConfirmationPage';
+import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
+import PublicProfilePage from './pages/cliente/PublicProfilePage';
 import ToastProvider from './components/ToastProvider';
 
 const AppRoutes = () => {
@@ -28,7 +29,7 @@ const AppRoutes = () => {
   const getHomeRoute = () => {
     if (!user) return '/login';
     if (user.role === UserRole.BARBEARIA && user.link_personalizado) {
-      return `/${user.link_personalizado}`;
+      return `/${user.link_personalizado}/dashboard`;
     }
     return `/${user.role}/dashboard`;
   };
@@ -37,7 +38,8 @@ const AppRoutes = () => {
      <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/confirmation" element={<ConfirmationPage />} />
+        <Route path="/booking-success" element={<BookingSuccessPage />} />
+        <Route path="/:slug" element={<PublicProfilePage />} />
         <Route path="/:slug/agendamento" element={<PublicBookingPage />} />
         <Route path="/" element={<Navigate to={getHomeRoute()} replace />} />
 
@@ -60,7 +62,6 @@ const AppRoutes = () => {
             <DashboardLayout title="Painel da Barbearia" />
           </ProtectedRoute>
         }>
-            <Route path="" element={<BarbeariaPage />} />
             <Route path="dashboard" element={<BarbeariaPage />} />
             <Route path="barbers" element={<BarbeariaPage />} />
             <Route path="services" element={<BarbeariaPage />} />

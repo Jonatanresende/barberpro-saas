@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { Barbearia, Barbeiro, Servico, AppointmentStatus, Agendamento } from '../../types';
@@ -17,6 +17,7 @@ const PublicBookingPage = () => {
     const [agendamentosDoDia, setAgendamentosDoDia] = useState<Pick<Agendamento, 'hora' | 'barbeiro_id'>[]>([]);
 
     // Form state
+    const [step, setStep] = useState(1);
     const [clienteNome, setClienteNome] = useState('');
     const [clienteTelefone, setClienteTelefone] = useState('');
     const [selectedServico, setSelectedServico] = useState<Servico | null>(null);
@@ -28,7 +29,6 @@ const PublicBookingPage = () => {
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Fetch initial barbershop data
     useEffect(() => {
         const fetchBarbeariaData = async () => {
             if (!slug) return;
@@ -53,7 +53,6 @@ const PublicBookingPage = () => {
         fetchBarbeariaData();
     }, [slug]);
 
-    // Fetch appointments for the selected date
     useEffect(() => {
         if (selectedDate && barbearia) {
             const dateString = selectedDate.toISOString().split('T')[0];
@@ -64,7 +63,6 @@ const PublicBookingPage = () => {
     }, [selectedDate, barbearia]);
 
     const availableTimes = useMemo(() => {
-        // Placeholder for business hours - to be replaced with dynamic data
         const times = [];
         for (let i = 9; i <= 18; i++) {
             times.push(`${String(i).padStart(2, '0')}:00`);
@@ -80,25 +78,17 @@ const PublicBookingPage = () => {
             .map(ag => ag.hora);
     }, [agendamentosDoDia, selectedBarbeiro]);
 
-    const handleDateSelect = (date: Date) => {
-        setSelectedDate(date);
-        setSelectedTime(null); // Reset time when date changes
-    };
+    const handleNext = () => setStep(s => s + 1);
+    const handleBack = () => setStep(s => s - 1);
 
-    const handleBarberSelect = (barber: Barbeiro) => {
-        setSelectedBarbeiro(barber);
-        setSelectedTime(null); // Reset time when barber changes
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         if (!barbearia || !selectedServico || !selectedBarbeiro || !selectedDate || !selectedTime || !clienteNome || !clienteTelefone) {
             toast.error("Por favor, preencha todos os campos.");
             return;
         }
         setIsSubmitting(true);
         try {
-            await api.createAgendamento({
+            const agendamento = await api.createAgendamento({
                 barbearia_id: barbearia.id,
                 servico_id: selectedServico.id,
                 servico_nome: selectedServico.nome,
@@ -110,7 +100,7 @@ const PublicBookingPage = () => {
                 cliente_telefone: clienteTelefone,
                 status: AppointmentStatus.PENDENTE,
             });
-            navigate('/confirmation');
+            navigate('/booking-success', { state: { agendamento, barbearia } });
         } catch (error: any) {
             toast.error(`Falha ao agendar: ${error.message}`);
         } finally {
@@ -121,50 +111,34 @@ const PublicBookingPage = () => {
     if (loading) return <div className="flex items-center justify-center h-screen bg-brand-dark text-white">Carregando...</div>;
     if (!barbearia) return <div className="flex items-center justify-center h-screen bg-brand-dark text-white">Barbearia não encontrada.</div>;
 
-    const isFormComplete = barbearia && selectedServico && selectedBarbeiro && selectedDate && selectedTime && clienteNome && clienteTelefone;
-
-    return (
-        <div className="min-h-screen bg-brand-dark text-white font-sans">
-            <header className="relative h-64">
-                <img src={barbearia.foto_url} alt={barbearia.nome} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-center p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold text-white">{barbearia.nome}</h1>
-                    <p className="text-lg text-gray-300 mt-2">{barbearia.endereco}</p>
-                </div>
-            </header>
-
-            <main className="container mx-auto p-4 md:p-8">
-                <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-8 lg:gap-12">
-                    {/* Left Column: Steps */}
+    const renderStep = () => {
+        switch (step) {
+            case 1: // Client Info
+                return (
+                    <div className="space-y-4">
+                        <input type="text" value={clienteNome} onChange={e => setClienteNome(e.target.value)} placeholder="Seu Nome Completo" required className="bg-brand-gray w-full px-4 py-3 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold" />
+                        <input type="tel" value={clienteTelefone} onChange={e => setClienteTelefone(e.target.value)} placeholder="Seu Telefone (WhatsApp)" required className="bg-brand-gray w-full px-4 py-3 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold" />
+                    </div>
+                );
+            case 2: // Barber & Service
+                return (
                     <div className="space-y-8">
                         <section>
-                            <h2 className="text-2xl font-bold text-brand-gold mb-4">1. Seus Dados</h2>
-                            <div className="space-y-4">
-                                <input type="text" value={clienteNome} onChange={e => setClienteNome(e.target.value)} placeholder="Seu Nome Completo" required className="bg-brand-gray w-full px-4 py-3 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold" />
-                                <input type="tel" value={clienteTelefone} onChange={e => setClienteTelefone(e.target.value)} placeholder="Seu Telefone (WhatsApp)" required className="bg-brand-gray w-full px-4 py-3 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold" />
-                            </div>
-                        </section>
-
-                        <section>
-                            <h2 className="text-2xl font-bold text-brand-gold mb-4">2. Escolha o Serviço</h2>
+                            <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Serviço</h3>
                             <div className="space-y-3">
                                 {servicos.map(s => (
                                     <button key={s.id} type="button" onClick={() => setSelectedServico(s)} className={`w-full p-4 rounded-lg text-left border-2 transition flex justify-between items-center ${selectedServico?.id === s.id ? 'border-brand-gold bg-brand-gray' : 'border-gray-600 bg-brand-dark hover:border-gray-500'}`}>
-                                        <div>
-                                            <p className="font-semibold">{s.nome}</p>
-                                            <p className="text-sm text-gray-400">{s.duracao} min</p>
-                                        </div>
+                                        <div><p className="font-semibold">{s.nome}</p><p className="text-sm text-gray-400">{s.duracao} min</p></div>
                                         <p className="font-bold text-brand-gold">R${s.preco.toFixed(2)}</p>
                                     </button>
                                 ))}
                             </div>
                         </section>
-
                         <section>
-                            <h2 className="text-2xl font-bold text-brand-gold mb-4">3. Escolha o Barbeiro</h2>
+                            <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Barbeiro</h3>
                             <div className="flex space-x-4 overflow-x-auto pb-2">
                                 {barbeiros.map(b => (
-                                    <button key={b.id} type="button" onClick={() => handleBarberSelect(b)} className={`flex-shrink-0 p-3 rounded-lg text-center border-2 transition ${selectedBarbeiro?.id === b.id ? 'border-brand-gold bg-brand-gray' : 'border-gray-600 bg-brand-dark hover:border-gray-500'}`}>
+                                    <button key={b.id} type="button" onClick={() => setSelectedBarbeiro(b)} className={`flex-shrink-0 p-3 rounded-lg text-center border-2 transition ${selectedBarbeiro?.id === b.id ? 'border-brand-gold bg-brand-gray' : 'border-gray-600 bg-brand-dark hover:border-gray-500'}`}>
                                         <img src={b.foto_url} alt={b.nome} className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"/>
                                         <p className="font-semibold text-sm">{b.nome}</p>
                                     </button>
@@ -172,27 +146,68 @@ const PublicBookingPage = () => {
                             </div>
                         </section>
                     </div>
-
-                    {/* Right Column: Calendar & Time */}
+                );
+            case 3: // Date & Time
+                return (
                     <div className="space-y-8">
                         <section>
-                            <h2 className="text-2xl font-bold text-brand-gold mb-4">4. Escolha a Data</h2>
-                            <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
+                            <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha a Data</h3>
+                            <Calendar selectedDate={selectedDate} onDateSelect={(date) => { setSelectedDate(date); setSelectedTime(null); }} />
                         </section>
-
                         {selectedDate && selectedBarbeiro && (
                             <section>
-                                <h2 className="text-2xl font-bold text-brand-gold mb-4">5. Escolha o Horário</h2>
+                                <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Horário</h3>
                                 <TimeSlots availableTimes={availableTimes} bookedTimes={bookedTimes} selectedTime={selectedTime} onTimeSelect={setSelectedTime} />
                             </section>
                         )}
-
-                        <button type="submit" className="w-full bg-brand-gold text-brand-dark font-bold py-4 px-4 rounded-lg text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed" disabled={!isFormComplete || isSubmitting}>
-                            {isSubmitting ? 'Agendando...' : 'Confirmar Agendamento'}
-                        </button>
                     </div>
-                </form>
-            </main>
+                );
+            case 4: // Confirmation
+                return (
+                    <div className="text-left space-y-4 bg-brand-dark p-6 rounded-lg border border-brand-gray">
+                        <h3 className="text-xl font-bold text-brand-gold mb-4 text-center">Confirme seu Agendamento</h3>
+                        <p><strong className="text-gray-400">Nome:</strong> {clienteNome}</p>
+                        <p><strong className="text-gray-400">Serviço:</strong> {selectedServico?.nome}</p>
+                        <p><strong className="text-gray-400">Barbeiro:</strong> {selectedBarbeiro?.nome}</p>
+                        <p><strong className="text-gray-400">Data:</strong> {selectedDate?.toLocaleDateString('pt-BR')} às {selectedTime}</p>
+                        <p><strong className="text-gray-400">Local:</strong> {barbearia.endereco}</p>
+                    </div>
+                );
+            default: return null;
+        }
+    };
+
+    const getStepTitle = () => {
+        switch (step) {
+            case 1: return "1. Seus Dados";
+            case 2: return "2. Serviço e Barbeiro";
+            case 3: return "3. Data e Horário";
+            case 4: return "4. Confirmação";
+            default: return "Agendamento";
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-brand-dark text-white font-sans p-4 sm:p-8 flex items-center justify-center">
+            <div className="w-full max-w-2xl bg-brand-gray rounded-xl shadow-lg p-8 border border-gray-700">
+                <h2 className="text-3xl font-bold text-center mb-2">{barbearia.nome}</h2>
+                <h3 className="text-xl font-semibold text-brand-gold text-center mb-8">{getStepTitle()}</h3>
+                
+                <div className="min-h-[300px]">
+                    {renderStep()}
+                </div>
+
+                <div className="flex justify-between items-center mt-8 pt-4 border-t border-brand-gray">
+                    {step > 1 ? (
+                        <button onClick={handleBack} className="px-6 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 font-semibold">Voltar</button>
+                    ) : (
+                        <Link to={`/${slug}`} className="px-6 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 font-semibold">Cancelar</Link>
+                    )}
+
+                    {step < 4 && <button onClick={handleNext} className="px-6 py-2 rounded-lg bg-brand-gold text-brand-dark font-bold">Próximo</button>}
+                    {step === 4 && <button onClick={handleSubmit} disabled={isSubmitting} className="px-6 py-2 rounded-lg bg-green-500 text-white font-bold disabled:opacity-50">{isSubmitting ? 'Confirmando...' : 'Confirmar Agendamento'}</button>}
+                </div>
+            </div>
         </div>
     );
 };

@@ -88,3 +88,17 @@ export const ActivityIcon = ({ className = 'w-6 h-6' }: IconProps) => (
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
     </svg>
 );
+
+export const InstagramIcon = ({ className = 'w-6 h-6' }: IconProps) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+    </svg>
+);
+
+export const WhatsAppIcon = ({ className = 'w-6 h-6' }: IconProps) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 12c0 1.74.45 3.38 1.24 4.84l-1.28 4.68 4.8-1.26c1.42.74 3.02 1.18 4.65 1.18h.01c5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.91-9.92-9.91zM17.2 15.45c-.21.12-.76.38-1.33.15-.57-.23-1.14-1.04-1.36-1.27s-.22-.23-.45 0c-.23.23-.9 1.04-1.1 1.24s-.38.23-.7.12c-.32-.12-1.33-.49-2.53-1.56-1.2-1.07-2-2.38-2.22-2.78s-.05-.38.12-.5c.14-.14.32-.38.48-.57.17-.2.23-.35.35-.57.12-.23 0-.45-.12-.68s-1.1-2.65-1.5-3.6c-.4-.95-.81-.81-.81-.81-.35 0-.7.12-.93.12s-.68.35-1.04 1.04c-.35.7-1.36 3.28-1.36 5.23 0 1.95 1.38 6.08 1.58 6.5s2.75 4.23 6.75 5.93c4 1.7 4 1.18 4.73 1.18.73 0 2.28-.95 2.6-1.8.32-.85.32-1.58.23-1.8s-.35-.23-.76-.45z"></path>
+    </svg>
+);

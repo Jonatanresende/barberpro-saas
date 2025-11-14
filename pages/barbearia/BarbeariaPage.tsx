@@ -172,11 +172,11 @@ const ManageServices = () => {
         setIsModalOpen(true);
     };
 
-    const handleSave = async (serviceData: any) => {
+    const handleSave = async (serviceData: any, photoFile?: File) => {
         if (!user?.barbeariaId) return;
         const promise = serviceToEdit
-            ? api.updateServico(serviceToEdit.id, serviceData)
-            : api.createServico(serviceData, user.barbeariaId);
+            ? api.updateServico(serviceToEdit.id, serviceData, photoFile)
+            : api.createServico(serviceData, user.barbeariaId, photoFile);
 
         toast.promise(promise, {
             loading: 'Salvando serviço...',
@@ -213,9 +213,12 @@ const ManageServices = () => {
                     <ul className="space-y-3">
                         {servicos.map(servico => (
                             <li key={servico.id} className="bg-brand-gray p-4 rounded-lg flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold text-white">{servico.nome}</p>
-                                    <p className="text-sm text-gray-400">{servico.duracao} min</p>
+                                <div className="flex items-center space-x-4">
+                                    <img src={servico.imagem_url || 'https://via.placeholder.com/64'} alt={servico.nome} className="w-16 h-16 rounded-md object-cover bg-brand-dark" />
+                                    <div>
+                                        <p className="font-semibold text-white">{servico.nome}</p>
+                                        <p className="text-sm text-gray-400">{servico.duracao} min</p>
+                                    </div>
                                 </div>
                                 <div className="flex items-center space-x-4">
                                     <p className="text-lg font-bold text-brand-gold">R$ {servico.preco.toFixed(2)}</p>
@@ -353,6 +356,8 @@ const Settings = () => {
             nome: barbearia.nome,
             endereco: barbearia.endereco,
             link_personalizado: barbearia.link_personalizado,
+            instagram_url: barbearia.instagram_url,
+            whatsapp_url: barbearia.whatsapp_url,
         };
 
         setIsSaving(true);
@@ -385,9 +390,17 @@ const Settings = () => {
              <div>
                 <label htmlFor="link_personalizado" className="block text-sm font-medium text-gray-300 mb-2">Link Personalizado</label>
                 <div className="flex items-center">
-                    <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-l-md border border-r-0 border-gray-600">barberpro.app/agendar/</span>
+                    <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-l-md border border-r-0 border-gray-600">barberpro.app/</span>
                     <input type="text" id="link_personalizado" name="link_personalizado" value={barbearia.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-r-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
+             </div>
+             <div>
+                <label htmlFor="instagram_url" className="block text-sm font-medium text-gray-300 mb-2">URL do Instagram</label>
+                <input type="url" id="instagram_url" name="instagram_url" value={barbearia.instagram_url || ''} onChange={handleInputChange} placeholder="https://instagram.com/suabarbearia" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+             </div>
+             <div>
+                <label htmlFor="whatsapp_url" className="block text-sm font-medium text-gray-300 mb-2">Link do WhatsApp</label>
+                <input type="url" id="whatsapp_url" name="whatsapp_url" value={barbearia.whatsapp_url || ''} onChange={handleInputChange} placeholder="https://wa.me/5511999999999" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
              </div>
              <div className="pt-4">
                 <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 disabled:opacity-50">

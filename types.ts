@@ -45,6 +45,8 @@ export interface Barbearia {
   criado_em: string;
   status: 'ativa' | 'inativa';
   foto_url?: string;
+  instagram_url?: string;
+  whatsapp_url?: string;
 }
 
 export interface Barbeiro {
@@ -65,6 +67,7 @@ export interface Servico {
   nome: string;
   preco: number;
   duracao: number; // in minutes
+  imagem_url?: string;
 }
 
 export interface Cliente {
