@@ -1,16 +1,16 @@
 import { supabase } from '@/src/integrations/supabase/client';
-import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano } from '../types';
+import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus } from '../types';
 
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
 
 // Helper function to upload photo and get URL
-const uploadPhoto = async (photoFile: File): Promise<string | null> => {
+const uploadPhoto = async (photoFile: File, bucket: string): Promise<string | null> => {
   if (!photoFile) return null;
 
   const filePath = `public/${Date.now()}-${photoFile.name}`;
   const { error: uploadError } = await supabase.storage
-    .from('fotos-barbearias')
+    .from(bucket)
     .upload(filePath, photoFile);
 
   if (uploadError) {
@@ -19,7 +19,7 @@ const uploadPhoto = async (photoFile: File): Promise<string | null> => {
   }
 
   const { data: urlData } = supabase.storage
-    .from('fotos-barbearias')
+    .from(bucket)
     .getPublicUrl(filePath);
   
   return urlData.publicUrl;
@@ -139,10 +139,7 @@ export const api = {
   },
 
   createBarbeariaAndOwner: async (barbeariaData: any, password: string, photoFile?: File): Promise<Barbearia> => {
-    let photoUrl = null;
-    if (photoFile) {
-      photoUrl = await uploadPhoto(photoFile);
-    }
+    const photoUrl = await uploadPhoto(photoFile!, 'fotos-barbearias');
 
     const { data, error } = await supabase.functions.invoke('create-barbershop', {
       body: { barbeariaData, password, photoUrl },
@@ -159,7 +156,7 @@ export const api = {
   updateBarbearia: async (id: string, dono_id: string, updates: BarbeariaUpdate, photoFile?: File): Promise<Barbearia> => {
     let photoUrl = updates.foto_url || null;
     if (photoFile) {
-      photoUrl = await uploadPhoto(photoFile);
+      photoUrl = await uploadPhoto(photoFile, 'fotos-barbearias');
     }
 
     const finalUpdates = { ...updates, foto_url: photoUrl };
@@ -285,6 +282,16 @@ export const api = {
     };
   },
 
+  getBarbeariaById: async (barbeariaId: string): Promise<Barbearia> => {
+    const { data, error } = await supabase
+      .from('barbearias')
+      .select('*')
+      .eq('id', barbeariaId)
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   // BARBEARIA - Barbeiros
   getBarbeirosByBarbearia: async (barbeariaId: string): Promise<Barbeiro[]> => {
     const { data, error } = await supabase
@@ -293,6 +300,38 @@ export const api = {
       .eq('barbearia_id', barbeariaId);
     if (error) throw new Error(error.message);
     return data;
+  },
+
+  createBarbeiro: async (barbeiroData: any, barbeariaId: string, photoFile?: File): Promise<Barbeiro> => {
+    const foto_url = await uploadPhoto(photoFile!, 'fotos-barbeiros');
+    const { data, error } = await supabase
+      .from('barbeiros')
+      .insert([{ ...barbeiroData, barbearia_id: barbeariaId, foto_url }])
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  updateBarbeiro: async (id: string, barbeiroData: any, photoFile?: File): Promise<Barbeiro> => {
+    let finalData = { ...barbeiroData };
+    if (photoFile) {
+      const foto_url = await uploadPhoto(photoFile, 'fotos-barbeiros');
+      finalData.foto_url = foto_url;
+    }
+    const { data, error } = await supabase
+      .from('barbeiros')
+      .update(finalData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  deleteBarbeiro: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('barbeiros').delete().eq('id', id);
+    if (error) throw new Error(error.message);
   },
 
   // BARBEARIA - Serviços
@@ -305,6 +344,32 @@ export const api = {
     return data;
   },
 
+  createServico: async (servicoData: any, barbeariaId: string): Promise<Servico> => {
+    const { data, error } = await supabase
+      .from('servicos')
+      .insert([{ ...servicoData, barbearia_id: barbeariaId }])
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  updateServico: async (id: string, servicoData: any): Promise<Servico> => {
+    const { data, error } = await supabase
+      .from('servicos')
+      .update(servicoData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  deleteServico: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('servicos').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+  },
+
   // BARBEARIA - Agendamentos
   getAgendamentosByBarbearia: async (barbeariaId: string): Promise<Agendamento[]> => {
     const { data, error } = await supabase
@@ -312,6 +377,17 @@ export const api = {
       .select('*')
       .eq('barbearia_id', barbeariaId)
       .order('data', { ascending: false });
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  updateAgendamento: async (id: string, updates: { status: AppointmentStatus }): Promise<Agendamento> => {
+    const { data, error } = await supabase
+      .from('agendamentos')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
     if (error) throw new Error(error.message);
     return data;
   },
