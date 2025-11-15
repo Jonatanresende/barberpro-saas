@@ -78,31 +78,32 @@ const AccountSettings = () => {
     };
 
     const handleSaveAdminUser = async (userData: any, password?: string) => {
-        const promise = userToEdit
-            ? api.updateAdminUser(userToEdit.id, userData)
-            : api.createAdminUser(userData.email, password!, userData.full_name);
-
-        toast.promise(promise, {
-            loading: 'Salvando administrador...',
-            success: () => {
-                fetchAdmins();
-                setIsUserModalOpen(false);
-                return `Administrador ${userToEdit ? 'atualizado' : 'criado'} com sucesso!`;
-            },
-            error: (err: any) => `Falha ao salvar: ${err.message}`,
-        });
+        const toastId = toast.loading('Salvando administrador...');
+        try {
+            if (userToEdit) {
+                await api.updateAdminUser(userToEdit.id, userData);
+            } else {
+                await api.createAdminUser(userData.email, password!, userData.full_name);
+            }
+            toast.success(`Administrador ${userToEdit ? 'atualizado' : 'criado'} com sucesso!`, { id: toastId });
+            fetchAdmins();
+            setIsUserModalOpen(false);
+        } catch (err: any) {
+            toast.error(`Falha ao salvar: ${err.message}`, { id: toastId });
+        }
     };
 
     const handleDeleteAdmin = (admin: User) => {
         if (window.confirm(`Tem certeza que deseja remover o administrador ${admin.full_name}?`)) {
-            toast.promise(api.deleteAdminUser(admin.id), {
-                loading: 'Removendo...',
-                success: () => {
+            const toastId = toast.loading('Removendo...');
+            api.deleteAdminUser(admin.id)
+                .then(() => {
+                    toast.success('Administrador removido com sucesso!', { id: toastId });
                     fetchAdmins();
-                    return 'Administrador removido com sucesso!';
-                },
-                error: (err) => `Falha ao remover: ${err.message}`,
-            });
+                })
+                .catch((err) => {
+                    toast.error(`Falha ao remover: ${err.message}`, { id: toastId });
+                });
         }
     };
 
@@ -213,21 +214,14 @@ const SystemSettings = () => {
     };
 
     const handleSave = async () => {
-        setIsSaving(true);
-        const promise = updateSettings(localSettings, logoFile || undefined);
-
-        toast.promise(promise, {
-            loading: 'Salvando configurações...',
-            success: () => {
-                setLogoFile(null);
-                setIsSaving(false);
-                return 'Configurações salvas com sucesso!';
-            },
-            error: (err) => {
-                setIsSaving(false);
-                return `Falha ao salvar: ${err.message}`;
-            },
-        });
+        const toastId = toast.loading('Salvando configurações...');
+        try {
+            await updateSettings(localSettings, logoFile || undefined);
+            toast.success('Configurações salvas com sucesso!', { id: toastId });
+            setLogoFile(null);
+        } catch (err: any) {
+            toast.error(`Falha ao salvar: ${err.message}`, { id: toastId });
+        }
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

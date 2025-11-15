@@ -170,45 +170,44 @@ const ManageBarbershops = () => {
     };
 
     const handleSave = async (barbeariaData: any, password?: string, photoFile?: File) => {
-        const promise = barbeariaToEdit
-            ? api.updateBarbearia(barbeariaToEdit.id, barbeariaToEdit.dono_id!, barbeariaData, photoFile)
-            : api.createBarbeariaAndOwner(barbeariaData, password!, photoFile);
-
-        toast.promise(promise, {
-            loading: 'Salvando...',
-            success: () => {
-                fetchBarbearias();
-                setIsModalOpen(false);
-                return `Barbearia ${barbeariaToEdit ? 'atualizada' : 'cadastrada'} com sucesso!`;
-            },
-            error: (err) => `Falha ao salvar: ${err.message}`,
-        });
+        const toastId = toast.loading('Salvando...');
+        try {
+            if (barbeariaToEdit) {
+                await api.updateBarbearia(barbeariaToEdit.id, barbeariaToEdit.dono_id!, barbeariaData, photoFile);
+            } else {
+                await api.createBarbeariaAndOwner(barbeariaData, password!, photoFile);
+            }
+            toast.success(`Barbearia ${barbeariaToEdit ? 'atualizada' : 'cadastrada'} com sucesso!`, { id: toastId });
+            fetchBarbearias();
+            setIsModalOpen(false);
+        } catch (err: any) {
+            toast.error(`Falha ao salvar: ${err.message}`, { id: toastId });
+        }
     };
 
     const handleToggleStatus = async (barbearia: Barbearia) => {
         const newStatus = barbearia.status === 'ativa' ? 'inativa' : 'ativa';
-        const promise = api.updateBarbearia(barbearia.id, barbearia.dono_id!, { status: newStatus });
-        toast.promise(promise, {
-            loading: 'Atualizando status...',
-            success: () => {
-                fetchBarbearias();
-                return 'Status atualizado com sucesso!';
-            },
-            error: (err) => `Falha ao atualizar status: ${err.message}`,
-        });
+        const toastId = toast.loading('Atualizando status...');
+        try {
+            await api.updateBarbearia(barbearia.id, barbearia.dono_id!, { status: newStatus });
+            toast.success('Status atualizado com sucesso!', { id: toastId });
+            fetchBarbearias();
+        } catch (err: any) {
+            toast.error(`Falha ao atualizar status: ${err.message}`, { id: toastId });
+        }
     };
 
     const handleDelete = (barbearia: Barbearia) => {
         if (window.confirm('Tem certeza que deseja excluir esta barbearia e a conta do proprietário? Esta ação não pode ser desfeita.')) {
-            const promise = api.deleteBarbearia(barbearia.id, barbearia.dono_id!);
-            toast.promise(promise, {
-                loading: 'Excluindo...',
-                success: () => {
+            const toastId = toast.loading('Excluindo...');
+            api.deleteBarbearia(barbearia.id, barbearia.dono_id!)
+                .then(() => {
+                    toast.success('Barbearia e proprietário excluídos com sucesso!', { id: toastId });
                     setBarbearias(prev => prev.filter(b => b.id !== barbearia.id));
-                    return 'Barbearia e proprietário excluídos com sucesso!';
-                },
-                error: (err) => `Falha ao excluir: ${err.message}`,
-            });
+                })
+                .catch((err) => {
+                    toast.error(`Falha ao excluir: ${err.message}`, { id: toastId });
+                });
         }
     };
 
@@ -302,31 +301,32 @@ const Plans = () => {
     };
 
     const handleSave = async (planoData: any) => {
-        const promise = planToEdit
-            ? api.updatePlano(planToEdit.id, planoData)
-            : api.createPlano(planoData);
-
-        toast.promise(promise, {
-            loading: 'Salvando plano...',
-            success: () => {
-                fetchPlanos();
-                setIsModalOpen(false);
-                return `Plano ${planToEdit ? 'atualizado' : 'criado'} com sucesso!`;
-            },
-            error: (err) => `Falha ao salvar: ${err.message}`,
-        });
+        const toastId = toast.loading('Salvando plano...');
+        try {
+            if (planToEdit) {
+                await api.updatePlano(planToEdit.id, planoData);
+            } else {
+                await api.createPlano(planoData);
+            }
+            toast.success(`Plano ${planToEdit ? 'atualizado' : 'criado'} com sucesso!`, { id: toastId });
+            fetchPlanos();
+            setIsModalOpen(false);
+        } catch (err: any) {
+            toast.error(`Falha ao salvar: ${err.message}`, { id: toastId });
+        }
     };
 
     const handleDelete = (plano: Plano) => {
         if (window.confirm(`Tem certeza que deseja excluir o plano "${plano.nome}"?`)) {
-            toast.promise(api.deletePlano(plano.id), {
-                loading: 'Excluindo...',
-                success: () => {
+            const toastId = toast.loading('Excluindo...');
+            api.deletePlano(plano.id)
+                .then(() => {
+                    toast.success('Plano excluído com sucesso!', { id: toastId });
                     fetchPlanos();
-                    return 'Plano excluído com sucesso!';
-                },
-                error: (err) => `Falha ao excluir: ${err.message}`,
-            });
+                })
+                .catch((err) => {
+                    toast.error(`Falha ao excluir: ${err.message}`, { id: toastId });
+                });
         }
     };
 
