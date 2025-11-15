@@ -1,5 +1,5 @@
 import { supabase } from '@/src/integrations/supabase/client';
-import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus } from '../types';
+import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus, Cliente } from '../types';
 
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
@@ -428,6 +428,14 @@ export const api = {
     return data;
   },
 
+  findOrCreateClient: async (nome: string, telefone: string): Promise<Cliente> => {
+    const { data, error } = await supabase.functions.invoke('find-or-create-client', {
+      body: { nome, telefone },
+    });
+    if (error) throw new Error(data?.error || error.message);
+    return data;
+  },
+
   createAgendamento: async (agendamentoData: Partial<Agendamento>): Promise<Agendamento> => {
     const { data, error } = await supabase
       .from('agendamentos')
@@ -436,5 +444,21 @@ export const api = {
       .single();
     if (error) throw new Error(error.message);
     return data;
+  },
+
+  getClientAppointment: async (telefone: string): Promise<Agendamento> => {
+    const { data, error } = await supabase.functions.invoke('get-client-appointment', {
+      body: { telefone },
+    });
+    if (error) throw new Error(data?.message || data?.error || error.message);
+    return data;
+  },
+
+  cancelClientAppointment: async (appointmentId: string, telefone: string): Promise<boolean> => {
+    const { data, error } = await supabase.functions.invoke('cancel-client-appointment', {
+      body: { appointmentId, telefone },
+    });
+    if (error) throw new Error(data?.error || error.message);
+    return data.success;
   },
 };
