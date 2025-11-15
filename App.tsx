@@ -36,11 +36,9 @@ const AppRoutes = () => {
 
   return (
      <Routes>
-        {/* Public Routes */}
+        {/* Static Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/booking-success" element={<BookingSuccessPage />} />
-        <Route path="/:slug" element={<PublicProfilePage />} />
-        <Route path="/:slug/agendamento" element={<PublicBookingPage />} />
         <Route path="/" element={<Navigate to={getHomeRoute()} replace />} />
 
         {/* Admin Routes */}
@@ -56,19 +54,6 @@ const AppRoutes = () => {
             <Route index element={<Navigate to="dashboard" />} />
         </Route>
 
-        {/* Barbearia Routes with custom slug */}
-        <Route path="/:slug" element={
-           <ProtectedRoute allowedRoles={[UserRole.BARBEARIA]}>
-            <DashboardLayout title="Painel da Barbearia" />
-          </ProtectedRoute>
-        }>
-            <Route path="dashboard" element={<BarbeariaPage />} />
-            <Route path="barbers" element={<BarbeariaPage />} />
-            <Route path="services" element={<BarbeariaPage />} />
-            <Route path="appointments" element={<BarbeariaPage />} />
-            <Route path="settings" element={<BarbeariaPage />} />
-        </Route>
-
         {/* Barbeiro Routes */}
         <Route path="/barbeiro" element={
             <ProtectedRoute allowedRoles={[UserRole.BARBEIRO]}>
@@ -77,6 +62,25 @@ const AppRoutes = () => {
         }>
             <Route path="dashboard" element={<BarbeiroPage />} />
             <Route index element={<Navigate to="dashboard" />} />
+        </Route>
+
+        {/* Dynamic Slug-based Routes (Public and Protected Barbearia) */}
+        <Route path="/:slug">
+          <Route index element={<PublicProfilePage />} />
+          <Route path="agendamento" element={<PublicBookingPage />} />
+          
+          {/* Protected Barbearia Dashboard Routes */}
+          <Route element={
+            <ProtectedRoute allowedRoles={[UserRole.BARBEARIA]}>
+              <DashboardLayout title="Painel da Barbearia" />
+            </ProtectedRoute>
+          }>
+            <Route path="dashboard" element={<BarbeariaPage />} />
+            <Route path="barbers" element={<BarbeariaPage />} />
+            <Route path="services" element={<BarbeariaPage />} />
+            <Route path="appointments" element={<BarbeariaPage />} />
+            <Route path="settings" element={<BarbeariaPage />} />
+          </Route>
         </Route>
 
         {/* Not Found Route */}
