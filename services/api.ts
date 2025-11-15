@@ -428,21 +428,11 @@ export const api = {
     return data;
   },
 
-  findOrCreateClient: async (nome: string, telefone: string): Promise<Cliente> => {
-    const { data, error } = await supabase.functions.invoke('find-or-create-client', {
-      body: { nome, telefone },
+  createAgendamento: async (agendamentoData: Partial<Agendamento>): Promise<Agendamento> => {
+    const { data, error } = await supabase.functions.invoke('create-appointment', {
+      body: { agendamentoData },
     });
     if (error) throw new Error(data?.error || error.message);
-    return data;
-  },
-
-  createAgendamento: async (agendamentoData: Partial<Agendamento>): Promise<Agendamento> => {
-    const { data, error } = await supabase
-      .from('agendamentos')
-      .insert([agendamentoData])
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
     return data;
   },
 

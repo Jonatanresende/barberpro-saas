@@ -137,23 +137,21 @@ const PublicBookingPage = () => {
         }
         setIsSubmitting(true);
         try {
-            // 1. Find or create the client
-            const client = await api.findOrCreateClient(clienteNome, clienteTelefone);
-
-            // 2. Create the appointment with the client_id
-            const agendamento = await api.createAgendamento({
+            const agendamentoPayload = {
                 barbearia_id: barbearia.id,
-                cliente_id: client.id,
                 servico_id: selectedServico.id,
                 servico_nome: selectedServico.nome,
                 barbeiro_id: selectedBarbeiro.id,
                 barbeiro_nome: selectedBarbeiro.nome,
                 data: selectedDate.toISOString().split('T')[0],
                 hora: selectedTime,
-                cliente_nome: clienteNome, // Still useful for display
+                cliente_nome: clienteNome,
                 cliente_telefone: clienteTelefone,
                 status: AppointmentStatus.PENDENTE,
-            });
+            };
+
+            const agendamento = await api.createAgendamento(agendamentoPayload);
+            
             navigate('/booking-success', { state: { agendamento, barbearia } });
         } catch (error: any) {
             toast.error(`Falha ao agendar: ${error.message}`);
