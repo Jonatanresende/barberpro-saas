@@ -369,7 +369,7 @@ export const api = {
   getAgendamentosByBarbearia: async (barbeariaId: string): Promise<Agendamento[]> => {
     const { data, error } = await supabase
       .from('agendamentos')
-      .select('*')
+      .select('*, servicos(preco)')
       .eq('barbearia_id', barbeariaId)
       .order('data', { ascending: false });
     if (error) throw new Error(error.message);
@@ -381,7 +381,7 @@ export const api = {
       .from('agendamentos')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select('*, servicos(preco)')
       .single();
     if (error) throw new Error(error.message);
     return data;
@@ -391,7 +391,7 @@ export const api = {
   getAgendamentosByBarbeiro: async (barbeiroId: string): Promise<Agendamento[]> => {
     const { data, error } = await supabase
       .from('agendamentos')
-      .select('*')
+      .select('*, servicos(preco)')
       .eq('barbeiro_id', barbeiroId)
       .order('data', { ascending: false });
     if (error) throw new Error(error.message);

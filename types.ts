@@ -100,4 +100,7 @@ export interface Agendamento {
   data: string;
   hora: string;
   status: AppointmentStatus;
+  servicos?: { // Adicionado para buscar o preço
+    preco: number;
+  };
 }
