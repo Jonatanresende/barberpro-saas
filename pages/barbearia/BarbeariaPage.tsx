@@ -301,7 +301,7 @@ const ManageAppointments = () => {
                                     <td className="px-6 py-4 font-medium text-white">{ag.cliente_nome}</td>
                                     <td className="px-6 py-4">{ag.servico_nome}</td>
                                     <td className="px-6 py-4">{ag.barbeiro_nome}</td>
-                                    <td className="px-6 py-4">{new Date(ag.data).toLocaleDateString()} - {ag.hora}</td>
+                                    <td className="px-6 py-4">{new Date(`${ag.data}T00:00:00`).toLocaleDateString()} - {ag.hora}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(ag.status)}`}>
                                             {ag.status}
