@@ -154,17 +154,14 @@ export const api = {
   },
 
   updateBarbearia: async (id: string, dono_id: string, updates: BarbeariaUpdate, photoFile?: File, heroFile?: File): Promise<Barbearia> => {
-    let photoUrl = updates.foto_url || null;
+    const finalUpdates = { ...updates };
+
     if (photoFile) {
-      photoUrl = await uploadPhoto(photoFile, 'fotos-barbearias');
+      finalUpdates.foto_url = await uploadPhoto(photoFile, 'fotos-barbearias');
     }
-
-    let heroUrl = updates.hero_image_url || null;
     if (heroFile) {
-      heroUrl = await uploadPhoto(heroFile, 'hero-images');
+      finalUpdates.hero_image_url = await uploadPhoto(heroFile, 'hero-images');
     }
-
-    const finalUpdates = { ...updates, foto_url: photoUrl, hero_image_url: heroUrl };
 
     const { data, error } = await supabase.functions.invoke('update-barbershop', {
       body: { 
