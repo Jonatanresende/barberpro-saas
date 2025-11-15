@@ -177,7 +177,12 @@ const AccountSettings = () => {
 
 const SystemSettings = () => {
     const { settings: globalSettings, updateSettings, loading } = useSettings();
-    const [localSettings, setLocalSettings] = useState({ system_name: '', support_email: '' });
+    const [localSettings, setLocalSettings] = useState({ 
+        system_name: '', 
+        support_email: '',
+        contact_email: '',
+        tos_link: '' 
+    });
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -188,6 +193,8 @@ const SystemSettings = () => {
             setLocalSettings({
                 system_name: globalSettings.system_name || '',
                 support_email: globalSettings.support_email || '',
+                contact_email: globalSettings.contact_email || '',
+                tos_link: globalSettings.tos_link || '',
             });
             setLogoPreview(globalSettings.logo_url || null);
         }
@@ -233,7 +240,7 @@ const SystemSettings = () => {
     }
 
     return (
-        <SettingsCard title="Sistema">
+        <SettingsCard title="Sistema e Suporte">
             <div>
                 <label htmlFor="system_name" className="block text-sm font-medium text-gray-300 mb-2">Nome do Sistema</label>
                 <input type="text" id="system_name" name="system_name" value={localSettings.system_name} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
@@ -255,8 +262,16 @@ const SystemSettings = () => {
                 </div>
             </div>
             <div>
-                <label htmlFor="support_email" className="block text-sm font-medium text-gray-300 mb-2">E-mail de Suporte</label>
+                <label htmlFor="support_email" className="block text-sm font-medium text-gray-300 mb-2">E-mail de Suporte (para administradores)</label>
                 <input type="email" id="support_email" name="support_email" value={localSettings.support_email} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            </div>
+            <div>
+                <label htmlFor="contact_email" className="block text-sm font-medium text-gray-300 mb-2">E-mail de Contato (público)</label>
+                <input type="email" id="contact_email" name="contact_email" value={localSettings.contact_email} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+            </div>
+            <div>
+                <label htmlFor="tos_link" className="block text-sm font-medium text-gray-300 mb-2">Link para Termos de Uso / Política de Privacidade</label>
+                <input type="url" id="tos_link" name="tos_link" value={localSettings.tos_link} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
             </div>
             <div className="pt-4">
                 <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50">
@@ -267,27 +282,11 @@ const SystemSettings = () => {
     );
 };
 
-const InputField = ({ label, type, id, value, placeholder }: { label: string, type: string, id: string, value?: string, placeholder?: string }) => (
-    <div>
-        <label htmlFor={id} className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
-        <input type={type} id={id} name={id} defaultValue={value} placeholder={placeholder} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
-    </div>
-);
-
 const SettingsPage = () => {
     return (
         <div className="space-y-8">
             <AccountSettings />
             <SystemSettings />
-            <SettingsCard title="Suporte">
-                <InputField label="E-mail de Contato" type="email" id="contact-email" value="contato@barberpro.com" />
-                <InputField label="Link para Termos de Uso / Política de Privacidade" type="url" id="tos-link" value="https://barberpro.com/termos" />
-                 <div className="pt-4">
-                    <button className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90">
-                        Salvar Alterações
-                    </button>
-                </div>
-            </SettingsCard>
         </div>
     );
 };

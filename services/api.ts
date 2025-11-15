@@ -65,7 +65,12 @@ export const api = {
     return data;
   },
 
-  updateSystemSettings: async (updates: { system_name?: string; support_email?: string }, logoFile?: File) => {
+  updateSystemSettings: async (updates: { 
+      system_name?: string; 
+      support_email?: string;
+      contact_email?: string;
+      tos_link?: string;
+    }, logoFile?: File) => {
     let logo_url;
     if (logoFile) {
       logo_url = await uploadSystemAsset(logoFile);

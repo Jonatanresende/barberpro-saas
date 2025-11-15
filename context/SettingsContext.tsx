@@ -5,6 +5,8 @@ interface SystemSettings {
   system_name: string;
   logo_url: string;
   support_email: string;
+  contact_email?: string;
+  tos_link?: string;
 }
 
 interface SettingsContextType {
