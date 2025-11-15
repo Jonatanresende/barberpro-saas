@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
@@ -238,16 +238,26 @@ const ManageServices = () => {
 const ManageAppointments = () => {
     const { user } = useAuth();
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+    const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
     const [loading, setLoading] = useState(true);
-    
-    const fetchAppointments = useCallback(async () => {
+
+    // Filter states
+    const [filterDate, setFilterDate] = useState('');
+    const [filterStatus, setFilterStatus] = useState<'todos' | AppointmentStatus>('todos');
+    const [filterBarber, setFilterBarber] = useState('todos');
+
+    const fetchData = useCallback(async () => {
         if (user?.barbeariaId) {
             try {
                 setLoading(true);
-                const data = await api.getAgendamentosByBarbearia(user.barbeariaId);
-                setAgendamentos(data);
+                const [appointmentsData, barbersData] = await Promise.all([
+                    api.getAgendamentosByBarbearia(user.barbeariaId),
+                    api.getBarbeirosByBarbearia(user.barbeariaId)
+                ]);
+                setAgendamentos(appointmentsData);
+                setBarbeiros(barbersData);
             } catch (error) {
-                toast.error("Falha ao carregar agendamentos.");
+                toast.error("Falha ao carregar dados de agendamentos e barbeiros.");
             } finally {
                 setLoading(false);
             }
@@ -255,14 +265,23 @@ const ManageAppointments = () => {
     }, [user]);
 
     useEffect(() => {
-        fetchAppointments();
-    }, [fetchAppointments]);
+        fetchData();
+    }, [fetchData]);
+
+    const filteredAgendamentos = useMemo(() => {
+        return agendamentos.filter(ag => {
+            const dateMatch = !filterDate || ag.data === filterDate;
+            const statusMatch = filterStatus === 'todos' || ag.status === filterStatus;
+            const barberMatch = filterBarber === 'todos' || ag.barbeiro_id === filterBarber;
+            return dateMatch && statusMatch && barberMatch;
+        });
+    }, [agendamentos, filterDate, filterStatus, filterBarber]);
 
     const handleStatusUpdate = (id: string, status: AppointmentStatus) => {
         toast.promise(api.updateAgendamento(id, { status }), {
             loading: 'Atualizando status...',
             success: () => {
-                fetchAppointments();
+                fetchData();
                 return 'Status atualizado!';
             },
             error: 'Falha ao atualizar.',
@@ -280,10 +299,51 @@ const ManageAppointments = () => {
     };
     
     return (
-        <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-            <h2 className="text-xl font-semibold mb-4 text-white">Todos os Agendamentos</h2>
+        <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray space-y-6">
+            <div className="flex flex-wrap items-center gap-4">
+                <h2 className="text-xl font-semibold text-white">Filtros</h2>
+                <div>
+                    <label htmlFor="date-filter" className="sr-only">Data</label>
+                    <input 
+                        type="date" 
+                        id="date-filter"
+                        value={filterDate}
+                        onChange={e => setFilterDate(e.target.value)}
+                        className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="status-filter" className="sr-only">Status</label>
+                    <select 
+                        id="status-filter"
+                        value={filterStatus}
+                        onChange={e => setFilterStatus(e.target.value as any)}
+                        className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+                    >
+                        <option value="todos">Todos os Status</option>
+                        <option value={AppointmentStatus.PENDENTE}>Pendente</option>
+                        <option value={AppointmentStatus.CONFIRMADO}>Confirmado</option>
+                        <option value={AppointmentStatus.CONCLUIDO}>Concluído</option>
+                        <option value={AppointmentStatus.CANCELADO}>Cancelado</option>
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="barber-filter" className="sr-only">Barbeiro</label>
+                    <select 
+                        id="barber-filter"
+                        value={filterBarber}
+                        onChange={e => setFilterBarber(e.target.value)}
+                        className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+                    >
+                        <option value="todos">Todos os Barbeiros</option>
+                        {barbeiros.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}
+                    </select>
+                </div>
+                 <button onClick={() => setFilterDate('')} className="text-sm text-gray-400 hover:text-white">Limpar Data</button>
+            </div>
+
             <div className="overflow-x-auto">
-                {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
+                {loading ? <p className="text-center text-gray-400 py-8">Carregando...</p> : (
                     <table className="w-full text-left text-sm text-gray-300">
                         <thead className="bg-brand-gray text-xs uppercase">
                             <tr>
@@ -296,12 +356,12 @@ const ManageAppointments = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {agendamentos.map(ag => (
+                            {filteredAgendamentos.length > 0 ? filteredAgendamentos.map(ag => (
                                 <tr key={ag.id} className="border-b border-brand-gray hover:bg-brand-gray">
                                     <td className="px-6 py-4 font-medium text-white">{ag.cliente_nome}</td>
                                     <td className="px-6 py-4">{ag.servico_nome}</td>
                                     <td className="px-6 py-4">{ag.barbeiro_nome}</td>
-                                    <td className="px-6 py-4">{new Date(`${ag.data}T00:00:00`).toLocaleDateString()} - {ag.hora}</td>
+                                    <td className="px-6 py-4">{new Date(ag.data + 'T00:00:00').toLocaleDateString('pt-BR')} - {ag.hora}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(ag.status)}`}>
                                             {ag.status}
@@ -319,7 +379,11 @@ const ManageAppointments = () => {
                                         )}
                                     </td>
                                 </tr>
-                            ))}
+                            )) : (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-8 text-gray-400">Nenhum agendamento encontrado para os filtros selecionados.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 )}
