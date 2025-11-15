@@ -21,8 +21,8 @@ const Login = () => {
           redirectPath = '/admin/dashboard';
           break;
         case UserRole.BARBEARIA:
-          // Redirect to the custom slug URL
-          redirectPath = `/${user.link_personalizado}`;
+          // Redirect to the barbershop's dashboard
+          redirectPath = `/${user.link_personalizado}/dashboard`;
           break;
         case UserRole.BARBEIRO:
           redirectPath = '/barbeiro/dashboard';

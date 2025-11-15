@@ -404,11 +404,13 @@ export const api = {
       .from('barbearias')
       .select('*')
       .eq('link_personalizado', slug)
-      .single();
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found, which is fine
+      .limit(1);
+
+    if (error) {
       throw new Error(error.message);
     }
-    return data;
+    
+    return data && data.length > 0 ? data[0] : null;
   },
 
   getAgendamentosByMonth: async (barbeariaId: string, year: number, month: number): Promise<Pick<Agendamento, 'data' | 'hora' | 'barbeiro_id'>[]> => {
