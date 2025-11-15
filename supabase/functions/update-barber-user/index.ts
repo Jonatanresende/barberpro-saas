@@ -23,19 +23,30 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Update the user in Supabase Auth if userId is provided and name is changed
-    if (userId && updates.nome) {
-      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
-        userId,
-        { user_metadata: { full_name: updates.nome } }
-      )
-      if (authError) {
-        // Log the error but don't stop the execution, as updating the DB is more critical.
-        console.error('Falha ao atualizar o nome do usuário no Auth:', authError.message);
+    // 1. Update the user in Supabase Auth if userId is provided
+    if (userId) {
+      const authUpdates: { email?: string; user_metadata?: { full_name: string } } = {};
+      if (updates.email) {
+        authUpdates.email = updates.email;
+      }
+      if (updates.nome) {
+        authUpdates.user_metadata = { full_name: updates.nome };
+      }
+
+      if (Object.keys(authUpdates).length > 0) {
+        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+          userId,
+          authUpdates
+        );
+        if (authError) {
+          console.error('Falha ao atualizar os dados do usuário no Auth:', authError.message);
+          throw new Error(`Falha ao atualizar dados de autenticação: ${authError.message}`);
+        }
       }
     }
 
     // 2. Update the barber record in the database
+    // The 'updates' object contains all fields for the 'barbeiros' table
     const { data, error: dbError } = await supabaseAdmin
       .from('barbeiros')
       .update(updates)

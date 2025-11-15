@@ -300,7 +300,6 @@ export const api = {
 
   updateBarbeiro: async (id: string, userId: string | undefined, barbeiroData: any, photoFile?: File): Promise<Barbeiro> => {
     let finalUpdates = { ...barbeiroData };
-    delete finalUpdates.email;
     if (photoFile) {
       finalUpdates.foto_url = await uploadPhoto(photoFile, 'fotos-barbeiros');
     }

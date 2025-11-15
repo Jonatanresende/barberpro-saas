@@ -102,7 +102,7 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit }: BarberModalProps
             </div>
             <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">E-mail de Acesso</label>
-            <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={!!barberToEdit} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white disabled:opacity-50" />
+            <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
             </div>
             <div>
             <label htmlFor="telefone" className="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
