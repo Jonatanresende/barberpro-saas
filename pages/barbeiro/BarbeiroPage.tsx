@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { Agendamento, AppointmentStatus } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { DollarSignIcon, CalendarIcon, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { DollarSignIcon, XCircleIcon, ClockIcon } from '../../components/icons';
 
 const StatCard = ({ title, value, icon, colorClass }: { title: string, value: string, icon: React.ReactNode, colorClass: string }) => (
     <div className="bg-brand-gray p-4 rounded-lg border border-gray-700 flex items-center">
@@ -113,8 +113,8 @@ export const BarbeiroPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard title="Total Recebido" value={formatCurrency(dailyMetrics.received)} icon={<DollarSignIcon className="w-5 h-5 text-white"/>} colorClass="bg-green-500" />
-                <StatCard title="A Receber" value={formatCurrency(dailyMetrics.toReceive)} icon={<Clock className="w-5 h-5 text-white"/>} colorClass="bg-yellow-500" />
-                <StatCard title="Cancelado" value={formatCurrency(dailyMetrics.canceled)} icon={<XCircle className="w-5 h-5 text-white"/>} colorClass="bg-red-500" />
+                <StatCard title="A Receber" value={formatCurrency(dailyMetrics.toReceive)} icon={<ClockIcon className="w-5 h-5 text-white"/>} colorClass="bg-yellow-500" />
+                <StatCard title="Cancelado" value={formatCurrency(dailyMetrics.canceled)} icon={<XCircleIcon className="w-5 h-5 text-white"/>} colorClass="bg-red-500" />
             </div>
 
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
