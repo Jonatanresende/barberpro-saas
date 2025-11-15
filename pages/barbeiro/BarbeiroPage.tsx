@@ -90,14 +90,17 @@ export const BarbeiroPage = () => {
                                             {ag.status}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 flex items-center space-x-4">
-                                        {ag.status === AppointmentStatus.CONFIRMADO && (
-                                            <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CONCLUIDO)} className="text-green-400 hover:text-green-300 text-xs font-semibold">Finalizar</button>
-                                        )}
-                                        {(ag.status === AppointmentStatus.PENDENTE || ag.status === AppointmentStatus.CONFIRMADO) && (
+                                    <td className="px-6 py-4 flex items-center space-x-2">
+                                        {ag.status === AppointmentStatus.PENDENTE && (
                                             <>
-                                                <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CANCELADO)} className="text-yellow-400 hover:text-yellow-300 text-xs font-semibold">Cliente Faltou</button>
-                                                <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CANCELADO)} className="text-red-400 hover:text-red-300 text-xs font-semibold">Cancelar</button>
+                                                <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CONFIRMADO)} className="text-blue-400 hover:text-blue-300 text-xs font-semibold px-2 py-1 rounded bg-blue-500/10">Confirmar</button>
+                                                <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CANCELADO)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 rounded bg-red-500/10">Cancelar</button>
+                                            </>
+                                        )}
+                                        {ag.status === AppointmentStatus.CONFIRMADO && (
+                                            <>
+                                                <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CONCLUIDO)} className="text-green-400 hover:text-green-300 text-xs font-semibold px-2 py-1 rounded bg-green-500/10">Finalizar</button>
+                                                <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CANCELADO)} className="text-yellow-400 hover:text-yellow-300 text-xs font-semibold px-2 py-1 rounded bg-yellow-500/10">Cliente Faltou</button>
                                             </>
                                         )}
                                     </td>
