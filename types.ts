@@ -30,6 +30,7 @@ export interface Plano {
   features: string[];
   ativo: boolean;
   popular: boolean;
+  limite_barbeiros?: number;
 }
 
 export interface Barbearia {

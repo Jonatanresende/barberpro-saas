@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
-import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia } from '../../types';
+import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon } from '../../components/icons';
 import BarberModal from './BarberModal';
@@ -53,18 +53,26 @@ const BarbeariaDashboard = () => {
 const ManageBarbers = () => {
     const { user } = useAuth();
     const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
+    const [plano, setPlano] = useState<Plano | null>(null);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [barberToEdit, setBarberToEdit] = useState<Barbeiro | null>(null);
 
-    const fetchBarbers = useCallback(async () => {
+    const fetchBarbersAndPlan = useCallback(async () => {
         if (user?.barbeariaId) {
             try {
                 setLoading(true);
-                const data = await api.getBarbeirosByBarbearia(user.barbeariaId);
-                setBarbeiros(data);
+                const [barbersData, barbeariaData] = await Promise.all([
+                    api.getBarbeirosByBarbearia(user.barbeariaId),
+                    api.getBarbeariaById(user.barbeariaId)
+                ]);
+                setBarbeiros(barbersData);
+                if (barbeariaData) {
+                    const planData = await api.getPlanoByName(barbeariaData.plano);
+                    setPlano(planData);
+                }
             } catch (error) {
-                toast.error("Falha ao carregar barbeiros.");
+                toast.error("Falha ao carregar dados dos barbeiros e do plano.");
             } finally {
                 setLoading(false);
             }
@@ -72,10 +80,14 @@ const ManageBarbers = () => {
     }, [user]);
 
     useEffect(() => {
-        fetchBarbers();
-    }, [fetchBarbers]);
+        fetchBarbersAndPlan();
+    }, [fetchBarbersAndPlan]);
 
     const handleOpenModal = (barber: Barbeiro | null = null) => {
+        if (!barber && plano?.limite_barbeiros && barbeiros.filter(b => b.ativo).length >= plano.limite_barbeiros) {
+            toast.error('Você atingiu o limite de barbeiros do seu plano. Faça um upgrade para adicionar mais.');
+            return;
+        }
         setBarberToEdit(barber);
         setIsModalOpen(true);
     };
@@ -90,7 +102,7 @@ const ManageBarbers = () => {
         toast.promise(promise, {
             loading: 'Salvando barbeiro...',
             success: () => {
-                fetchBarbers();
+                fetchBarbersAndPlan();
                 setIsModalOpen(false);
                 return `Barbeiro ${barberToEdit ? 'atualizado' : 'adicionado'} com sucesso!`;
             },
@@ -103,7 +115,7 @@ const ManageBarbers = () => {
             toast.promise(api.deleteBarbeiro(barbeiro.id, barbeiro.user_id), {
                 loading: 'Removendo...',
                 success: () => {
-                    fetchBarbers();
+                    fetchBarbersAndPlan();
                     return 'Barbeiro removido com sucesso!';
                 },
                 error: (err) => `Falha ao remover: ${err.message}`,

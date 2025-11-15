@@ -14,14 +14,52 @@ serve(async (req) => {
   try {
     const { barberData, password, photoUrl } = await req.json()
 
-    if (!barberData.email || !password) {
-        throw new Error('E-mail e senha são obrigatórios para criar um barbeiro.');
+    if (!barberData.email || !password || !barberData.barbearia_id) {
+        throw new Error('Dados essenciais (e-mail, senha, ID da barbearia) estão faltando.');
     }
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
+
+    // --- VALIDAÇÃO DO LIMITE DE BARBEIROS ---
+    // 1. Buscar o plano da barbearia
+    const { data: barbearia, error: barbeariaError } = await supabaseAdmin
+      .from('barbearias')
+      .select('plano')
+      .eq('id', barberData.barbearia_id)
+      .single();
+    
+    if (barbeariaError) throw new Error(`Barbearia não encontrada: ${barbeariaError.message}`);
+
+    // 2. Buscar os detalhes do plano
+    const { data: plano, error: planoError } = await supabaseAdmin
+      .from('planos')
+      .select('limite_barbeiros')
+      .eq('nome', barbearia.plano)
+      .single();
+
+    if (planoError) throw new Error(`Plano "${barbearia.plano}" não encontrado: ${planoError.message}`);
+
+    // 3. Se o plano tiver um limite, verificar
+    if (plano.limite_barbeiros) {
+      const { count, error: countError } = await supabaseAdmin
+        .from('barbeiros')
+        .select('*', { count: 'exact', head: true })
+        .eq('barbearia_id', barberData.barbearia_id)
+        .eq('ativo', true);
+
+      if (countError) throw new Error(`Erro ao contar barbeiros: ${countError.message}`);
+
+      if (count !== null && count >= plano.limite_barbeiros) {
+        return new Response(JSON.stringify({ error: 'Você atingiu o limite de barbeiros do seu plano. Faça um upgrade para adicionar mais.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403, // Forbidden
+        });
+      }
+    }
+    // --- FIM DA VALIDAÇÃO ---
 
     // 1. Create the user in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({

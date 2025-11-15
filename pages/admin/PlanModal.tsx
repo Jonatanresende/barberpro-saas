@@ -12,6 +12,7 @@ const PlanModal = ({ isOpen, onClose, onSave, planToEdit }: PlanModalProps) => {
   const [nome, setNome] = useState('');
   const [preco, setPreco] = useState('');
   const [features, setFeatures] = useState('');
+  const [limiteBarbeiros, setLimiteBarbeiros] = useState('');
   const [ativo, setAtivo] = useState(true);
   const [popular, setPopular] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -21,6 +22,7 @@ const PlanModal = ({ isOpen, onClose, onSave, planToEdit }: PlanModalProps) => {
       setNome(planToEdit.nome || '');
       setPreco(String(planToEdit.preco || ''));
       setFeatures(planToEdit.features?.join('\n') || '');
+      setLimiteBarbeiros(String(planToEdit.limite_barbeiros || ''));
       setAtivo(planToEdit.ativo !== undefined ? planToEdit.ativo : true);
       setPopular(planToEdit.popular || false);
     } else {
@@ -28,6 +30,7 @@ const PlanModal = ({ isOpen, onClose, onSave, planToEdit }: PlanModalProps) => {
       setNome('');
       setPreco('');
       setFeatures('');
+      setLimiteBarbeiros('');
       setAtivo(true);
       setPopular(false);
     }
@@ -40,6 +43,7 @@ const PlanModal = ({ isOpen, onClose, onSave, planToEdit }: PlanModalProps) => {
       nome,
       preco: parseFloat(preco),
       features: features.split('\n').filter(f => f.trim() !== ''),
+      limite_barbeiros: parseInt(limiteBarbeiros, 10) || null,
       ativo,
       popular,
     };
@@ -56,6 +60,10 @@ const PlanModal = ({ isOpen, onClose, onSave, planToEdit }: PlanModalProps) => {
       <div>
         <label htmlFor="preco" className="block text-sm font-medium text-gray-300 mb-1">Preço (ex: 39.90)</label>
         <input type="number" step="0.01" id="preco" value={preco} onChange={e => setPreco(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+      </div>
+      <div>
+        <label htmlFor="limiteBarbeiros" className="block text-sm font-medium text-gray-300 mb-1">Limite de Barbeiros (deixe em branco para ilimitado)</label>
+        <input type="number" id="limiteBarbeiros" value={limiteBarbeiros} onChange={e => setLimiteBarbeiros(e.target.value)} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
       </div>
       <div>
         <label htmlFor="features" className="block text-sm font-medium text-gray-300 mb-1">Funcionalidades (uma por linha)</label>
