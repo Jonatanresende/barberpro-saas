@@ -63,11 +63,17 @@ const PublicProfilePage = () => {
                 <section className="relative h-[60vh] flex items-center justify-center text-center bg-cover bg-center" style={{ backgroundImage: `url(${barbearia.hero_image_url || defaultHeroImage})` }}>
                     <div className="absolute inset-0 bg-black/60"></div>
                     <div className="relative z-10 flex flex-col items-center p-4">
-                        <img src={barbearia.foto_url} alt={`Logo ${barbearia.nome}`} className="w-40 h-40 rounded-full object-cover border-4 border-brand-gold mb-4" />
+                        {barbearia.foto_url ? (
+                            <img src={barbearia.foto_url} alt={`Logo ${barbearia.nome}`} className="w-40 h-40 rounded-full object-cover border-4 border-brand-gold mb-4" />
+                        ) : (
+                            <div className="w-40 h-40 rounded-full border-4 border-brand-gold mb-4 bg-brand-gray flex items-center justify-center">
+                                <ScissorsIcon className="w-20 h-20 text-brand-gold" />
+                            </div>
+                        )}
                         <h1 className="text-4xl md:text-5xl font-bold">{barbearia.nome}</h1>
                         <p className="text-brand-gold mt-1">{barbearia.hero_title}</p>
                         <p className="mt-4 max-w-md">{barbearia.hero_subtitle}</p>
-                        <Link to={`/${slug}/agendamento`} className="mt-6 bg-orange-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2">
+                        <Link to={`/${slug}/agendamento`} className="mt-6 bg-brand-gold text-brand-dark font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-colors flex items-center gap-2">
                             <CalendarIcon className="w-5 h-5" />
                             AGENDAR HORÁRIO
                         </Link>
@@ -78,19 +84,19 @@ const PublicProfilePage = () => {
                 <section className="py-16 bg-cover bg-center" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/brick-wall.png')" }}>
                     <div className="container mx-auto px-4 text-center">
                         <h2 className="text-4xl font-bold mb-2">{barbearia.services_title}</h2>
-                        <div className="w-24 h-1 bg-orange-500 mx-auto mb-12"></div>
+                        <div className="w-24 h-1 bg-brand-gold mx-auto mb-12"></div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                             {servicos.map(servico => (
                                 <div key={servico.id} className="relative group overflow-hidden rounded-lg">
                                     <img src={servico.imagem_url || 'https://images.unsplash.com/photo-1622288432453-531452789e54?q=80&w=1974&auto=format&fit=crop'} alt={servico.nome} className="w-full h-60 object-cover transform group-hover:scale-110 transition-transform duration-300" />
                                     <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
-                                        <ScissorsIcon className="w-10 h-10 text-orange-500 mb-2" />
+                                        <ScissorsIcon className="w-10 h-10 text-brand-gold mb-2" />
                                         <h3 className="text-2xl font-semibold">{servico.nome}</h3>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        <Link to={`/${slug}/agendamento`} className="mt-12 inline-block bg-orange-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-orange-600 transition-colors">
+                        <Link to={`/${slug}/agendamento`} className="mt-12 inline-block bg-brand-gold text-brand-dark font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-colors">
                             Agende seu horário →
                         </Link>
                     </div>
