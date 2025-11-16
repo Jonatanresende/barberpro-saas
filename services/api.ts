@@ -104,6 +104,23 @@ export const api = {
     return data;
   },
 
+  getPlanoByName: async (nome: string): Promise<Plano | null> => {
+    const { data, error } = await supabase
+      .from('planos')
+      .select('*')
+      .eq('nome', nome)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') { // no rows found
+        console.warn(`Plano com nome "${nome}" não encontrado.`);
+        return null;
+      }
+      throw new Error(error.message);
+    }
+    return data;
+  },
+
   createPlano: async (planoData: Omit<Plano, 'id'>): Promise<Plano> => {
     const { data, error } = await supabase
       .from('planos')
