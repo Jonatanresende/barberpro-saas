@@ -34,23 +34,25 @@ serve(async (req) => {
 
     // --- Fetch all necessary data in parallel ---
     const [
+      { data: barbeariaData, error: barbeariaError },
       { data: servicos, error: servicosError },
       { data: agendamentos, error: agendamentosError },
-      { count: barbeirosCount, error: barbeirosError },
+      { data: barbeiros, error: barbeirosError },
     ] = await Promise.all([
+      supabase.from('barbearias').select('comissao_padrao').eq('id', barbeariaId).single(),
       supabase.from('servicos').select('id, preco').eq('barbearia_id', barbeariaId),
-      supabase.from('agendamentos').select('servico_id, data, status, cliente_id').eq('barbearia_id', barbeariaId),
-      supabase.from('barbeiros').select('*', { count: 'exact', head: true }).eq('barbearia_id', barbeariaId),
+      supabase.from('agendamentos').select('servico_id, data, status, cliente_id, barbeiro_id').eq('barbearia_id', barbeariaId),
+      supabase.from('barbeiros').select('id, nome').eq('barbearia_id', barbeariaId),
     ]);
 
+    if (barbeariaError) throw barbeariaError;
     if (servicosError) throw servicosError;
     if (agendamentosError) throw agendamentosError;
     if (barbeirosError) throw barbeirosError;
 
     // --- Process Data ---
     const servicePriceMap = new Map(servicos.map(s => [s.id, s.preco]));
-    const completedAppointments = agendamentos.filter(a => a.status === 'concluído');
-
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayISO = new Date().toISOString().split('T')[0];
@@ -62,20 +64,31 @@ serve(async (req) => {
     let rendaDiaria = 0;
     let rendaSemanal = 0;
     let rendaMensal = 0;
+    
+    const comissaoPercentual = (barbeariaData.comissao_padrao || 0) / 100;
+    const comissoesPorBarbeiro: { [key: string]: { nome: string, valor: number } } = {};
+    barbeiros.forEach(b => {
+        comissoesPorBarbeiro[b.id] = { nome: b.nome, valor: 0 };
+    });
 
-    for (const ag of completedAppointments) {
-      // Supabase date is YYYY-MM-DD, need to add time part for correct Date object parsing
+    const completedAppointmentsThisMonth = agendamentos.filter(a => {
+        const appointmentDate = new Date(`${a.data}T00:00:00`);
+        return a.status === 'concluído' && appointmentDate >= startOfMonth;
+    });
+
+    for (const ag of agendamentos) {
       const appointmentDate = new Date(`${ag.data}T00:00:00`);
       const price = servicePriceMap.get(ag.servico_id) || 0;
 
-      if (appointmentDate.getTime() === today.getTime()) {
-        rendaDiaria += price;
-      }
-      if (appointmentDate >= startOfWeek) {
-        rendaSemanal += price;
-      }
-      if (appointmentDate >= startOfMonth) {
-        rendaMensal += price;
+      if (ag.status === 'concluído') {
+        if (appointmentDate.getTime() === today.getTime()) rendaDiaria += price;
+        if (appointmentDate >= startOfWeek) rendaSemanal += price;
+        if (appointmentDate >= startOfMonth) {
+            rendaMensal += price;
+            if (comissoesPorBarbeiro[ag.barbeiro_id]) {
+                comissoesPorBarbeiro[ag.barbeiro_id].valor += price * comissaoPercentual;
+            }
+        }
       }
     }
 
@@ -88,8 +101,9 @@ serve(async (req) => {
       rendaSemanal,
       rendaMensal,
       totalAgendamentosHoje,
-      totalBarbeiros: barbeirosCount ?? 0,
+      totalBarbeiros: barbeiros.length,
       totalClientes: uniqueClients.size,
+      comissoes: Object.values(comissoesPorBarbeiro),
     };
 
     return new Response(JSON.stringify(response), {

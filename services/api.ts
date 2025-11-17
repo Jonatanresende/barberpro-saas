@@ -405,7 +405,18 @@ export const api = {
     return data;
   },
 
-  // BARBEIRO - Agendamentos
+  // BARBEIRO - Dashboard & Agendamentos
+  getBarberDashboardData: async (barbeiroId: string) => {
+    const { data, error } = await supabase.functions.invoke('get-barber-dashboard', {
+      body: { barbeiroId },
+    });
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
+    }
+    return data;
+  },
+
   getAgendamentosByBarbeiro: async (barbeiroId: string): Promise<Agendamento[]> => {
     const { data, error } = await supabase
       .from('agendamentos')

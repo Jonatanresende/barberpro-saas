@@ -39,13 +39,36 @@ const BarbeariaDashboard = () => {
     const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <StatCard title="Renda de Hoje" value={formatCurrency(stats.rendaDiaria)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
-            <StatCard title="Renda da Semana" value={formatCurrency(stats.rendaSemanal)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
-            <StatCard title="Renda do Mês" value={formatCurrency(stats.rendaMensal)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
-            <StatCard title="Agendamentos Hoje" value={stats.totalAgendamentosHoje} icon={<CalendarIcon className="w-6 h-6 text-brand-gold" />} />
-            <StatCard title="Total de Barbeiros" value={stats.totalBarbeiros} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
-            <StatCard title="Total de Clientes" value={stats.totalClientes} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
+        <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <StatCard title="Renda de Hoje" value={formatCurrency(stats.rendaDiaria)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Renda da Semana" value={formatCurrency(stats.rendaSemanal)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Renda do Mês" value={formatCurrency(stats.rendaMensal)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Agendamentos Hoje" value={stats.totalAgendamentosHoje} icon={<CalendarIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Total de Barbeiros" value={stats.totalBarbeiros} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Total de Clientes" value={stats.totalClientes} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
+            </div>
+            <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
+                <h3 className="text-lg font-semibold text-white mb-4">Comissões do Mês (A Pagar)</h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-gray-300">
+                        <thead className="bg-brand-gray text-xs uppercase">
+                            <tr>
+                                <th className="px-6 py-3">Barbeiro</th>
+                                <th className="px-6 py-3">Valor da Comissão</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {stats.comissoes && stats.comissoes.map((c: any, index: number) => (
+                                <tr key={index} className="border-b border-brand-gray hover:bg-brand-gray">
+                                    <td className="px-6 py-4 font-medium text-white">{c.nome}</td>
+                                    <td className="px-6 py-4 font-semibold text-brand-gold">{formatCurrency(c.valor)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };
@@ -476,6 +499,7 @@ const Settings = () => {
             operating_days: barbearia.operating_days,
             start_time: barbearia.start_time,
             end_time: barbearia.end_time,
+            comissao_padrao: barbearia.comissao_padrao,
         };
 
         setIsSaving(true);
@@ -514,6 +538,10 @@ const Settings = () => {
                         <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-l-md border border-r-0 border-gray-600">barberpro.app/</span>
                         <input type="text" id="link_personalizado" name="link_personalizado" value={barbearia.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-r-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                     </div>
+                </div>
+                <div>
+                    <label htmlFor="comissao_padrao" className="block text-sm font-medium text-gray-300 mb-2">Comissão Padrão (%)</label>
+                    <input type="number" id="comissao_padrao" name="comissao_padrao" value={barbearia.comissao_padrao || ''} onChange={handleInputChange} placeholder="Ex: 50" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
                 <div>
                     <label htmlFor="instagram_url" className="block text-sm font-medium text-gray-300 mb-2">URL do Instagram</label>

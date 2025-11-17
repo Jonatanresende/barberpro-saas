@@ -57,6 +57,7 @@ export interface Barbearia {
   operating_days?: number[]; // 0=Dom, 1=Seg, etc.
   start_time?: string; // "HH:MM"
   end_time?: string; // "HH:MM"
+  comissao_padrao?: number;
 }
 
 export interface Barbeiro {
