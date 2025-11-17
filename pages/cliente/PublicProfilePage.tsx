@@ -44,6 +44,9 @@ const PublicProfilePage = () => {
     }
 
     const defaultHeroImage = 'https://images.unsplash.com/photo-1585749425332-9b175015e5d0?q=80&w=2070&auto=format&fit=crop';
+    
+    // Lógica para colunas dinâmicas na grade de serviços
+    const servicesGridClass = servicos.length > 4 ? 'lg:grid-cols-3' : 'lg:grid-cols-4';
 
     return (
         <>
@@ -85,11 +88,11 @@ const PublicProfilePage = () => {
                     <div className="container mx-auto px-4 text-center">
                         <h2 className="text-4xl font-bold mb-2">{barbearia.services_title}</h2>
                         <div className="w-24 h-1 bg-brand-gold mx-auto mb-12"></div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                        <div className={`inline-grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${servicesGridClass} gap-8`}>
                             {servicos.map(servico => (
                                 <div key={servico.id} className="relative group overflow-hidden rounded-lg">
-                                    <img src={servico.imagem_url || 'https://images.unsplash.com/photo-1622288432453-531452789e54?q=80&w=1974&auto=format&fit=crop'} alt={servico.nome} className="w-full h-60 object-cover transform group-hover:scale-110 transition-transform duration-300" />
-                                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
+                                    <img src={servico.imagem_url || 'https://images.unsplash.com/photo-16222888432453-531452789e54?q=80&w=1974&auto=format&fit=crop'} alt={servico.nome} className="w-full h-60 object-cover transform group-hover:scale-110 transition-transform duration-300" />
+                                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-center p-2">
                                         <ScissorsIcon className="w-10 h-10 text-brand-gold mb-2" />
                                         <h3 className="text-2xl font-semibold">{servico.nome}</h3>
                                     </div>
