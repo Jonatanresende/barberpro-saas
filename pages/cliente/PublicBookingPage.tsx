@@ -176,22 +176,23 @@ const PublicBookingPage = () => {
                         <section>
                             <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Barbeiro</h3>
                             <div className="flex space-x-4 overflow-x-auto pb-2">
-                                {barbeiros.map(b => {
-                                    const availability = selectedDate ? getBarberAvailabilityForDate(b.id, selectedDate) : null;
-                                    const isAvailable = availability ? availability.disponivel : true; // Default to available if no specific rule is set
+                                {barbeiros.map(barbeiro => {
+                                    const availabilityRecord = selectedDate ? getBarberAvailabilityForDate(barbeiro.id, selectedDate) : null;
+                                    // A barber is available if there's no specific record, or if the record explicitly says they are available.
+                                    const isAvailable = availabilityRecord ? availabilityRecord.disponivel === true : true;
                                     
                                     const handleBarberClick = () => {
                                         if (isAvailable) {
-                                            setSelectedBarbeiro(b);
+                                            setSelectedBarbeiro(barbeiro);
                                         } else {
-                                            toast.error(`${b.nome} não está disponível na data selecionada.`);
+                                            toast.error(`${barbeiro.nome} não está disponível na data selecionada.`);
                                         }
                                     };
 
                                     return (
-                                        <button key={b.id} type="button" onClick={handleBarberClick} className={`flex-shrink-0 p-3 rounded-lg text-center border-2 transition ${selectedBarbeiro?.id === b.id ? 'border-brand-gold bg-brand-gray' : 'border-gray-600 bg-brand-dark'} ${!isAvailable ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-500'}`}>
-                                            <img src={b.foto_url} alt={b.nome} className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"/>
-                                            <p className="font-semibold text-sm">{b.nome}</p>
+                                        <button key={barbeiro.id} type="button" onClick={handleBarberClick} className={`flex-shrink-0 p-3 rounded-lg text-center border-2 transition ${selectedBarbeiro?.id === barbeiro.id ? 'border-brand-gold bg-brand-gray' : 'border-gray-600 bg-brand-dark'} ${!isAvailable ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-500'}`}>
+                                            <img src={barbeiro.foto_url} alt={barbeiro.nome} className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"/>
+                                            <p className="font-semibold text-sm">{barbeiro.nome}</p>
                                         </button>
                                     );
                                 })}
