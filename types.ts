@@ -105,3 +105,12 @@ export interface Agendamento {
     preco: number;
   };
 }
+
+export interface BarbeiroDisponibilidade {
+  id?: string;
+  barbeiro_id: string;
+  data: string; // YYYY-MM-DD
+  hora_inicio: string | null; // HH:MM
+  hora_fim: string | null; // HH:MM
+  disponivel: boolean;
+}

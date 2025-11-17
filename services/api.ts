@@ -1,5 +1,5 @@
 import { supabase } from '../src/integrations/supabase/client';
-import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus, Cliente } from '../types';
+import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus, Cliente, BarbeiroDisponibilidade } from '../types';
 
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
@@ -427,6 +427,30 @@ export const api = {
     return data;
   },
 
+  // BARBEIRO - Disponibilidade
+  getBarbeiroDisponibilidade: async (barbeiroId: string, year: number, month: number): Promise<BarbeiroDisponibilidade[]> => {
+    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('barbeiro_disponibilidade')
+      .select('*')
+      .eq('barbeiro_id', barbeiroId)
+      .gte('data', startDate)
+      .lte('data', endDate);
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  setBarbeiroDisponibilidade: async (disponibilidadeData: BarbeiroDisponibilidade): Promise<BarbeiroDisponibilidade> => {
+    const { data, error } = await supabase
+      .from('barbeiro_disponibilidade')
+      .upsert(disponibilidadeData, { onConflict: 'barbeiro_id, data' })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   // PUBLIC/CLIENTE
   getBarbeariaBySlug: async (slug: string): Promise<Barbearia | null> => {
     const { data, error } = await supabase
@@ -442,19 +466,29 @@ export const api = {
     return data && data.length > 0 ? data[0] : null;
   },
 
-  getAgendamentosByMonth: async (barbeariaId: string, year: number, month: number): Promise<Pick<Agendamento, 'data' | 'hora' | 'barbeiro_id'>[]> => {
+  getBookingDataForMonth: async (barbeariaId: string, year: number, month: number) => {
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
 
-    const { data, error } = await supabase
-      .from('agendamentos')
-      .select('data, hora, barbeiro_id')
-      .eq('barbearia_id', barbeariaId)
-      .gte('data', startDate)
-      .lte('data', endDate);
+    const [agendamentos, disponibilidades] = await Promise.all([
+      supabase
+        .from('agendamentos')
+        .select('data, hora, barbeiro_id')
+        .eq('barbearia_id', barbeariaId)
+        .gte('data', startDate)
+        .lte('data', endDate),
+      supabase
+        .from('barbeiro_disponibilidade')
+        .select('*')
+        .in('barbeiro_id', (await supabase.from('barbeiros').select('id').eq('barbearia_id', barbeariaId)).data?.map(b => b.id) || [])
+        .gte('data', startDate)
+        .lte('data', endDate)
+    ]);
       
-    if (error) throw new Error(error.message);
-    return data;
+    if (agendamentos.error) throw new Error(agendamentos.error.message);
+    if (disponibilidades.error) throw new Error(disponibilidades.error.message);
+
+    return { agendamentos: agendamentos.data, disponibilidades: disponibilidades.data };
   },
 
   createAgendamento: async (agendamentoData: Partial<Agendamento>): Promise<Agendamento> => {

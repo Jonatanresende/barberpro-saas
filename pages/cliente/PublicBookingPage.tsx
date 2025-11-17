@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
-import { Barbearia, Barbeiro, Servico, AppointmentStatus, Agendamento } from '../../types';
+import { Barbearia, Barbeiro, Servico, AppointmentStatus, Agendamento, BarbeiroDisponibilidade } from '../../types';
 import Calendar from '../../components/booking/Calendar';
 import TimeSlots from '../../components/booking/TimeSlots';
 
@@ -15,6 +15,7 @@ const PublicBookingPage = () => {
     const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
     const [servicos, setServicos] = useState<Servico[]>([]);
     const [agendamentosDoMes, setAgendamentosDoMes] = useState<Pick<Agendamento, 'data' | 'hora' | 'barbeiro_id'>[]>([]);
+    const [disponibilidadesDoMes, setDisponibilidadesDoMes] = useState<BarbeiroDisponibilidade[]>([]);
 
     // Form state
     const [step, setStep] = useState(1);
@@ -56,32 +57,42 @@ const PublicBookingPage = () => {
 
     useEffect(() => {
         if (barbearia) {
-            api.getAgendamentosByMonth(barbearia.id, currentMonth.getFullYear(), currentMonth.getMonth())
-                .then(setAgendamentosDoMes)
+            api.getBookingDataForMonth(barbearia.id, currentMonth.getFullYear(), currentMonth.getMonth())
+                .then(({ agendamentos, disponibilidades }) => {
+                    setAgendamentosDoMes(agendamentos);
+                    setDisponibilidadesDoMes(disponibilidades);
+                })
                 .catch(() => toast.error("Erro ao buscar horários do mês."));
         }
     }, [currentMonth, barbearia]);
 
+    const getBarberAvailabilityForDate = (barbeiroId: string, date: Date) => {
+        const dateString = date.toISOString().split('T')[0];
+        return disponibilidadesDoMes.find(d => d.barbeiro_id === barbeiroId && d.data === dateString);
+    };
+
     const availableTimes = useMemo(() => {
-        if (!barbearia?.start_time || !barbearia?.end_time) return [];
+        if (!barbearia || !selectedDate) return [];
+
+        const availability = selectedBarbeiro ? getBarberAvailabilityForDate(selectedBarbeiro.id, selectedDate) : null;
         
+        const startTime = availability?.hora_inicio || barbearia.start_time || '09:00';
+        const endTime = availability?.hora_fim || barbearia.end_time || '18:00';
+
         const times = [];
-        const [startHour, startMinute] = barbearia.start_time.split(':').map(Number);
-        const [endHour, endMinute] = barbearia.end_time.split(':').map(Number);
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
         let currentTime = new Date();
         currentTime.setHours(startHour, startMinute, 0, 0);
-        let endTime = new Date();
-        endTime.setHours(endHour, endMinute, 0, 0);
+        let endDateTime = new Date();
+        endDateTime.setHours(endHour, endMinute, 0, 0);
 
-        while (currentTime < endTime) {
+        while (currentTime < endDateTime) {
             times.push(currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
             currentTime.setMinutes(currentTime.getMinutes() + 30);
         }
 
-        if (!selectedDate) return times;
-
         const isToday = selectedDate.toDateString() === new Date().toDateString();
-
         if (isToday) {
             const now = new Date();
             return times.filter(time => {
@@ -93,39 +104,15 @@ const PublicBookingPage = () => {
         }
 
         return times;
-    }, [barbearia, selectedDate]);
+    }, [barbearia, selectedDate, selectedBarbeiro, disponibilidadesDoMes]);
 
     const bookedTimes = useMemo(() => {
         if (!selectedBarbeiro || !selectedDate) return [];
         const dateString = selectedDate.toISOString().split('T')[0];
         return agendamentosDoMes
             .filter(ag => ag.barbeiro_id === selectedBarbeiro.id && ag.data === dateString)
-            .map(ag => ag.hora.slice(0, 5)); // Correctly format time to HH:MM
+            .map(ag => ag.hora.slice(0, 5));
     }, [agendamentosDoMes, selectedBarbeiro, selectedDate]);
-
-    const fullyBookedDays = useMemo(() => {
-        const activeBarbers = barbeiros.filter(b => b.ativo);
-        if (activeBarbers.length === 0) return [];
-
-        const appointmentsByDay = agendamentosDoMes.reduce((acc, ag) => {
-            (acc[ag.data] = acc[ag.data] || []).push(ag);
-            return acc;
-        }, {} as Record<string, typeof agendamentosDoMes>);
-
-        const fullyBooked: string[] = [];
-        for (const date in appointmentsByDay) {
-            const appointmentsForDay = appointmentsByDay[date];
-            const bookedBarbersCount = activeBarbers.filter(barber => {
-                const barberAppointments = appointmentsForDay.filter(ag => ag.barbeiro_id === barber.id);
-                return barberAppointments.length >= availableTimes.length;
-            }).length;
-
-            if (bookedBarbersCount === activeBarbers.length) {
-                fullyBooked.push(date);
-            }
-        }
-        return fullyBooked;
-    }, [agendamentosDoMes, barbeiros, availableTimes]);
 
     const handleNext = () => setStep(s => s + 1);
     const handleBack = () => setStep(s => s - 1);
@@ -189,12 +176,25 @@ const PublicBookingPage = () => {
                         <section>
                             <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Barbeiro</h3>
                             <div className="flex space-x-4 overflow-x-auto pb-2">
-                                {barbeiros.map(b => (
-                                    <button key={b.id} type="button" onClick={() => setSelectedBarbeiro(b)} className={`flex-shrink-0 p-3 rounded-lg text-center border-2 transition ${selectedBarbeiro?.id === b.id ? 'border-brand-gold bg-brand-gray' : 'border-gray-600 bg-brand-dark hover:border-gray-500'}`}>
-                                        <img src={b.foto_url} alt={b.nome} className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"/>
-                                        <p className="font-semibold text-sm">{b.nome}</p>
-                                    </button>
-                                ))}
+                                {barbeiros.map(b => {
+                                    const availability = selectedDate ? getBarberAvailabilityForDate(b.id, selectedDate) : null;
+                                    const isAvailable = availability ? availability.disponivel : true; // Default to available if no specific rule is set
+                                    
+                                    const handleBarberClick = () => {
+                                        if (isAvailable) {
+                                            setSelectedBarbeiro(b);
+                                        } else {
+                                            toast.error(`${b.nome} não está disponível na data selecionada.`);
+                                        }
+                                    };
+
+                                    return (
+                                        <button key={b.id} type="button" onClick={handleBarberClick} className={`flex-shrink-0 p-3 rounded-lg text-center border-2 transition ${selectedBarbeiro?.id === b.id ? 'border-brand-gold bg-brand-gray' : 'border-gray-600 bg-brand-dark'} ${!isAvailable ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-500'}`}>
+                                            <img src={b.foto_url} alt={b.nome} className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"/>
+                                            <p className="font-semibold text-sm">{b.nome}</p>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </section>
                     </div>
@@ -208,7 +208,7 @@ const PublicBookingPage = () => {
                                 selectedDate={selectedDate} 
                                 onDateSelect={(date) => { setSelectedDate(date); setSelectedTime(null); }} 
                                 operatingDays={barbearia.operating_days || []}
-                                fullyBookedDays={fullyBookedDays}
+                                fullyBookedDays={[]}
                                 onMonthChange={setCurrentMonth}
                                 currentMonth={currentMonth}
                             />
