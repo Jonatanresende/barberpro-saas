@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/src/context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { UserRole } from '../types';
 import { ScissorsIcon } from '../components/icons';
