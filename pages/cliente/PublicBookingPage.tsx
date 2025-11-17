@@ -114,6 +114,13 @@ const PublicBookingPage = () => {
             .map(ag => ag.hora.slice(0, 5));
     }, [agendamentosDoMes, selectedBarbeiro, selectedDate]);
 
+    const barberDaysOff = useMemo(() => {
+        if (!selectedBarbeiro) return [];
+        return disponibilidadesDoMes
+            .filter(d => d.barbeiro_id === selectedBarbeiro.id && d.disponivel === false)
+            .map(d => d.data);
+    }, [disponibilidadesDoMes, selectedBarbeiro]);
+
     const handleNext = () => setStep(s => s + 1);
     const handleBack = () => setStep(s => s - 1);
 
@@ -209,7 +216,7 @@ const PublicBookingPage = () => {
                                 selectedDate={selectedDate} 
                                 onDateSelect={(date) => { setSelectedDate(date); setSelectedTime(null); }} 
                                 operatingDays={barbearia.operating_days || []}
-                                fullyBookedDays={[]}
+                                fullyBookedDays={barberDaysOff}
                                 onMonthChange={setCurrentMonth}
                                 currentMonth={currentMonth}
                             />
