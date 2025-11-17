@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { supabase } from '@/src/integrations/supabase/client';
+import { supabase } from '../../src/integrations/supabase/client';
 
 interface PasswordChangeModalProps {
   onClose: () => void;

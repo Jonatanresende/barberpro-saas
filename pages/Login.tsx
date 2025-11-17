@@ -6,7 +6,7 @@ import { UserRole } from '../types';
 import { ScissorsIcon } from '../components/icons';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '@/src/integrations/supabase/client';
+import { supabase } from '../src/integrations/supabase/client';
 
 const Login = () => {
   const { user, loading } = useAuth();

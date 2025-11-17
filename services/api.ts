@@ -1,4 +1,4 @@
-import { supabase } from '@/src/integrations/supabase/client';
+import { supabase } from '../src/integrations/supabase/client';
 import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus, Cliente } from '../types';
 
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
