@@ -560,7 +560,8 @@ const Settings = () => {
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray max-w-3xl space-y-4">
                 <h2 className="text-xl font-semibold text-white mb-4">Personalização da Página Pública</h2>
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Imagem de Fundo (Banner)</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Imagem de Fundo (Banner)</label>
+                    <p className="text-xs text-gray-500 mb-2">Recomendado: 1920x1080 pixels</p>
                     <div className="flex items-center space-x-4">
                         <div className="w-32 h-20 bg-brand-gray rounded-md flex items-center justify-center overflow-hidden border-2 border-gray-600">
                             {heroPreview ? <img src={heroPreview} alt="Banner Preview" className="w-full h-full object-cover" /> : <span className="text-gray-400 text-xs">Banner</span>}
