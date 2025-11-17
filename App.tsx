@@ -31,6 +31,9 @@ const AppRoutes = () => {
     if (user.role === UserRole.BARBEARIA && user.link_personalizado) {
       return `/${user.link_personalizado}/dashboard`;
     }
+    if (user.role === UserRole.BARBEIRO) {
+      return '/barbeiro/appointments';
+    }
     return `/${user.role}/dashboard`;
   };
 
@@ -61,7 +64,9 @@ const AppRoutes = () => {
             </ProtectedRoute>
         }>
             <Route path="dashboard" element={<BarbeiroPage />} />
-            <Route index element={<Navigate to="dashboard" />} />
+            <Route path="appointments" element={<BarbeiroPage />} />
+            <Route path="availability" element={<BarbeiroPage />} />
+            <Route index element={<Navigate to="appointments" />} />
         </Route>
 
         {/* Dynamic Slug-based Routes (Public and Protected Barbearia) */}

@@ -25,7 +25,7 @@ const Login = () => {
           redirectPath = `/${user.link_personalizado}/dashboard`;
           break;
         case UserRole.BARBEIRO:
-          redirectPath = '/barbeiro/dashboard';
+          redirectPath = '/barbeiro/appointments';
           break;
         case UserRole.CLIENTE:
           redirectPath = '/';
