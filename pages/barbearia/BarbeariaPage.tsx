@@ -48,6 +48,27 @@ const BarbeariaDashboard = () => {
                 <StatCard title="Total de Barbeiros" value={stats.totalBarbeiros} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
                 <StatCard title="Total de Clientes" value={stats.totalClientes} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
             </div>
+
+            <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
+                <h3 className="text-lg font-semibold text-white mb-4">Status dos Barbeiros (Hoje)</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {stats.barberStatusList && stats.barberStatusList.map((barber: any) => (
+                        <div key={barber.id} className="bg-brand-gray p-4 rounded-lg flex items-center space-x-4">
+                            <img src={barber.foto_url || 'https://via.placeholder.com/48'} alt={barber.nome} className="w-12 h-12 rounded-full object-cover" />
+                            <div>
+                                <p className="font-semibold text-white">{barber.nome}</p>
+                                <div className="flex items-center text-xs mt-1">
+                                    <span className={`w-2 h-2 rounded-full mr-2 ${barber.isAvailableToday ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                    <span className={barber.isAvailableToday ? 'text-green-400' : 'text-red-400'}>
+                                        {barber.isAvailableToday ? 'Disponível' : 'Folga'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
                 <h3 className="text-lg font-semibold text-white mb-4">Comissões do Mês (A Pagar)</h3>
                 <div className="overflow-x-auto">

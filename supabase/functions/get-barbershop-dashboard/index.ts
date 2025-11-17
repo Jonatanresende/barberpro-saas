@@ -31,6 +31,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+    
+    const todayISO = new Date().toISOString().split('T')[0];
 
     // --- Fetch all necessary data in parallel ---
     const [
@@ -38,24 +40,26 @@ serve(async (req) => {
       { data: servicos, error: servicosError },
       { data: agendamentos, error: agendamentosError },
       { data: barbeiros, error: barbeirosError },
+      { data: disponibilidadesHoje, error: dispError }
     ] = await Promise.all([
       supabase.from('barbearias').select('comissao_padrao').eq('id', barbeariaId).single(),
       supabase.from('servicos').select('id, preco').eq('barbearia_id', barbeariaId),
       supabase.from('agendamentos').select('servico_id, data, status, cliente_id, barbeiro_id').eq('barbearia_id', barbeariaId),
-      supabase.from('barbeiros').select('id, nome').eq('barbearia_id', barbeariaId),
+      supabase.from('barbeiros').select('id, nome, foto_url').eq('barbearia_id', barbeariaId),
+      supabase.from('barbeiro_disponibilidade').select('barbeiro_id, disponivel').eq('data', todayISO)
     ]);
 
     if (barbeariaError) throw barbeariaError;
     if (servicosError) throw servicosError;
     if (agendamentosError) throw agendamentosError;
     if (barbeirosError) throw barbeirosError;
+    if (dispError) throw dispError;
 
     // --- Process Data ---
     const servicePriceMap = new Map(servicos.map(s => [s.id, s.preco]));
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayISO = new Date().toISOString().split('T')[0];
 
     const startOfWeek = getStartOfWeek(new Date());
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -69,11 +73,6 @@ serve(async (req) => {
     const comissoesPorBarbeiro: { [key: string]: { nome: string, valor: number } } = {};
     barbeiros.forEach(b => {
         comissoesPorBarbeiro[b.id] = { nome: b.nome, valor: 0 };
-    });
-
-    const completedAppointmentsThisMonth = agendamentos.filter(a => {
-        const appointmentDate = new Date(`${a.data}T00:00:00`);
-        return a.status === 'concluído' && appointmentDate >= startOfMonth;
     });
 
     for (const ag of agendamentos) {
@@ -95,6 +94,15 @@ serve(async (req) => {
     const totalAgendamentosHoje = agendamentos.filter(a => a.data === todayISO).length;
     const uniqueClients = new Set(agendamentos.map(a => a.cliente_id));
 
+    // --- Process Barber Status for Today ---
+    const availabilityMap = new Map(disponibilidadesHoje.map(d => [d.barbeiro_id, d.disponivel]));
+    const barberStatusList = barbeiros.map(barbeiro => ({
+        id: barbeiro.id,
+        nome: barbeiro.nome,
+        foto_url: barbeiro.foto_url,
+        isAvailableToday: availabilityMap.has(barbeiro.id) ? availabilityMap.get(barbeiro.id) : true,
+    }));
+
     // --- Final Response ---
     const response = {
       rendaDiaria,
@@ -104,6 +112,7 @@ serve(async (req) => {
       totalBarbeiros: barbeiros.length,
       totalClientes: uniqueClients.size,
       comissoes: Object.values(comissoesPorBarbeiro),
+      barberStatusList,
     };
 
     return new Response(JSON.stringify(response), {
