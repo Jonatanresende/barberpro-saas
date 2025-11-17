@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { Agendamento, AppointmentStatus } from '../../types';
-import { useAuth } from '@/src/context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { DollarSignIcon, XCircleIcon, ClockIcon, ScissorsIcon } from '../../components/icons';
 
 const StatCard = ({ title, value, icon, colorClass }: { title: string, value: string | number, icon: React.ReactNode, colorClass: string }) => (

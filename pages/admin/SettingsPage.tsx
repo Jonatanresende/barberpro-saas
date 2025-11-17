@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { useAuth } from '@/src/context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/src/integrations/supabase/client';
 import { api } from '../../services/api';
 import { User } from '../../types';

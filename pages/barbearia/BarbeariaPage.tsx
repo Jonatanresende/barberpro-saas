@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano } from '../../types';
-import { useAuth } from '@/src/context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon } from '../../components/icons';
 import BarberModal from './BarberModal';
 import ServiceModal from './ServiceModal';

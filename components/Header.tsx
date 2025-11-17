@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/src/context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { LogoutIcon, MenuIcon } from './icons';
 import { UserRole } from '../types';
 

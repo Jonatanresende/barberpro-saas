@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useAuth } from '@/src/context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { UserRole } from '../types';
