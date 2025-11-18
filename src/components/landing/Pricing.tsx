@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { api } from '../../services/api';
-import { Plano } from '../../types';
+import { api } from '../../../services/api';
+import { Plano } from '../../../types';
 import AnimatedSection from './AnimatedSection';
 
 const Pricing = () => {
