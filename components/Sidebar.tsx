@@ -56,9 +56,9 @@ const Sidebar = ({ role, slug, isSidebarOpen }: SidebarProps) => {
 
   return (
     <aside className={`bg-brand-dark text-white fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-200 ease-in-out z-30 w-64 border-r border-brand-gray flex flex-col`}>
-      <div className="flex items-center justify-center h-20 border-b border-brand-gray px-4">
+      <div className="flex items-center justify-center border-b border-brand-gray px-4 py-6">
         {settings?.logo_url ? (
-          <img src={settings.logo_url} alt="Logo" className="h-10 max-w-full" />
+          <img src={settings.logo_url} alt="Logo" className="w-48 h-auto" />
         ) : (
           <>
             <ScissorsIcon className="h-8 w-8 text-brand-gold" />

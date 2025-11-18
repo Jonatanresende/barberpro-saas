@@ -52,7 +52,7 @@ const Login = () => {
       <div className="w-full max-w-md bg-brand-gray rounded-xl shadow-lg p-8 border border-gray-700">
         <div className="text-center mb-8">
           {settings?.logo_url ? (
-            <img src={settings.logo_url} alt="Logo" className="h-16 max-w-xs mx-auto mb-4" />
+            <img src={settings.logo_url} alt="Logo" className="w-64 h-auto mx-auto mb-4" />
           ) : (
             <div className="inline-block p-4 bg-brand-dark rounded-full mb-4">
               <ScissorsIcon className="h-10 w-10 text-brand-gold" />
