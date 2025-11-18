@@ -7,7 +7,7 @@ import { ScissorsIcon } from '../components/icons';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../src/integrations/supabase/client';
-import logo from '/logo-Barbeironahora.png';
+import logo from '../logo-Barbeironahora.png';
 
 const Login = () => {
   const { user, loading } = useAuth();
