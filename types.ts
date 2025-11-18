@@ -43,6 +43,7 @@ export interface Barbearia {
   link_personalizado: string;
   endereco: string;
   documento?: string;
+  telefone?: string;
   criado_em: string;
   status: 'ativa' | 'inativa';
   foto_url?: string;

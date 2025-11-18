@@ -29,6 +29,7 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
   const [nome, setNome] = useState('');
   const [donoNome, setDonoNome] = useState('');
   const [donoEmail, setDonoEmail] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [password, setPassword] = useState('');
   const [endereco, setEndereco] = useState('');
   const [documento, setDocumento] = useState('');
@@ -62,6 +63,7 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
       setNome(barbeariaToEdit.nome);
       setDonoNome(barbeariaToEdit.dono_nome || '');
       setDonoEmail(barbeariaToEdit.dono_email);
+      setTelefone(barbeariaToEdit.telefone || '');
       setEndereco(barbeariaToEdit.endereco || '');
       setDocumento(barbeariaToEdit.documento || '');
       setPlano(barbeariaToEdit.plano);
@@ -74,6 +76,7 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
       setNome('');
       setDonoNome('');
       setDonoEmail('');
+      setTelefone('');
       setPassword('');
       setEndereco('');
       setDocumento('');
@@ -107,6 +110,7 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
       nome,
       dono_nome: donoNome,
       dono_email: donoEmail,
+      telefone,
       endereco,
       documento,
       plano,
@@ -139,6 +143,7 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
         <InputField id="nome" label="Nome da Barbearia" value={nome} onChange={e => setNome(e.target.value)} required />
         <InputField id="dono_nome" label="Nome do Proprietário" value={donoNome} onChange={e => setDonoNome(e.target.value)} required />
         <InputField id="dono_email" label="E-mail do Proprietário" value={donoEmail} onChange={e => setDonoEmail(e.target.value)} type="email" required />
+        <InputField id="telefone" label="Telefone para Contato" value={telefone} onChange={e => setTelefone(e.target.value)} type="tel" required />
         {!barbeariaToEdit && (
           <InputField id="password" label="Senha de Acesso" value={password} onChange={e => setPassword(e.target.value)} type="password" required />
         )}
