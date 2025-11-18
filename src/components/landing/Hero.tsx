@@ -1,0 +1,55 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+
+const Hero = () => {
+  return (
+    <section className="relative bg-brand-dark py-20 md:py-32 overflow-hidden">
+      <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
+      <div className="container mx-auto px-6 text-center relative z-10">
+        <motion.h1 
+          className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          Eleve a Gestão da Sua Barbearia a <span className="text-brand-gold">Outro Nível</span>
+        </motion.h1>
+        <motion.p 
+          className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          O sistema completo para agendamentos, clientes e finanças. Foque no seu talento, nós cuidamos do resto.
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Link 
+            to="/login" 
+            className="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block"
+          >
+            Iniciar Teste Grátis por 7 Dias
+          </Link>
+        </motion.div>
+        <motion.div 
+          className="mt-16"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.6, ease: 'easeOut' }}
+        >
+          <img 
+            src="https://placehold.co/1200x600/111111/D4AF37?text=Mockup+do+Dashboard" 
+            alt="Dashboard do BarberPro" 
+            className="rounded-xl shadow-2xl shadow-brand-gold/10 mx-auto"
+          />
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+export default Hero;

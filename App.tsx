@@ -14,6 +14,7 @@ import PublicBookingPage from './pages/cliente/PublicBookingPage';
 import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
 import PublicProfilePage from './pages/cliente/PublicProfilePage';
 import ToastProvider from './components/ToastProvider';
+import LandingPage from './pages/LandingPage';
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
@@ -25,24 +26,13 @@ const AppRoutes = () => {
       </div>
     );
   }
-  
-  const getHomeRoute = () => {
-    if (!user) return '/login';
-    if (user.role === UserRole.BARBEARIA && user.link_personalizado) {
-      return `/${user.link_personalizado}/dashboard`;
-    }
-    if (user.role === UserRole.BARBEIRO) {
-      return '/barbeiro/appointments';
-    }
-    return `/${user.role}/dashboard`;
-  };
 
   return (
      <Routes>
-        {/* Static Public Routes */}
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/booking-success" element={<BookingSuccessPage />} />
-        <Route path="/" element={<Navigate to={getHomeRoute()} replace />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={
