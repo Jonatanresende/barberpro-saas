@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../../../logo-Barbeironahora.png';
+import logo from '@/logo-Barbeironahora.png';
 
 const Header = () => {
   return (
