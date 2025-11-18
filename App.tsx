@@ -2,7 +2,7 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
-import Login from './pages/Login';
+import Login from './src/pages/Login';
 import NotFound from './pages/NotFound';
 import DashboardLayout from './components/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -14,7 +14,7 @@ import PublicBookingPage from './pages/cliente/PublicBookingPage';
 import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
 import PublicProfilePage from './pages/cliente/PublicProfilePage';
 import ToastProvider from './components/ToastProvider';
-import LandingPage from './pages/LandingPage';
+import LandingPage from './src/pages/LandingPage';
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
