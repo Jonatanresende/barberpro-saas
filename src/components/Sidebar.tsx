@@ -1,8 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { UserRole } from '../types';
-import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon, ActivityIcon } from './icons';
-import { useSettings } from '../context/SettingsContext';
+import { UserRole } from '../../types';
+import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon, ActivityIcon } from '../icons';
+import { useSettings } from '../../context/SettingsContext';
 
 interface SidebarProps {
   role: UserRole;
@@ -57,14 +57,7 @@ const Sidebar = ({ role, slug, isSidebarOpen }: SidebarProps) => {
   return (
     <aside className={`bg-brand-dark text-white fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-200 ease-in-out z-30 w-64 border-r border-brand-gray flex flex-col`}>
       <div className="flex items-center justify-center border-b border-brand-gray px-4 py-6">
-        {settings?.logo_url ? (
-          <img src={settings.logo_url} alt="Logo" className="w-48 h-auto" />
-        ) : (
-          <>
-            <ScissorsIcon className="h-8 w-8 text-brand-gold" />
-            <h1 className="text-2xl font-bold ml-2 text-white">{settings?.system_name || 'BarberPro'}</h1>
-          </>
-        )}
+        <img src="/logo-Barbeironahora.png" alt="Logo Barbeiro na Hora" className="w-40 h-auto" />
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navItems.map(item => <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />)}

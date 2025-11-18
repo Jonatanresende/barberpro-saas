@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { UserRole } from '../../types';
-import { ScissorsIcon } from '../../components/icons';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../integrations/supabase/client';
@@ -51,14 +50,7 @@ const Login = () => {
     <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-brand-gray rounded-xl shadow-lg p-8 border border-gray-700">
         <div className="text-center mb-8">
-          {settings?.logo_url ? (
-            <img src={settings.logo_url} alt="Logo" className="w-64 h-auto mx-auto mb-4" />
-          ) : (
-            <div className="inline-block p-4 bg-brand-dark rounded-full mb-4">
-              <ScissorsIcon className="h-10 w-10 text-brand-gold" />
-            </div>
-          )}
-          <h1 className="text-3xl font-bold text-white">{settings?.system_name || 'BarberPro SaaS'}</h1>
+          <img src="/logo-Barbeironahora.png" alt="Logo Barbeiro na Hora" className="w-64 h-auto mx-auto mb-4" />
           <p className="text-gray-400 mt-2">Acesse seu painel</p>
         </div>
         
