@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useSettings } from '../context/SettingsContext';
-import { UserRole } from '../types';
-import { ScissorsIcon } from '../components/icons';
+import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
+import { UserRole } from '../../types';
+import { ScissorsIcon } from '../../components/icons';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '../src/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 
 const Login = () => {
   const { user, loading } = useAuth();
