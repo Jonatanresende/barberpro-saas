@@ -11,10 +11,11 @@ import AdminPage from '@/pages/admin/AdminPage';
 import { BarbeariaPage } from '@/pages/barbearia/BarbeariaPage';
 import { BarbeiroPage } from '@/pages/barbeiro/BarbeiroPage';
 import PublicBookingPage from '@/pages/cliente/PublicBookingPage';
-import BookingSuccessPage from '@/pages/cliente/BookingSuccessPage';
+import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
 import PublicProfilePage from '@/pages/cliente/PublicProfilePage';
 import ToastProvider from '@/components/ToastProvider';
 import LandingPage from '@/pages/LandingPage';
+import TrialExpiredPage from '@/pages/TrialExpired';
 
 const AppRoutes = () => {
   return (
@@ -23,6 +24,7 @@ const AppRoutes = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/booking-success" element={<BookingSuccessPage />} />
+        <Route path="/trial-expired" element={<TrialExpiredPage />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={

@@ -38,18 +38,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
+    const metadata = effectiveUser.user_metadata || {};
     const baseUser: User = {
       id: effectiveUser.id,
       email: effectiveUser.email!,
-      role: effectiveUser.user_metadata.role as UserRole,
-      full_name: effectiveUser.user_metadata.full_name,
+      role: metadata.role as UserRole,
+      full_name: metadata.full_name,
     };
+
+    let trialStartedAt: string | undefined = metadata.trial_started_at;
+    let trialExpiresAt: string | undefined = metadata.trial_expires_at;
 
     // If the user is a barbershop owner, find their barbershop to get the ID and slug
     if (baseUser.role === UserRole.BARBEARIA) {
       const { data: barbearia, error } = await supabase
         .from('barbearias')
-        .select('id, nome, link_personalizado')
+        .select('id, nome, link_personalizado, trial_started_at, trial_expires_at')
         .eq('dono_id', effectiveUser.id)
         .single();
 
@@ -63,6 +67,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         baseUser.barbeariaId = barbearia.id;
         baseUser.barbeariaNome = barbearia.nome;
         baseUser.link_personalizado = barbearia.link_personalizado;
+        trialStartedAt = trialStartedAt || barbearia.trial_started_at || undefined;
+        trialExpiresAt = trialExpiresAt || barbearia.trial_expires_at || undefined;
       }
     } else if (baseUser.role === UserRole.BARBEIRO) {
       const { data: barbeiro, error } = await supabase
@@ -80,6 +86,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (barbeiro) {
         baseUser.barbeiroId = barbeiro.id;
       }
+    }
+
+    if (trialStartedAt) {
+      baseUser.trialStartedAt = trialStartedAt;
+    }
+    if (trialExpiresAt) {
+      baseUser.trialExpiresAt = trialExpiresAt;
+      baseUser.isTrialActive = new Date(trialExpiresAt) >= new Date();
     }
 
     setUser(baseUser);

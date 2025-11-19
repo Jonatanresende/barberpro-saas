@@ -24,6 +24,15 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  const trialExpired =
+    user.role === UserRole.BARBEARIA &&
+    user.trialExpiresAt &&
+    new Date(user.trialExpiresAt) < new Date();
+
+  if (trialExpired) {
+    return <Navigate to="/trial-expired" state={{ from: location }} replace />;
+  }
+
   if (!allowedRoles.includes(user.role)) {
     // Redirect to a relevant dashboard or an unauthorized page
     return <Navigate to="/login" replace />;

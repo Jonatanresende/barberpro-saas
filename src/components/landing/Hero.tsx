@@ -1,8 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 
-const Hero = () => {
+interface HeroProps {
+  onStartTrial: () => void;
+}
+
+const Hero = ({ onStartTrial }: HeroProps) => {
   return (
     <section className="relative bg-brand-dark py-20 md:py-32 overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
@@ -28,12 +31,13 @@ const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <Link 
-            to="/login" 
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={onStartTrial}
             className="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block"
           >
-            Iniciar Teste Grátis por 7 Dias
-          </Link>
+            Começar acesso gratuito
+          </motion.button>
         </motion.div>
         <motion.div 
           className="mt-16"

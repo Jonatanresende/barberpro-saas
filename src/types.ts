@@ -21,6 +21,9 @@ export interface User {
   barbeariaNome?: string;
   barbeiroId?: string;
   link_personalizado?: string; // For barbershop owners
+  trialStartedAt?: string;
+  trialExpiresAt?: string;
+  isTrialActive?: boolean;
 }
 
 export interface Plano {
@@ -59,6 +62,8 @@ export interface Barbearia {
   start_time?: string; // "HH:MM"
   end_time?: string; // "HH:MM"
   comissao_padrao?: number;
+  trial_started_at?: string;
+  trial_expires_at?: string;
 }
 
 export interface Barbeiro {
