@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useSettings } from '../../context/SettingsContext';
-import { UserRole } from '../../types';
+import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
+import { UserRole } from '@/types';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '../integrations/supabase/client';
-import logo from '@/logo-Barbeironahora.png';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const { user, loading } = useAuth();
@@ -21,7 +20,6 @@ const Login = () => {
           redirectPath = '/admin/dashboard';
           break;
         case UserRole.BARBEARIA:
-          // Redirect to the barbershop's dashboard
           redirectPath = `/${user.link_personalizado}/dashboard`;
           break;
         case UserRole.BARBEIRO:
@@ -44,14 +42,14 @@ const Login = () => {
   }
 
   if (user) {
-    return null; // Avoids flashing the login screen if already logged in
+    return null;
   }
 
   return (
     <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-brand-gray rounded-xl shadow-lg p-8 border border-gray-700">
         <div className="text-center mb-8">
-          <img src={logo} alt="Logo Barbeiro na Hora" className="w-64 h-auto mx-auto mb-4" />
+          <img src="/logo-Barbeironahora.png" alt="Logo Barbeiro na Hora" className="w-64 h-auto mx-auto mb-4" />
           <p className="text-gray-400 mt-2">Acesse seu painel</p>
         </div>
         
