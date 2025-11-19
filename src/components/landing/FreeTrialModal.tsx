@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Modal from '@/components/Modal';
 import { api } from '@/services/api';
@@ -19,6 +20,7 @@ const initialState = {
 const FreeTrialModal = ({ isOpen, onClose }: FreeTrialModalProps) => {
   const [formData, setFormData] = useState(initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -48,8 +50,9 @@ const FreeTrialModal = ({ isOpen, onClose }: FreeTrialModalProps) => {
         password,
         phone,
       });
-      toast.success('Conta criada! Verifique seu e-mail para acessar o painel.');
+      toast.success('Conta criada com sucesso! Redirecionando para o login...');
       handleClose();
+      navigate('/login');
     } catch (error: any) {
       toast.error(error.message || 'Não foi possível iniciar o teste.');
     } finally {
@@ -131,4 +134,3 @@ const FreeTrialModal = ({ isOpen, onClose }: FreeTrialModalProps) => {
 };
 
 export default FreeTrialModal;
-
