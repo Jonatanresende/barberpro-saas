@@ -451,10 +451,13 @@ const ManageAppointments = () => {
 const Settings = () => {
     const { user } = useAuth();
     const [barbearia, setBarbearia] = useState<Partial<Barbearia>>({ operating_days: [] });
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [heroFile, setHeroFile] = useState<File | null>(null);
     const [heroPreview, setHeroPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const logoFileInputRef = useRef<HTMLInputElement>(null);
     const heroFileInputRef = useRef<HTMLInputElement>(null);
 
     const daysOfWeek = [
@@ -470,6 +473,7 @@ const Settings = () => {
                 .then(data => {
                     setBarbearia(data);
                     setHeroPreview(data.hero_image_url || null);
+                    setLogoPreview(data.foto_url || null);
                 })
                 .catch(() => toast.error("Falha ao carregar dados da barbearia."))
                 .finally(() => setLoading(false));
@@ -489,6 +493,18 @@ const Settings = () => {
                 : [...currentDays, dayValue];
             return { ...prev, operating_days: newDays.sort() };
         });
+    };
+
+    const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setLogoFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -524,12 +540,14 @@ const Settings = () => {
         };
 
         setIsSaving(true);
-        toast.promise(api.updateBarbearia(user.barbeariaId, user.id, updates, undefined, heroFile || undefined), {
+        toast.promise(api.updateBarbearia(user.barbeariaId, user.id, updates, logoFile || undefined, heroFile || undefined), {
             loading: 'Salvando alterações...',
             success: (updatedBarbearia) => {
                 setIsSaving(false);
                 setHeroFile(null);
+                setLogoFile(null);
                 setHeroPreview(updatedBarbearia.hero_image_url || null);
+                setLogoPreview(updatedBarbearia.foto_url || null);
                 return 'Configurações salvas com sucesso!';
             },
             error: (err) => {
@@ -548,6 +566,22 @@ const Settings = () => {
                 <div>
                     <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-2">Nome da Barbearia</label>
                     <input type="text" id="nome" name="nome" value={barbearia.nome || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Logo da Barbearia</label>
+                    <div className="flex items-center space-x-4">
+                        <div className="w-20 h-20 bg-brand-gray rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-600">
+                            {logoPreview ? (
+                                <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-gray-400 text-xs">Logo</span>
+                            )}
+                        </div>
+                        <input type="file" id="logo-upload" ref={logoFileInputRef} onChange={handleLogoFileChange} accept="image/*" className="hidden" />
+                        <button type="button" onClick={() => logoFileInputRef.current?.click()} className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Fazer Upload
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label htmlFor="endereco" className="block text-sm font-medium text-gray-300 mb-2">Endereço</label>
