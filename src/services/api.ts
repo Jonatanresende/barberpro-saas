@@ -200,6 +200,17 @@ export const api = {
     return data as Barbearia;
   },
 
+  updateBarbershopPlan: async (barbeariaId: string, newPlanName: string): Promise<Barbearia> => {
+    const { data, error } = await supabase.functions.invoke('update-barbershop-plan', {
+      body: { barbeariaId, newPlanName },
+    });
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
+    }
+    return data as Barbearia;
+  },
+
   deleteBarbearia: async (id: string, dono_id: string): Promise<boolean> => {
     const { error, data } = await supabase.functions.invoke('delete-barbershop', {
       body: {

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
-import { Barbearia, Plano } from '@/types';
+import { Barbearia, Barbeiro, Plano } from '@/types';
 import toast from 'react-hot-toast';
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Partial<Barbearia>>({});
+  const [initialProfile, setInitialProfile] = useState<Partial<Barbearia>>({});
   const [availablePlans, setAvailablePlans] = useState<Plano[]>([]);
+  const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingPlan, setIsSavingPlan] = useState(false);
@@ -17,10 +19,13 @@ const ProfilePage = () => {
       setLoading(true);
       Promise.all([
         api.getBarbeariaById(user.barbeariaId),
-        api.getPlanos()
-      ]).then(([profileData, plansData]) => {
+        api.getPlanos(),
+        api.getBarbeirosByBarbearia(user.barbeariaId)
+      ]).then(([profileData, plansData, barbersData]) => {
         setProfile(profileData);
+        setInitialProfile(profileData);
         setAvailablePlans(plansData.filter(p => p.ativo));
+        setBarbeiros(barbersData);
       }).catch(() => {
         toast.error("Falha ao carregar dados do perfil e planos.");
       }).finally(() => {
@@ -58,12 +63,43 @@ const ProfilePage = () => {
   const handleSavePlan = async () => {
     if (!user?.barbeariaId || !user.id || !profile.plano) return;
 
+    const targetPlan = availablePlans.find(p => p.nome === profile.plano);
+    const currentPlan = availablePlans.find(p => p.nome === initialProfile.plano);
+    const activeBarberCount = barbeiros.filter(b => b.ativo).length;
+
+    if (!targetPlan || !currentPlan) {
+        toast.error("Não foi possível verificar os detalhes do plano.");
+        return;
+    }
+
+    // Verifica se é um downgrade que excede o limite
+    const isProblematicDowngrade = 
+        (targetPlan.limite_barbeiros !== null && activeBarberCount > targetPlan.limite_barbeiros) &&
+        (currentPlan.limite_barbeiros === null || targetPlan.limite_barbeiros < currentPlan.limite_barbeiros);
+
+    if (isProblematicDowngrade) {
+        const excessCount = activeBarberCount - targetPlan.limite_barbeiros!;
+        const confirmation = window.confirm(
+            `Atenção! Seu novo plano suporta apenas ${targetPlan.limite_barbeiros} barbeiros, mas você tem ${activeBarberCount} ativos. ` +
+            `Ao confirmar, ${excessCount} barbeiro(s) (os mais antigos) serão removidos permanentemente. Deseja continuar?`
+        );
+
+        if (!confirmation) {
+            setProfile(prev => ({ ...prev, plano: initialProfile.plano })); // Reverte a seleção
+            return;
+        }
+    }
+
     setIsSavingPlan(true);
     toast.promise(
-      api.updateBarbearia(user.barbeariaId, user.id, { plano: profile.plano }),
+      api.updateBarbershopPlan(user.barbeariaId, profile.plano),
       {
         loading: 'Atualizando plano...',
-        success: 'Plano atualizado com sucesso!',
+        success: (updatedBarbearia) => {
+          setProfile(updatedBarbearia);
+          setInitialProfile(updatedBarbearia);
+          return 'Plano atualizado com sucesso!';
+        },
         error: (err) => `Falha ao atualizar plano: ${err.message}`,
       }
     ).finally(() => setIsSavingPlan(false));
