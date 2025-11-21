@@ -104,9 +104,6 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
             
             {hasBarberPanelFeature && (
               <>
-                <div className="bg-brand-gray p-3 rounded-md border border-dashed border-brand-gold/50">
-                  <p className="text-xs text-yellow-300">Seu plano permite criar acessos individuais para barbeiros.</p>
-                </div>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">E-mail de Acesso</label>
                   <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required={hasBarberPanelFeature} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />

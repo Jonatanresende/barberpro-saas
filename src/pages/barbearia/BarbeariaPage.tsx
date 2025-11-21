@@ -185,8 +185,12 @@ const ManageBarbers = () => {
                 <div className="flex justify-between items-center mb-4">
                     <div>
                         <h2 className="text-xl font-semibold text-white">Gerenciar Barbeiros</h2>
-                        {!hasBarberPanelFeature && !loading && (
-                            <p className="text-xs text-yellow-400 mt-1">Seu plano não inclui acesso individual para barbeiros.</p>
+                        {!loading && (
+                            hasBarberPanelFeature ? (
+                                <p className="text-xs text-green-400 mt-1">Seu plano permite criar acessos individuais para barbeiros.</p>
+                            ) : (
+                                <p className="text-xs text-yellow-400 mt-1">Seu plano não inclui acesso individual para barbeiros.</p>
+                            )
                         )}
                     </div>
                     <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90">Adicionar Barbeiro</button>
