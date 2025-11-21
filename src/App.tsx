@@ -67,6 +67,7 @@ const AppRoutes = () => {
             <Route path="services" element={<BarbeariaPage />} />
             <Route path="appointments" element={<BarbeariaPage />} />
             <Route path="settings" element={<BarbeariaPage />} />
+            <Route path="profile" element={<BarbeariaPage />} />
           </Route>
         </Route>
 

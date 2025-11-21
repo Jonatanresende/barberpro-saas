@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon } from '@/components/icons';
 import BarberModal from '@/pages/barbearia/BarberModal';
 import ServiceModal from '@/pages/barbearia/ServiceModal';
+import ProfilePage from './ProfilePage';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center">
@@ -695,7 +696,7 @@ export const BarbeariaPage = () => {
     const determineActiveTab = () => {
         const pathParts = location.pathname.split('/');
         const lastPart = pathParts[pathParts.length - 1];
-        const validTabs = ['dashboard', 'appointments', 'barbers', 'services', 'settings'];
+        const validTabs = ['dashboard', 'appointments', 'barbers', 'services', 'settings', 'profile'];
         
         if (validTabs.includes(lastPart)) {
             return lastPart;
@@ -723,6 +724,7 @@ export const BarbeariaPage = () => {
             case 'services': return <ManageServices />;
             case 'appointments': return <ManageAppointments />;
             case 'settings': return <Settings />;
+            case 'profile': return <ProfilePage />;
             default: return <BarbeariaDashboard />;
         }
     };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { UserRole } from '@/types';
-import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon, ActivityIcon } from '@/components/icons';
+import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon, ActivityIcon, UserIcon } from '@/components/icons';
 import { useSettings } from '@/context/SettingsContext';
 import defaultLogo from '../assets/logo-Barbeironahora.png';
 
@@ -40,6 +40,7 @@ const getNavItems = (role: UserRole, slug?: string) => {
         { to: `/${slug}/appointments`, icon: <CalendarIcon className="w-5 h-5" />, label: "Agendamentos" },
         { to: `/${slug}/barbers`, icon: <ScissorsIcon className="w-5 h-5" />, label: "Barbeiros" },
         { to: `/${slug}/services`, icon: <ClipboardListIcon className="w-5 h-5" />, label: "Serviços" },
+        { to: `/${slug}/profile`, icon: <UserIcon className="w-5 h-5" />, label: "Meu Perfil" },
         { to: `/${slug}/settings`, icon: <SettingsIcon className="w-5 h-5" />, label: "Configurações" },
       ];
     case UserRole.BARBEIRO:
