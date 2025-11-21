@@ -34,7 +34,12 @@ const Pricing = () => {
         <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto">Escolha o plano ideal para o tamanho da sua barbearia e comece a crescer.</p>
         <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {planos.map(plano => (
-            <div key={plano.id} className={`bg-brand-gray p-8 rounded-lg border flex flex-col ${plano.popular ? 'border-2 border-brand-gold' : 'border-brand-gray/50'}`}>
+            <div key={plano.id} className={`bg-brand-gray p-8 rounded-lg border flex flex-col relative ${plano.popular ? 'border-2 border-brand-gold' : 'border-brand-gray/50'}`}>
+              {plano.popular && (
+                <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-brand-gold text-brand-dark px-3 py-1 text-sm font-bold rounded-full">
+                  Mais Escolhido
+                </div>
+              )}
               <h3 className="text-2xl font-bold text-brand-gold">{plano.nome}</h3>
               <p className="text-4xl font-extrabold my-4 text-white">R${plano.preco.toFixed(2)}<span className="text-base font-medium text-gray-400">/mês</span></p>
               <ul className="space-y-3 text-gray-300 text-left flex-grow mb-8">

@@ -128,6 +128,10 @@ const ManageBarbers = () => {
         fetchBarbersAndPlan();
     }, [fetchBarbersAndPlan]);
 
+    const hasBarberPanelFeature = useMemo(() => 
+        plano?.nome.toLowerCase() === 'profissional', 
+    [plano]);
+
     const handleOpenModal = (barber: Barbeiro | null = null) => {
         if (!barber && plano?.limite_barbeiros && barbeiros.filter(b => b.ativo).length >= plano.limite_barbeiros) {
             toast.error('Você atingiu o limite de barbeiros do seu plano. Faça um upgrade para adicionar mais.');
@@ -140,9 +144,16 @@ const ManageBarbers = () => {
     const handleSave = async (barberData: any, password?: string, photoFile?: File) => {
         if (!user?.barbeariaId) return;
         
-        const promise = barberToEdit
-            ? api.updateBarbeiro(barberToEdit.id, barberToEdit.user_id, barberData, photoFile)
-            : api.createBarbeiro(barberData, user.barbeariaId, password!, photoFile);
+        let promise;
+        if (barberToEdit) {
+            promise = api.updateBarbeiro(barberToEdit.id, barberToEdit.user_id, barberData, photoFile);
+        } else {
+            if (hasBarberPanelFeature) {
+                promise = api.createBarbeiro(barberData, user.barbeariaId, password!, photoFile);
+            } else {
+                promise = api.createBarbeiroWithoutAuth(barberData, user.barbeariaId, photoFile);
+            }
+        }
 
         toast.promise(promise, {
             loading: 'Salvando barbeiro...',
@@ -172,7 +183,12 @@ const ManageBarbers = () => {
         <>
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-white">Gerenciar Barbeiros</h2>
+                    <div>
+                        <h2 className="text-xl font-semibold text-white">Gerenciar Barbeiros</h2>
+                        {!hasBarberPanelFeature && !loading && (
+                            <p className="text-xs text-yellow-400 mt-1">Seu plano não inclui acesso individual para barbeiros.</p>
+                        )}
+                    </div>
                     <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90">Adicionar Barbeiro</button>
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
@@ -194,7 +210,7 @@ const ManageBarbers = () => {
                     </div>
                 )}
             </div>
-            <BarberModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} barberToEdit={barberToEdit} />
+            <BarberModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} barberToEdit={barberToEdit} hasBarberPanelFeature={hasBarberPanelFeature} />
         </>
     );
 };

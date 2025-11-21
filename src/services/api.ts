@@ -317,6 +317,17 @@ export const api = {
     return data as Barbeiro;
   },
 
+  createBarbeiroWithoutAuth: async (barberData: any, barbeariaId: string, photoFile?: File): Promise<Barbeiro> => {
+    const photoUrl = await uploadPhoto(photoFile!, 'fotos-barbeiros');
+    const { data, error } = await supabase
+      .from('barbeiros')
+      .insert([{ ...barberData, barbearia_id: barbeariaId, foto_url: photoUrl, user_id: null }])
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   updateBarbeiro: async (id: string, userId: string | undefined, barbeiroData: any, photoFile?: File): Promise<Barbeiro> => {
     let finalUpdates = { ...barbeiroData };
     if (photoFile) {
