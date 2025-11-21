@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from '@/assets/logo-Barbeironahora.png';
+import logo from '../../assets/logo-Barbeironahora.png';
 
 interface HeaderProps {
   onStartTrial: () => void;

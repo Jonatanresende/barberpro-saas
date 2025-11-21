@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { UserRole } from '@/types';
 import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon, ActivityIcon } from '@/components/icons';
 import { useSettings } from '@/context/SettingsContext';
-import logo from '@/assets/logo-Barbeironahora.png';
+import logo from '../assets/logo-Barbeironahora.png';
 
 interface SidebarProps {
   role: UserRole;
