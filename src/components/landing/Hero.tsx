@@ -28,7 +28,7 @@ const Hero = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <motion.a
-            href="/#pricing"
+            href="#pricing"
             whileTap={{ scale: 0.97 }}
             className="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block"
           >

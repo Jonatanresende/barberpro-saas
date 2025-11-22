@@ -13,7 +13,7 @@ const Guarantee = () => {
             Invista na ferramenta que vai organizar sua rotina, fidelizar seus clientes e aumentar seu faturamento. Uma decisão inteligente e sem burocracia.
           </p>
           <a 
-            href="/#pricing" 
+            href="#pricing" 
             className="bg-brand-gold text-brand-dark font-bold py-3 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block"
           >
             Ver Planos e Contratar

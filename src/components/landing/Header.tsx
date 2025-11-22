@@ -17,7 +17,7 @@ const Header = () => {
             Login
           </Link>
           <a
-            href="/#pricing"
+            href="#pricing"
             className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity"
           >
             Assinar Agora
