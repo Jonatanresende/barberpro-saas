@@ -25,12 +25,12 @@ serve(async (req) => {
   }
 
   try {
-    // --- CAMADA DE SEGURANÇA ---
-    // Verifica se o segredo do webhook foi enviado no cabeçalho
-    const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
+    // --- CAMADA DE SEGURANÇA ATUALIZADA ---
+    const expectedToken = 'mnhxo6jrjll'; // Seu token de verificação
     const authHeader = req.headers.get('Authorization');
-    if (!webhookSecret || authHeader !== `Bearer ${webhookSecret}`) {
-      return new Response(JSON.stringify({ error: 'Não autorizado.' }), {
+    
+    if (authHeader !== `Bearer ${expectedToken}`) {
+      return new Response(JSON.stringify({ error: 'Token de autenticação inválido.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
