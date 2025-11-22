@@ -2,6 +2,15 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const Hero = () => {
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    e.preventDefault();
+    const targetId = e.currentTarget.href.split('#')[1];
+    const targetElement = document.getElementById(targetId);
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <section className="relative bg-brand-dark py-20 md:py-32 overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
@@ -29,6 +38,7 @@ const Hero = () => {
         >
           <motion.a
             href="#pricing"
+            onClick={handleScroll}
             whileTap={{ scale: 0.97 }}
             className="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block"
           >

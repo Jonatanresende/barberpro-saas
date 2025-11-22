@@ -6,6 +6,15 @@ import defaultLogo from '../../assets/logo-Barbeironahora.png';
 const Header = () => {
   const { settings } = useSettings();
 
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    e.preventDefault();
+    const targetId = e.currentTarget.href.split('#')[1];
+    const targetElement = document.getElementById(targetId);
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <header className="bg-brand-dark/80 backdrop-blur-sm sticky top-0 z-50 border-b border-brand-gray/50">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
@@ -18,6 +27,7 @@ const Header = () => {
           </Link>
           <a
             href="#pricing"
+            onClick={handleScroll}
             className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity"
           >
             Assinar Agora

@@ -3,6 +3,15 @@ import { ShieldCheck } from 'lucide-react';
 import AnimatedSection from './AnimatedSection';
 
 const Guarantee = () => {
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    e.preventDefault();
+    const targetId = e.currentTarget.href.split('#')[1];
+    const targetElement = document.getElementById(targetId);
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <AnimatedSection className="py-20 bg-brand-dark">
       <div className="container mx-auto px-6">
@@ -14,6 +23,7 @@ const Guarantee = () => {
           </p>
           <a 
             href="#pricing" 
+            onClick={handleScroll}
             className="bg-brand-gold text-brand-dark font-bold py-3 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block"
           >
             Ver Planos e Contratar
