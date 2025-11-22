@@ -536,21 +536,4 @@ export const api = {
     if (error) throw new Error(data?.error || error.message);
     return data.success;
   },
-
-  startFreeTrialSignup: async (payload: {
-    fullName: string;
-    barbershopName: string;
-    email: string;
-    password: string;
-    phone: string;
-  }) => {
-    const { data, error } = await supabase.functions.invoke('start-trial-signup', {
-      body: payload,
-    });
-    if (error) {
-      const errorMessage = data?.error || error.message;
-      throw new Error(errorMessage);
-    }
-    return data;
-  },
 };

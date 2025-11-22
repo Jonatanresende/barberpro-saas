@@ -1,11 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-interface HeroProps {
-  onStartTrial: () => void;
-}
-
-const Hero = ({ onStartTrial }: HeroProps) => {
+const Hero = () => {
   return (
     <section className="relative bg-brand-dark py-20 md:py-32 overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
@@ -31,13 +27,13 @@ const Hero = ({ onStartTrial }: HeroProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <motion.button
+          <motion.a
+            href="/#pricing"
             whileTap={{ scale: 0.97 }}
-            onClick={onStartTrial}
             className="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block"
           >
-            Iniciar Teste Grátis (Não Pede Cartão)
-          </motion.button>
+            Ver Planos e Contratar
+          </motion.a>
         </motion.div>
         <motion.div 
           className="mt-16"

@@ -3,11 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSettings } from '@/context/SettingsContext';
 import defaultLogo from '../../assets/logo-Barbeironahora.png';
 
-interface HeaderProps {
-  onStartTrial: () => void;
-}
-
-const Header = ({ onStartTrial }: HeaderProps) => {
+const Header = () => {
   const { settings } = useSettings();
 
   return (
@@ -20,12 +16,12 @@ const Header = ({ onStartTrial }: HeaderProps) => {
           <Link to="/login" className="text-gray-300 hover:text-brand-gold transition-colors font-medium">
             Login
           </Link>
-          <button
-            onClick={onStartTrial}
+          <a
+            href="/#pricing"
             className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity"
           >
-            Começar acesso gratuito
-          </button>
+            Assinar Agora
+          </a>
         </div>
       </div>
     </header>

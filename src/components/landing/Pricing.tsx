@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { api } from '@/services/api';
 import { Plano } from '@/types';
 import AnimatedSection from './AnimatedSection';
+
+const planLinks: { [key: string]: string } = {
+  'Básico': 'https://pay.kiwify.com.br/7LfyG5Z',
+  'Profissional': 'https://pay.kiwify.com.br/ot4k2Am',
+};
 
 const Pricing = () => {
   const [planos, setPlanos] = useState<Plano[]>([]);
@@ -13,7 +17,8 @@ const Pricing = () => {
     const fetchPlanos = async () => {
       try {
         const data = await api.getPlanos();
-        setPlanos(data.filter(p => p.ativo));
+        // Filtrando para garantir que o plano 'trial' não seja exibido
+        setPlanos(data.filter(p => p.ativo && p.nome.toLowerCase() !== 'trial'));
       } catch (error) {
         console.error("Failed to fetch plans:", error);
       } finally {
@@ -31,8 +36,8 @@ const Pricing = () => {
     <AnimatedSection id="pricing" className="py-20 bg-brand-dark">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold text-white mb-4">Um Plano Para Cada Tamanho de Barbearia</h2>
-        <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto">Comece com um teste gratuito de 7 dias em qualquer plano. Sem compromisso.</p>
-        <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto items-stretch">
+        <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto">Escolha o plano ideal e comece a transformar sua gestão hoje mesmo.</p>
+        <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
           {planos.map(plano => (
             <div key={plano.id} className={`bg-brand-gray p-8 rounded-lg border flex flex-col relative ${plano.popular ? 'border-2 border-brand-gold' : 'border-brand-gray/50'}`}>
               {plano.popular && (
@@ -50,9 +55,14 @@ const Pricing = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/login" className="mt-auto bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded-lg w-full hover:opacity-90 transition-opacity">
-                Começar Teste Grátis
-              </Link>
+              <a 
+                href={planLinks[plano.nome] || '#'} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="mt-auto bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded-lg w-full hover:opacity-90 transition-opacity"
+              >
+                Contratar Agora
+              </a>
             </div>
           ))}
         </div>
