@@ -70,7 +70,11 @@ serve(async (req) => {
 
       // Remover contas de usuário do Supabase Auth
       for (const userId of userIdsToRemove) {
-        await supabaseAdmin.auth.admin.deleteUser(userId);
+        const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+        if (deleteUserError) {
+            // Loga o erro mas não interrompe o processo. O registro do barbeiro já foi removido.
+            console.error(`Falha ao excluir usuário ${userId} durante o downgrade de plano:`, deleteUserError.message);
+        }
       }
     }
 
