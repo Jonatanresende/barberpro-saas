@@ -25,6 +25,15 @@ serve(async (req) => {
   }
 
   try {
+    // --- LOG PARA DEBUG ---
+    // Pega o corpo da requisição como texto para podermos logar
+    const requestBodyText = await req.text();
+    console.log("--- INÍCIO DO PAYLOAD DO WEBHOOK ---");
+    console.log(requestBodyText);
+    console.log("--- FIM DO PAYLOAD DO WEBHOOK ---");
+    // Converte o texto para JSON para usar no resto da função
+    const body = JSON.parse(requestBodyText);
+
     // --- CAMADA DE SEGURANÇA ATUALIZADA ---
     const expectedToken = 'mnhxo6jrjll'; // Seu token de verificação
     const authHeader = req.headers.get('Authorization');
@@ -37,7 +46,6 @@ serve(async (req) => {
     }
 
     // --- PROCESSAMENTO DOS DADOS ---
-    // A estrutura de dados pode ser ajustada quando você me enviar o formato final
     const { 
       email, 
       documento, 
@@ -45,7 +53,7 @@ serve(async (req) => {
       nomeBarbearia, 
       planoNome, 
       telefone 
-    } = await req.json();
+    } = body;
 
     if (!email || !documento || !nomeCompleto || !nomeBarbearia || !planoNome) {
       throw new Error('Dados obrigatórios ausentes no corpo da requisição.');
