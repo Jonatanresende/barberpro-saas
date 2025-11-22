@@ -1,5 +1,6 @@
 import React from 'react';
 import AnimatedSection from './AnimatedSection';
+import dashboardPreview from '@/assets/dashboard-preview.png';
 
 const Demo = () => {
   return (
@@ -9,7 +10,7 @@ const Demo = () => {
         <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">Uma interface limpa e intuitiva, projetada para a velocidade da sua rotina.</p>
         <div className="bg-brand-dark p-4 rounded-xl shadow-lg border border-brand-gray/50">
           <img 
-            src="https://placehold.co/1200x700/111111/D4AF37?text=Demonstração+do+Sistema" 
+            src={dashboardPreview} 
             alt="Demonstração do Barbeiro na Hora" 
             className="rounded-lg w-full"
           />

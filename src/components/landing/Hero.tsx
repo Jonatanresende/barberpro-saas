@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import dashboardPreview from '@/assets/dashboard-preview.png';
 
 const Hero = () => {
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -52,7 +53,7 @@ const Hero = () => {
           transition={{ duration: 0.7, delay: 0.6, ease: 'easeOut' }}
         >
           <img 
-            src="/dashboard-preview.png" 
+            src={dashboardPreview} 
             alt="Dashboard do Barbeiro na Hora" 
             className="rounded-xl shadow-2xl shadow-brand-gold/10 mx-auto"
           />
