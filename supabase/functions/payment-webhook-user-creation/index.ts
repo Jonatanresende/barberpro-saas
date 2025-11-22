@@ -41,7 +41,7 @@ serve(async (req) => {
     }
 
     // Extraindo dados da estrutura aninhada do JSON
-    const { Product, Customer, nomeBarbearia } = body; // Assumindo que nomeBarbearia virá no corpo principal
+    const { Product, Customer } = body;
 
     if (!Product || !Customer) {
       throw new Error('Estrutura do JSON inválida. Faltando "Product" ou "Customer".');
@@ -57,9 +57,8 @@ serve(async (req) => {
       throw new Error('Dados obrigatórios (email, CPF, nome, plano) ausentes no payload.');
     }
     
-    if (!nomeBarbearia) {
-        throw new Error('O campo "nomeBarbearia" é obrigatório e não foi encontrado no payload.');
-    }
+    // GERAÇÃO DE NOME TEMPORÁRIO - O usuário irá alterar isso no primeiro login.
+    const nomeBarbearia = `Barbearia de ${nomeCompleto}`;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -86,7 +85,10 @@ serve(async (req) => {
     if (!createUserData.user) throw new Error('Criação do usuário falhou silenciosamente.');
     const userId = createUserData.user.id;
 
-    const slug = generateSlug(nomeBarbearia);
+    // Gera um slug único usando o nome temporário e parte do ID do usuário
+    const slugBase = generateSlug(nomeBarbearia);
+    const slug = `${slugBase}-${userId.substring(0, 8)}`;
+
     const { data: barbearia, error: dbError } = await supabaseAdmin
       .from('barbearias')
       .insert([{ 
