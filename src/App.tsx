@@ -1,7 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/context/AuthContext';
-import { SettingsProvider } from '@/context/SettingsContext';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from '@/pages/Login';
 import NotFound from '@/pages/NotFound';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -87,14 +85,10 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <HashRouter>
-      <AuthProvider>
-        <SettingsProvider>
-          <ToastProvider />
-          <AppRoutes />
-        </SettingsProvider>
-      </AuthProvider>
-    </HashRouter>
+    <>
+      <ToastProvider />
+      <AppRoutes />
+    </>
   );
 };
 
