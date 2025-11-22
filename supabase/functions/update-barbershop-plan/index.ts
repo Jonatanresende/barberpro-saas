@@ -46,7 +46,6 @@ serve(async (req) => {
     if (newLimit !== null && activeBarberCount > newLimit) {
       const excessCount = activeBarberCount - newLimit;
       
-      // Encontrar os barbeiros mais antigos para remover
       const { data: barbersToRemove, error: fetchError } = await supabaseAdmin
         .from('barbeiros')
         .select('id, user_id')
@@ -57,23 +56,22 @@ serve(async (req) => {
 
       if (fetchError) throw new Error('Erro ao buscar barbeiros para remover.');
 
-      const barberIdsToRemove = barbersToRemove.map(b => b.id);
-      const userIdsToRemove = barbersToRemove.map(b => b.user_id).filter(Boolean); // Filtra IDs nulos
+      if (barbersToRemove && barbersToRemove.length > 0) {
+        const barberIdsToRemove = barbersToRemove.map(b => b.id);
+        const userIdsToRemove = barbersToRemove.map(b => b.user_id).filter(Boolean);
 
-      // Remover registros da tabela 'barbeiros'
-      const { error: deleteBarbersError } = await supabaseAdmin
-        .from('barbeiros')
-        .delete()
-        .in('id', barberIdsToRemove);
-      
-      if (deleteBarbersError) throw new Error('Erro ao remover registros de barbeiros.');
+        const { error: deleteBarbersError } = await supabaseAdmin
+          .from('barbeiros')
+          .delete()
+          .in('id', barberIdsToRemove);
+        
+        if (deleteBarbersError) throw new Error('Erro ao remover registros de barbeiros.');
 
-      // Remover contas de usuário do Supabase Auth
-      for (const userId of userIdsToRemove) {
-        const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-        if (deleteUserError) {
-            // Loga o erro mas não interrompe o processo. O registro do barbeiro já foi removido.
-            console.error(`Falha ao excluir usuário ${userId} durante o downgrade de plano:`, deleteUserError.message);
+        for (const userId of userIdsToRemove) {
+          const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+          if (deleteUserError) {
+              console.error(`Falha ao excluir usuário ${userId} durante o downgrade de plano:`, deleteUserError.message);
+          }
         }
       }
     }
