@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { api } from '@/services/api';
 import { slugify } from '@/utils/slugify';
-import defaultLogo from '../../assets/logo-Barbeironahora.png';
+import defaultLogo from '@/assets/logo-Barbeironahora.png';
 
 const InitialSetupPage = () => {
   const { user } = useAuth();

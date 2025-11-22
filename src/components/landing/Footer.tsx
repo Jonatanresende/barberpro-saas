@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSettings } from '@/context/SettingsContext';
-import defaultLogo from '../../assets/logo-Barbeironahora.png';
+import defaultLogo from '@/assets/logo-Barbeironahora.png';
 
 const Footer = () => {
   const { settings } = useSettings();

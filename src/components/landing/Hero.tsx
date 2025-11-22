@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import dashboardPreview from '../../assets/dashboard-preview.png';
+import dashboardPreview from '@/assets/dashboard-preview.png';
 
 const Hero = () => {
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
