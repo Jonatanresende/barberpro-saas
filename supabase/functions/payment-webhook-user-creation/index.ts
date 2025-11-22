@@ -19,23 +19,18 @@ const generateSlug = (name: string) => {
 };
 
 serve(async (req) => {
-  // Lida com a requisição de pre-flight do CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // --- LOG PARA DEBUG ---
-    // Pega o corpo da requisição como texto para podermos logar
     const requestBodyText = await req.text();
     console.log("--- INÍCIO DO PAYLOAD DO WEBHOOK ---");
     console.log(requestBodyText);
     console.log("--- FIM DO PAYLOAD DO WEBHOOK ---");
-    // Converte o texto para JSON para usar no resto da função
     const body = JSON.parse(requestBodyText);
 
-    // --- CAMADA DE SEGURANÇA ATUALIZADA ---
-    const expectedToken = 'mnhxo6jrjll'; // Seu token de verificação
+    const expectedToken = 'mnhxo6jrjll';
     const authHeader = req.headers.get('Authorization');
     
     if (authHeader !== `Bearer ${expectedToken}`) {
@@ -45,18 +40,25 @@ serve(async (req) => {
       });
     }
 
-    // --- PROCESSAMENTO DOS DADOS ---
-    const { 
-      email, 
-      documento, 
-      nomeCompleto, 
-      nomeBarbearia, 
-      planoNome, 
-      telefone 
-    } = body;
+    // Extraindo dados da estrutura aninhada do JSON
+    const { Product, Customer, nomeBarbearia } = body; // Assumindo que nomeBarbearia virá no corpo principal
 
-    if (!email || !documento || !nomeCompleto || !nomeBarbearia || !planoNome) {
-      throw new Error('Dados obrigatórios ausentes no corpo da requisição.');
+    if (!Product || !Customer) {
+      throw new Error('Estrutura do JSON inválida. Faltando "Product" ou "Customer".');
+    }
+
+    const email = Customer.email;
+    const documento = Customer.CPF;
+    const nomeCompleto = Customer.full_name;
+    const planoNome = Product.product_name;
+    const telefone = Customer.mobile;
+
+    if (!email || !documento || !nomeCompleto || !planoNome) {
+      throw new Error('Dados obrigatórios (email, CPF, nome, plano) ausentes no payload.');
+    }
+    
+    if (!nomeBarbearia) {
+        throw new Error('O campo "nomeBarbearia" é obrigatório e não foi encontrado no payload.');
     }
 
     const supabaseAdmin = createClient(
@@ -64,11 +66,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Cria o usuário no Supabase Auth
     const { data: createUserData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: documento, // Senha temporária
-      email_confirm: true, // E-mail já confirmado pelo pagamento
+      email_confirm: true,
       user_metadata: {
         role: 'barbearia',
         full_name: nomeCompleto,
@@ -85,7 +86,6 @@ serve(async (req) => {
     if (!createUserData.user) throw new Error('Criação do usuário falhou silenciosamente.');
     const userId = createUserData.user.id;
 
-    // 2. Cria o registro da barbearia no banco de dados
     const slug = generateSlug(nomeBarbearia);
     const { data: barbearia, error: dbError } = await supabaseAdmin
       .from('barbearias')
@@ -104,7 +104,6 @@ serve(async (req) => {
       .single();
       
     if (dbError) {
-      // Limpeza: se a criação da barbearia falhar, exclui o usuário para evitar inconsistência.
       await supabaseAdmin.auth.admin.deleteUser(userId);
       throw new Error(`Falha ao criar barbearia no banco de dados: ${dbError.message}`);
     }
@@ -117,7 +116,7 @@ serve(async (req) => {
     console.error('Erro no webhook de criação de usuário:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400, // Erro de cliente (dados inválidos, etc.)
+      status: 400,
     });
   }
 });
