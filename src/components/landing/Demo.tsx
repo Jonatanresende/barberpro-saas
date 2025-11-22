@@ -1,6 +1,6 @@
 import React from 'react';
 import AnimatedSection from './AnimatedSection';
-import dashboardPreview from '@/assets/dashboard-preview.png';
+import dashboardPreview from '@/assets/dashboard-showcase.png';
 
 const Demo = () => {
   return (
