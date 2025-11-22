@@ -16,6 +16,7 @@ import PublicProfilePage from '@/pages/cliente/PublicProfilePage';
 import ToastProvider from '@/components/ToastProvider';
 import LandingPage from '@/pages/LandingPage';
 import TrialExpiredPage from '@/pages/TrialExpired';
+import InitialSetupPage from '@/pages/barbearia/InitialSetupPage';
 
 const AppRoutes = () => {
   return (
@@ -25,6 +26,13 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/booking-success" element={<BookingSuccessPage />} />
         <Route path="/trial-expired" element={<TrialExpiredPage />} />
+
+        {/* Initial Setup Route for Barbershops */}
+        <Route path="/initial-setup" element={
+          <ProtectedRoute allowedRoles={[UserRole.BARBEARIA]}>
+            <InitialSetupPage />
+          </ProtectedRoute>
+        } />
 
         {/* Admin Routes */}
         <Route path="/admin" element={

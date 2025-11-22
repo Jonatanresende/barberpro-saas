@@ -24,6 +24,17 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Redireciona para a página de configuração se o nome da barbearia for temporário
+  const isTemporaryName = user.role === UserRole.BARBEARIA && user.barbeariaNome?.startsWith('Barbearia de ');
+  if (isTemporaryName && location.pathname !== '/initial-setup') {
+    return <Navigate to="/initial-setup" replace />;
+  }
+  
+  // Impede o acesso à página de setup se o nome já foi alterado
+  if (!isTemporaryName && location.pathname === '/initial-setup') {
+    return <Navigate to={`/${user.link_personalizado}/dashboard`} replace />;
+  }
+
   const trialExpired =
     user.role === UserRole.BARBEARIA &&
     user.trialExpiresAt &&
