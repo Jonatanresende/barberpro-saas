@@ -28,11 +28,11 @@ const Pricing = () => {
   }
 
   return (
-    <AnimatedSection className="py-20 bg-brand-dark">
+    <AnimatedSection id="pricing" className="py-20 bg-brand-dark">
       <div className="container mx-auto px-6 text-center">
-        <h2 className="text-4xl font-bold text-white mb-4">Planos que cabem no seu bolso</h2>
-        <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto">Escolha o plano ideal para o tamanho da sua barbearia e comece a crescer.</p>
-        <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <h2 className="text-4xl font-bold text-white mb-4">Um Plano Para Cada Tamanho de Barbearia</h2>
+        <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto">Comece com um teste gratuito de 7 dias em qualquer plano. Sem compromisso.</p>
+        <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto items-stretch">
           {planos.map(plano => (
             <div key={plano.id} className={`bg-brand-gray p-8 rounded-lg border flex flex-col relative ${plano.popular ? 'border-2 border-brand-gold' : 'border-brand-gray/50'}`}>
               {plano.popular && (
@@ -44,14 +44,14 @@ const Pricing = () => {
               <p className="text-4xl font-extrabold my-4 text-white">R${plano.preco.toFixed(2)}<span className="text-base font-medium text-gray-400">/mês</span></p>
               <ul className="space-y-3 text-gray-300 text-left flex-grow mb-8">
                 {plano.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <li key={index} className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-1" />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
               <Link to="/login" className="mt-auto bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded-lg w-full hover:opacity-90 transition-opacity">
-                Iniciar Teste Grátis
+                Começar Teste Grátis
               </Link>
             </div>
           ))}

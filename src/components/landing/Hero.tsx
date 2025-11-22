@@ -16,7 +16,7 @@ const Hero = ({ onStartTrial }: HeroProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Eleve a Gestão da Sua Barbearia a <span className="text-brand-gold">Outro Nível</span>
+          Chega de Gerenciar sua Barbearia no <span className="text-brand-gold">Papel e WhatsApp</span>
         </motion.h1>
         <motion.p 
           className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8"
@@ -24,7 +24,7 @@ const Hero = ({ onStartTrial }: HeroProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          O sistema completo para agendamentos, clientes e finanças. Foque no seu talento, nós cuidamos do resto.
+          O Barbeiro na Hora organiza seus agendamentos, clientes e finanças para você focar no que realmente importa: seus clientes.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -36,7 +36,7 @@ const Hero = ({ onStartTrial }: HeroProps) => {
             onClick={onStartTrial}
             className="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block"
           >
-            Começar acesso gratuito
+            Iniciar Teste Grátis (Não Pede Cartão)
           </motion.button>
         </motion.div>
         <motion.div 
@@ -46,8 +46,8 @@ const Hero = ({ onStartTrial }: HeroProps) => {
           transition={{ duration: 0.7, delay: 0.6, ease: 'easeOut' }}
         >
           <img 
-            src="https://placehold.co/1200x600/111111/D4AF37?text=Mockup+do+Dashboard" 
-            alt="Dashboard do BarberPro" 
+            src="https://placehold.co/1200x600/111111/D4AF37?text=Veja+a+Sua+Agenda+Organizada" 
+            alt="Dashboard do Barbeiro na Hora" 
             className="rounded-xl shadow-2xl shadow-brand-gold/10 mx-auto"
           />
         </motion.div>

@@ -5,18 +5,18 @@ import AnimatedSection from './AnimatedSection';
 const steps = [
   {
     icon: <UserPlus className="w-12 h-12 text-brand-gold" />,
-    title: "1. Cadastre-se",
-    description: "Crie sua conta em menos de 2 minutos. É rápido, fácil e sem compromisso."
+    title: "1. Crie sua Conta",
+    description: "Em 2 minutos, sem burocracia e sem pedir seu cartão de crédito. Acesso liberado na hora."
   },
   {
     icon: <CalendarPlus className="w-12 h-12 text-brand-gold" />,
     title: "2. Configure sua Barbearia",
-    description: "Adicione seus serviços, barbeiros e horários de funcionamento. Nós te guiamos no processo."
+    description: "Adicione seus serviços, barbeiros e horários. Nossa interface é tão fácil que você não vai precisar de manual."
   },
   {
     icon: <BarChart3 className="w-12 h-12 text-brand-gold" />,
-    title: "3. Comece a Gerenciar",
-    description: "Receba agendamentos, acompanhe suas finanças e veja sua produtividade decolar."
+    title: "3. Divulgue e Cresça",
+    description: "Compartilhe seu link de agendamento exclusivo e veja sua agenda encher. É simples assim."
   }
 ];
 

@@ -3,22 +3,22 @@ import AnimatedSection from './AnimatedSection';
 
 const testimonials = [
   {
-    quote: "O BarberPro mudou o jogo para nós. A agenda online é fantástica e meus clientes adoram a facilidade de marcar um horário.",
-    name: "João Silva",
-    title: "Dono, Barbearia Clássica",
-    avatar: "https://placehold.co/100x100/D4AF37/111111?text=JS"
+    quote: "A gestão da minha barbearia mudou completamente. A agenda online é fantástica e meus clientes adoram a facilidade de marcar um horário.",
+    name: "Dono de Barbearia",
+    title: "Parceiro Barbeiro na Hora",
+    avatar: "https://placehold.co/100x100/D4AF37/111111?text=B"
   },
   {
     quote: "Finalmente tenho controle total sobre o faturamento e as comissões. A parte financeira ficou muito mais simples e transparente.",
-    name: "Marcos Andrade",
-    title: "Barbeiro, The Gents Club",
-    avatar: "https://placehold.co/100x100/D4AF37/111111?text=MA"
+    name: "Gerente de Salão",
+    title: "Parceiro Barbeiro na Hora",
+    avatar: "https://placehold.co/100x100/D4AF37/111111?text=N"
   },
   {
-    quote: "O suporte é incrível e o sistema é super fácil de usar. Em um dia já estava com tudo configurado e funcionando.",
-    name: "Carlos Pereira",
-    title: "Dono, Navalha de Ouro",
-    avatar: "https://placehold.co/100x100/D4AF37/111111?text=CP"
+    quote: "O sistema é super fácil de usar. Em um dia já estava com tudo configurado e recebendo agendamentos pelo link.",
+    name: "Barbeiro Profissional",
+    title: "Parceiro Barbeiro na Hora",
+    avatar: "https://placehold.co/100x100/D4AF37/111111?text=H"
   }
 ];
 
@@ -26,7 +26,7 @@ const Testimonials = () => {
   return (
     <AnimatedSection className="py-20 bg-brand-gray">
       <div className="container mx-auto px-6 text-center">
-        <h2 className="text-4xl font-bold text-white mb-12">O que nossos parceiros dizem</h2>
+        <h2 className="text-4xl font-bold text-white mb-12">O que os Barbeiros Dizem</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
             <div key={index} className="bg-brand-dark p-8 rounded-lg border border-brand-gray/50">
