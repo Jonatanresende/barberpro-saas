@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import dashboardImage from '@/assets/dashboard-showcase.png';
 
 const Hero = () => {
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -53,7 +54,7 @@ const Hero = () => {
         >
           <div className="relative flex flex-col items-center">
             <img 
-              src="/dashboard-showcase.png" 
+              src={dashboardImage} 
               alt="Dashboard do Barbeiro na Hora" 
               className="rounded-xl shadow-2xl shadow-brand-gold/10 w-full max-w-6xl h-auto object-contain"
             />
