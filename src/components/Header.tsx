@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { LogoutIcon, MenuIcon, UserIcon } from '@/components/icons';
 import { UserRole } from '@/types';
 

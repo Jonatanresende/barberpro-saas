@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 const TrialExpiredPage = () => {
   const { user, logout } = useAuth();
@@ -53,4 +53,3 @@ const TrialExpiredPage = () => {
 };
 
 export default TrialExpiredPage;
-

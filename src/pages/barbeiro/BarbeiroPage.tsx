@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
 import { Agendamento, AppointmentStatus, BarbeiroDisponibilidade } from '@/types';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { DollarSignIcon, XCircleIcon, ClockIcon, ScissorsIcon } from '@/components/icons';
 import Calendar from '@/components/booking/Calendar';
 
