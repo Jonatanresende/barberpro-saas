@@ -2,7 +2,7 @@
 <html lang="pt-BR" class="scroll-smooth">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale-1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Barbeiro na Hora - Gestão Simplificada para sua Barbearia</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -269,25 +269,25 @@
             lucide.createIcons();
         }
 
+        function setupSmoothScroll() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             fetchSettings();
             fetchPlans();
-
-            // Handle smooth scrolling for anchor links to avoid conflict with React Router
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                if (anchor.closest('#landing-page-content')) {
-                    anchor.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        const targetId = this.getAttribute('href');
-                        const targetElement = document.querySelector(targetId);
-                        if (targetElement) {
-                            targetElement.scrollIntoView({
-                                behavior: 'smooth'
-                            });
-                        }
-                    });
-                }
-            });
+            setupSmoothScroll();
         });
     </script>
 </body>
