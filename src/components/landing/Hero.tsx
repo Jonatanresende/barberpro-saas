@@ -53,7 +53,7 @@ const Hero = () => {
         >
           <div className="relative flex flex-col items-center">
             <img 
-              src="/dashboard-showcase.png" 
+              src="https://placehold.co/1200x675/222222/D4AF37?text=Dashboard+Showcase" 
               alt="Dashboard do Barbeiro na Hora" 
               className="rounded-xl shadow-2xl shadow-brand-gold/10 w-full max-w-6xl h-auto object-contain"
             />
