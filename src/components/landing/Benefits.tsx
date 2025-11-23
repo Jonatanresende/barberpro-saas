@@ -1,6 +1,5 @@
 import React from 'react';
 import { CalendarClock, Users, DollarSign, Smartphone } from 'lucide-react';
-import AnimatedSection from './AnimatedSection';
 
 const benefits = [
   {
@@ -27,7 +26,7 @@ const benefits = [
 
 const Benefits = () => {
   return (
-    <AnimatedSection className="py-20 bg-brand-dark">
+    <section className="py-20 bg-brand-dark">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold text-white mb-4">Assuma o Controle e Acelere o Crescimento</h2>
         <p className="text-lg text-gray-400 mb-2 max-w-3xl mx-auto">O Barbeiro na Hora foi desenhado para simplificar sua rotina e profissionalizar sua gestão.</p>
@@ -42,7 +41,7 @@ const Benefits = () => {
           ))}
         </div>
       </div>
-    </AnimatedSection>
+    </section>
   );
 };
 

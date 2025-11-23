@@ -1,6 +1,5 @@
 import React from 'react';
 import { XCircle, CheckCircle2 } from 'lucide-react';
-import AnimatedSection from './AnimatedSection';
 
 const ProblemSolution = () => {
   const problems = [
@@ -18,7 +17,7 @@ const ProblemSolution = () => {
   ];
 
   return (
-    <AnimatedSection className="py-20 bg-brand-gray">
+    <section className="py-20 bg-brand-gray">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white">Sua rotina parece com isso?</h2>
@@ -49,7 +48,7 @@ const ProblemSolution = () => {
           </div>
         </div>
       </div>
-    </AnimatedSection>
+    </section>
   );
 };
 

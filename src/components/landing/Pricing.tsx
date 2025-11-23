@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { api } from '@/services/api';
 import { Plano } from '@/types';
-import AnimatedSection from './AnimatedSection';
 
 const planLinks: { [key: string]: string } = {
   'Básico': 'https://pay.kiwify.com.br/7LfyG5Z',
@@ -33,7 +32,7 @@ const Pricing = () => {
   }
 
   return (
-    <AnimatedSection id="pricing" className="py-20 bg-brand-dark">
+    <section id="pricing" className="py-20 bg-brand-dark">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold text-white mb-4">Um Plano Para Cada Tamanho de Barbearia</h2>
         <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto">Escolha o plano ideal e comece a transformar sua gestão hoje mesmo.</p>
@@ -67,7 +66,7 @@ const Pricing = () => {
           ))}
         </div>
       </div>
-    </AnimatedSection>
+    </section>
   );
 };
 

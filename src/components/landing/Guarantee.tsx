@@ -1,6 +1,5 @@
 import React from 'react';
 import { ShieldCheck } from 'lucide-react';
-import AnimatedSection from './AnimatedSection';
 
 const Guarantee = () => {
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -13,7 +12,7 @@ const Guarantee = () => {
   };
 
   return (
-    <AnimatedSection className="py-20 bg-brand-dark">
+    <section className="py-20 bg-brand-dark">
       <div className="container mx-auto px-6">
         <div className="bg-brand-gray border border-brand-gold/30 rounded-lg p-10 text-center max-w-4xl mx-auto">
           <ShieldCheck className="w-16 h-16 text-brand-gold mx-auto mb-6" />
@@ -30,7 +29,7 @@ const Guarantee = () => {
           </a>
         </div>
       </div>
-    </AnimatedSection>
+    </section>
   );
 };
 

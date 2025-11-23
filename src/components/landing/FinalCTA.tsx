@@ -1,5 +1,4 @@
 import React from 'react';
-import AnimatedSection from './AnimatedSection';
 import { useSettings } from '@/context/SettingsContext';
 
 const FinalCTA = () => {
@@ -16,7 +15,7 @@ const FinalCTA = () => {
   };
 
   return (
-    <AnimatedSection className="py-20 bg-brand-dark">
+    <section className="py-20 bg-brand-dark">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold text-white mb-4">Sua Barbearia Merece uma Gestão Profissional</h2>
         <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">Deixe o caos do WhatsApp para trás. Junte-se aos barbeiros que estão usando a tecnologia para crescer.</p>
@@ -33,7 +32,7 @@ const FinalCTA = () => {
             </a>
         </div>
       </div>
-    </AnimatedSection>
+    </section>
   );
 };
 

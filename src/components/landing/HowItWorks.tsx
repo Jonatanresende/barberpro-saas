@@ -1,6 +1,5 @@
 import React from 'react';
 import { UserPlus, CalendarPlus, BarChart3 } from 'lucide-react';
-import AnimatedSection from './AnimatedSection';
 
 const steps = [
   {
@@ -22,7 +21,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <AnimatedSection className="py-20 bg-brand-gray">
+    <section className="py-20 bg-brand-gray">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold text-white mb-12">Comece a usar em 3 passos simples</h2>
         <div className="grid md:grid-cols-3 gap-10">
@@ -37,7 +36,7 @@ const HowItWorks = () => {
           ))}
         </div>
       </div>
-    </AnimatedSection>
+    </section>
   );
 };
 
