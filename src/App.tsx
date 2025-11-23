@@ -18,8 +18,7 @@ import InitialSetupPage from '@/pages/barbearia/InitialSetupPage';
 const AppRoutes = () => {
   return (
      <Routes>
-        {/* Public Routes - A landing page agora é o index.html estático */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* A rota "/" agora é tratada pelo HTML estático. O React assume as rotas com hash. */}
         <Route path="/login" element={<Login />} />
         <Route path="/booking-success" element={<BookingSuccessPage />} />
         <Route path="/trial-expired" element={<TrialExpiredPage />} />
