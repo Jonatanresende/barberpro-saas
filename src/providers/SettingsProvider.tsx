@@ -2,7 +2,7 @@ import React, { useState, ReactNode, useEffect, useCallback } from 'react';
 import { SettingsContext, SystemSettings } from '@/context/SettingsContext';
 import { api } from '@/services/api';
 
-const SettingsProvider = ({ children }: { children: ReactNode }) => {
+export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,5 +40,3 @@ const SettingsProvider = ({ children }: { children: ReactNode }) => {
     </SettingsContext.Provider>
   );
 };
-
-export default SettingsProvider;
