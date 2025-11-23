@@ -52,11 +52,14 @@ const Hero = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.6, ease: 'easeOut' }}
         >
-          <img 
-            src={dashboardImage} 
-            alt="Dashboard do Barbeiro na Hora" 
-            className="rounded-xl shadow-2xl shadow-brand-gold/10 mx-auto"
-          />
+          <div className="relative flex flex-col items-center">
+            <img 
+              src={dashboardImage} 
+              alt="Dashboard do Barbeiro na Hora" 
+              className="rounded-xl shadow-2xl shadow-brand-gold/10 w-full max-w-6xl h-auto object-contain"
+            />
+            <p className="text-gray-400 text-sm mt-4 text-center">Dashboard do Barbeiro na Hora</p>
+          </div>
         </motion.div>
       </div>
     </section>
