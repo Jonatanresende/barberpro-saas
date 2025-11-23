@@ -1,6 +1,7 @@
 import React from 'react';
 import AnimatedSection from './AnimatedSection';
-import dashboardImage from '@/assets/dashboard-showcase.png';
+// A imagem agora é servida diretamente da pasta /public
+// import dashboardImage from '@/assets/dashboard-showcase.png';
 
 const Demo = () => {
   return (
@@ -10,7 +11,7 @@ const Demo = () => {
         <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">Uma interface limpa e intuitiva, projetada para a velocidade da sua rotina.</p>
         <div className="bg-brand-dark p-4 rounded-xl shadow-lg border border-brand-gray/50">
           <img 
-            src={dashboardImage} 
+            src="/dashboard-showcase.png" 
             alt="Demonstração do Barbeiro na Hora" 
             className="rounded-lg w-full"
           />
@@ -18,6 +19,3 @@ const Demo = () => {
       </div>
     </AnimatedSection>
   );
-};
-
-export default Demo;
