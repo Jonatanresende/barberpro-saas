@@ -7,7 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { UserRole } from '@/types';
 import AdminPage from '@/pages/admin/AdminPage';
 import { BarbeariaPage } from '@/pages/barbearia/BarbeariaPage';
-import { BarbeiroPage } from '@/pages/barbeiro/BarbeiroPage';
+import { BarbeiroPage } from '@/pages/barbearia/BarbeiroPage';
 import PublicBookingPage from '@/pages/cliente/PublicBookingPage';
 import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
 import PublicProfilePage from '@/pages/cliente/PublicProfilePage';
@@ -18,6 +18,9 @@ import InitialSetupPage from '@/pages/barbearia/InitialSetupPage';
 const AppRoutes = () => {
   return (
      <Routes>
+        {/* Rota para a raiz que não renderiza nada, mantendo a landing page estática visível */}
+        <Route path="/" element={null} />
+
         {/* A rota "/" agora é tratada pelo HTML estático. O React assume as rotas com hash. */}
         <Route path="/login" element={<Login />} />
         <Route path="/booking-success" element={<BookingSuccessPage />} />
