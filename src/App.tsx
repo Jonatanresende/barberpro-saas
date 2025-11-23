@@ -7,7 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { UserRole } from '@/types';
 import AdminPage from '@/pages/admin/AdminPage';
 import { BarbeariaPage } from '@/pages/barbearia/BarbeariaPage';
-import { BarbeiroPage } from '@/pages/barbearia/BarbeiroPage';
+import { BarbeiroPage } from '@/pages/barbeiro/BarbeiroPage';
 import PublicBookingPage from '@/pages/cliente/PublicBookingPage';
 import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
 import PublicProfilePage from '@/pages/cliente/PublicProfilePage';
