@@ -1,9 +1,6 @@
 import React from 'react';
 import AnimatedSection from './AnimatedSection';
 
-// Abordagem robusta para garantir que o Vite encontre a imagem
-const dashboardImageUrl = new URL('../../assets/dashboard-showcase.png', import.meta.url).href;
-
 const Demo = () => {
   return (
     <AnimatedSection className="py-20 bg-brand-gray">
@@ -12,7 +9,7 @@ const Demo = () => {
         <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">Uma interface limpa e intuitiva, projetada para a velocidade da sua rotina.</p>
         <div className="bg-brand-dark p-4 rounded-xl shadow-lg border border-brand-gray/50">
           <img 
-            src={dashboardImageUrl} 
+            src="/dashboard-showcase.png" 
             alt="Demonstração do Barbeiro na Hora" 
             className="rounded-lg w-full"
           />
