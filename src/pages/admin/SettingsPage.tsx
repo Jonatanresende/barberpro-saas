@@ -7,7 +7,7 @@ import { User } from '@/types';
 import Modal from '@/components/Modal';
 import PasswordChangeModal from '@/pages/admin/PasswordChangeModal';
 import AdminUserModal from '@/pages/admin/AdminUserModal';
-import { useSettings } from '@/context/SettingsContext';
+import { useSettings } from '@/hooks/useSettings';
 
 const SettingsCard = ({ title, children, actions }: { title: string, children: React.ReactNode, actions?: React.ReactNode }) => (
     <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">

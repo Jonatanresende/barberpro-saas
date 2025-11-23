@@ -1,21 +1,6 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { useState, ReactNode, useEffect, useCallback } from 'react';
+import { SettingsContext, SystemSettings } from '@/context/SettingsContext';
 import { api } from '@/services/api';
-
-interface SystemSettings {
-  system_name: string;
-  logo_url: string;
-  support_email: string;
-  contact_email?: string;
-  tos_link?: string;
-}
-
-interface SettingsContextType {
-  settings: SystemSettings | null;
-  loading: boolean;
-  updateSettings: (updates: Partial<SystemSettings>, logoFile?: File) => Promise<void>;
-}
-
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<SystemSettings | null>(null);
@@ -45,7 +30,7 @@ const SettingsProvider = ({ children }: { children: ReactNode }) => {
       setSettings(updatedSettings);
     } catch (error) {
       console.error("Failed to update settings:", error);
-      throw error; // Re-throw to be caught by the calling component for toast notifications
+      throw error;
     }
   };
 
@@ -54,14 +39,6 @@ const SettingsProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </SettingsContext.Provider>
   );
-};
-
-export const useSettings = () => {
-  const context = useContext(SettingsContext);
-  if (context === undefined) {
-    throw new Error('useSettings must be used within a SettingsProvider');
-  }
-  return context;
 };
 
 export default SettingsProvider;
