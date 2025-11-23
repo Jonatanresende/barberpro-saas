@@ -12,15 +12,14 @@ import PublicBookingPage from '@/pages/cliente/PublicBookingPage';
 import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
 import PublicProfilePage from '@/pages/cliente/PublicProfilePage';
 import ToastProvider from '@/components/ToastProvider';
-import LandingPage from '@/pages/LandingPage';
 import TrialExpiredPage from '@/pages/TrialExpired';
 import InitialSetupPage from '@/pages/barbearia/InitialSetupPage';
 
 const AppRoutes = () => {
   return (
      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Public Routes - A landing page agora é o index.html estático */}
+        <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/booking-success" element={<BookingSuccessPage />} />
         <Route path="/trial-expired" element={<TrialExpiredPage />} />
