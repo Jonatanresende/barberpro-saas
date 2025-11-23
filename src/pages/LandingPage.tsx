@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '@/context/SettingsContext';
 import defaultLogo from '@/assets/logo-Barbeironahora.png';
+import dashboardShowcase from '@/assets/dashboard-showcase.png';
 import { Check, XCircle, CheckCircle2, CalendarClock, Users, DollarSign, Smartphone, UserPlus, CalendarPlus, BarChart3, ShieldCheck } from 'lucide-react';
 import { api } from '@/services/api';
 import { Plano } from '@/types';
@@ -51,7 +52,7 @@ const Hero = () => {
           </a>
         </div>
         <div className="mt-16">
-          <img src="/dashboard-showcase.png" alt="Dashboard do Barbeiro na Hora" className="rounded-xl shadow-2xl shadow-brand-gold/10 w-full max-w-6xl h-auto object-contain" />
+          <img src={dashboardShowcase} alt="Dashboard do Barbeiro na Hora" className="rounded-xl shadow-2xl shadow-brand-gold/10 w-full max-w-6xl h-auto object-contain" />
           <p className="text-gray-400 text-sm mt-4 text-center">Dashboard do Barbeiro na Hora</p>
         </div>
       </div>
@@ -103,7 +104,7 @@ const Demo = () => (
       <h2 className="text-4xl font-bold text-white mb-4">Veja como é Fácil Gerenciar Tudo</h2>
       <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">Uma interface limpa e intuitiva, projetada para a velocidade da sua rotina.</p>
       <div className="bg-brand-dark p-4 rounded-xl shadow-lg border border-brand-gray/50">
-        <img src="/dashboard-showcase.png" alt="Demonstração do Barbeiro na Hora" className="rounded-lg w-full" />
+        <img src={dashboardShowcase} alt="Demonstração do Barbeiro na Hora" className="rounded-lg w-full" />
       </div>
     </div>
   </section>
