@@ -14,14 +14,6 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; }
-        #root:not(:empty) {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 100;
-        }
     </style>
 
     <script>
@@ -51,7 +43,7 @@
               <img id="header-logo" src="/landing/images/logo.png" alt="Logo Barbeiro na Hora" class="h-10" />
             </a>
             <div class="flex items-center gap-4">
-              <a href="/#/login" class="text-gray-300 hover:text-brand-gold transition-colors font-medium">Login</a>
+              <a href="/app.html#/login" class="text-gray-300 hover:text-brand-gold transition-colors font-medium">Login</a>
               <a href="#pricing" class="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity cursor-pointer">Assinar Agora</a>
             </div>
           </div>
@@ -215,10 +207,7 @@
           </div>
         </footer>
     </div>
-
-    <div id="root"></div>
     
-    <script type="module" src="/src/main.tsx"></script>
     <script>
         lucide.createIcons();
 
@@ -269,25 +258,9 @@
             lucide.createIcons();
         }
 
-        function setupSmoothScroll() {
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    const targetElement = document.querySelector(targetId);
-                    if (targetElement) {
-                        targetElement.scrollIntoView({
-                            behavior: 'smooth'
-                        });
-                    }
-                });
-            });
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             fetchSettings();
             fetchPlans();
-            setupSmoothScroll();
         });
     </script>
 </body>
