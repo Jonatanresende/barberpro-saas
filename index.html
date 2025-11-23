@@ -2,7 +2,7 @@
 <html lang="pt-BR" class="scroll-smooth">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale-1.0" />
     <title>Barbeiro na Hora - Gestão Simplificada para sua Barbearia</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -52,7 +52,7 @@
             </a>
             <div class="flex items-center gap-4">
               <a href="/#/login" class="text-gray-300 hover:text-brand-gold transition-colors font-medium">Login</a>
-              <a href="#pricing" class="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">Assinar Agora</a>
+              <a href="#pricing" class="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity cursor-pointer">Assinar Agora</a>
             </div>
           </div>
         </header>
@@ -68,7 +68,7 @@
                   A plataforma completa para agendamentos, clientes e finanças que coloca sua barbearia no piloto automático e libera seu tempo para o que realmente importa.
                 </p>
                 <div>
-                  <a href="#pricing" class="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block">
+                  <a href="#pricing" class="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block cursor-pointer">
                     Conhecer Planos
                   </a>
                 </div>
@@ -185,7 +185,7 @@
                     <p class="text-lg text-gray-300 mb-6">
                         Estamos tão confiantes de que o Barbeiro na Hora vai transformar a gestão do seu negócio que oferecemos cancelamento a qualquer momento, sem burocracia. Se o sistema não atender às suas expectativas, você pode cancelar sua assinatura com apenas um clique.
                     </p>
-                    <a href="#pricing" class="text-brand-gold font-semibold hover:underline">Ver planos e começar agora →</a>
+                    <a href="#pricing" class="text-brand-gold font-semibold hover:underline cursor-pointer">Ver planos e começar agora →</a>
                 </div>
             </section>
 
@@ -196,7 +196,7 @@
                     <p class="text-lg text-gray-300 mb-8">
                         Deixe o caos da agenda manual para trás. Comece hoje a construir uma barbearia mais moderna, organizada e lucrativa.
                     </p>
-                    <a href="#pricing" class="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block">
+                    <a href="#pricing" class="bg-brand-gold text-brand-dark font-bold py-4 px-8 rounded-lg text-lg hover:opacity-90 transition-opacity inline-block cursor-pointer">
                         Ver Planos e Contratar Agora
                     </a>
                     <p class="mt-6 text-gray-400">
@@ -272,6 +272,22 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchSettings();
             fetchPlans();
+
+            // Handle smooth scrolling for anchor links to avoid conflict with React Router
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                if (anchor.closest('#landing-page-content')) {
+                    anchor.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const targetId = this.getAttribute('href');
+                        const targetElement = document.querySelector(targetId);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                }
+            });
         });
     </script>
 </body>
