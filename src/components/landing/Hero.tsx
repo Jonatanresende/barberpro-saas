@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import dashboardImage from '../../assets/dashboard-showcase.png';
+
+// Abordagem robusta para garantir que o Vite encontre a imagem
+const dashboardImageUrl = new URL('../../assets/dashboard-showcase.png', import.meta.url).href;
 
 const Hero = () => {
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -54,7 +56,7 @@ const Hero = () => {
         >
           <div className="relative flex flex-col items-center">
             <img 
-              src={dashboardImage} 
+              src={dashboardImageUrl} 
               alt="Dashboard do Barbeiro na Hora" 
               className="rounded-xl shadow-2xl shadow-brand-gold/10 w-full max-w-6xl h-auto object-contain"
             />
