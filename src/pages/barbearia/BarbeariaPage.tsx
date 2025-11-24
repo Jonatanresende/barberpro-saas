@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano } from '@/types';
+import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano, Cliente } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon } from '@/components/icons';
 import BarberModal from '@/pages/barbearia/BarberModal';
 import ServiceModal from '@/pages/barbearia/ServiceModal';
 import ProfilePage from './ProfilePage';
+import ClientEditModal from './ClientEditModal';
+import ClientHistoryModal from './ClientHistoryModal';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center">
@@ -469,6 +471,100 @@ const ManageAppointments = () => {
     );
 };
 
+const ManageClients = () => {
+    const { user } = useAuth();
+    const [clients, setClients] = useState<Cliente[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
+    const [clientAppointments, setClientAppointments] = useState<Agendamento[]>([]);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+    const fetchClients = useCallback(async () => {
+        if (user?.barbeariaId) {
+            try {
+                setLoading(true);
+                const data = await api.getClientsByBarbearia(user.barbeariaId);
+                setClients(data);
+            } catch (error) {
+                toast.error("Falha ao carregar clientes.");
+            } finally {
+                setLoading(false);
+            }
+        }
+    }, [user]);
+
+    useEffect(() => {
+        fetchClients();
+    }, [fetchClients]);
+
+    const handleOpenEditModal = (client: Cliente) => {
+        setSelectedClient(client);
+        setIsEditModalOpen(true);
+    };
+
+    const handleOpenHistoryModal = async (client: Cliente) => {
+        if (!user?.barbeariaId) return;
+        setSelectedClient(client);
+        try {
+            const appointments = await api.getAppointmentsByClient(client.id, user.barbeariaId);
+            setClientAppointments(appointments);
+            setIsHistoryModalOpen(true);
+        } catch (error) {
+            toast.error("Falha ao buscar histórico do cliente.");
+        }
+    };
+
+    const handleSaveClient = async (clientId: string, updates: { nome: string; telefone: string }) => {
+        toast.promise(api.updateClient(clientId, updates), {
+            loading: 'Salvando...',
+            success: () => {
+                fetchClients();
+                setIsEditModalOpen(false);
+                return 'Cliente atualizado com sucesso!';
+            },
+            error: 'Falha ao atualizar cliente.',
+        });
+    };
+
+    return (
+        <>
+            <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
+                <h2 className="text-xl font-semibold text-white mb-4">Gerenciar Clientes</h2>
+                <div className="overflow-x-auto">
+                    {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
+                        <table className="w-full text-left text-sm text-gray-300">
+                            <thead className="bg-brand-gray text-xs uppercase">
+                                <tr>
+                                    <th className="px-6 py-3">Nome</th>
+                                    <th className="px-6 py-3">Telefone</th>
+                                    <th className="px-6 py-3">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {clients.map(client => (
+                                    <tr key={client.id} className="border-b border-brand-gray hover:bg-brand-gray">
+                                        <td className="px-6 py-4 font-medium text-white">{client.nome}</td>
+                                        <td className="px-6 py-4">{client.telefone}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center space-x-4">
+                                                <button onClick={() => handleOpenEditModal(client)} className="text-blue-400 hover:text-blue-300">Editar</button>
+                                                <button onClick={() => handleOpenHistoryModal(client)} className="text-green-400 hover:text-green-300">Ver Histórico</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            </div>
+            <ClientEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveClient} client={selectedClient} />
+            <ClientHistoryModal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} clientName={selectedClient?.nome || ''} appointments={clientAppointments} />
+        </>
+    );
+};
+
 const Settings = () => {
     const { user } = useAuth();
     const [barbearia, setBarbearia] = useState<Partial<Barbearia>>({ operating_days: [] });
@@ -716,7 +812,7 @@ export const BarbeariaPage = () => {
     const determineActiveTab = () => {
         const pathParts = location.pathname.split('/');
         const lastPart = pathParts[pathParts.length - 1];
-        const validTabs = ['dashboard', 'appointments', 'barbers', 'services', 'settings', 'profile'];
+        const validTabs = ['dashboard', 'appointments', 'barbers', 'services', 'clients', 'settings', 'profile'];
         
         if (validTabs.includes(lastPart)) {
             return lastPart;
@@ -743,6 +839,7 @@ export const BarbeariaPage = () => {
             case 'barbers': return <ManageBarbers />;
             case 'services': return <ManageServices />;
             case 'appointments': return <ManageAppointments />;
+            case 'clients': return <ManageClients />;
             case 'settings': return <Settings />;
             case 'profile': return <ProfilePage />;
             default: return <BarbeariaDashboard />;
@@ -756,6 +853,7 @@ export const BarbeariaPage = () => {
                 <button onClick={() => handleTabChange('appointments')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Agendamentos</button>
                 <button onClick={() => handleTabChange('barbers')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'barbers' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbeiros</button>
                 <button onClick={() => handleTabChange('services')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'services' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Serviços</button>
+                <button onClick={() => handleTabChange('clients')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'clients' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Clientes</button>
                 <button onClick={() => handleTabChange('settings')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
             </div>
             {renderContent()}

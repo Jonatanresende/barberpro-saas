@@ -427,6 +427,50 @@ export const api = {
     return data;
   },
 
+  // BARBEARIA - Clientes
+  getClientsByBarbearia: async (barbeariaId: string): Promise<Cliente[]> => {
+    const { data: appointmentData, error: appointmentError } = await supabase
+      .from('agendamentos')
+      .select('cliente_id')
+      .eq('barbearia_id', barbeariaId)
+      .not('cliente_id', 'is', null);
+
+    if (appointmentError) throw new Error(appointmentError.message);
+
+    const clientIds = [...new Set(appointmentData.map(a => a.cliente_id))];
+    if (clientIds.length === 0) return [];
+
+    const { data: clientsData, error: clientsError } = await supabase
+      .from('clientes')
+      .select('*')
+      .in('id', clientIds);
+
+    if (clientsError) throw new Error(clientsError.message);
+    return clientsData;
+  },
+
+  updateClient: async (clientId: string, updates: { nome: string; telefone: string }): Promise<Cliente> => {
+    const { data, error } = await supabase
+      .from('clientes')
+      .update(updates)
+      .eq('id', clientId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  getAppointmentsByClient: async (clientId: string, barbeariaId: string): Promise<Agendamento[]> => {
+    const { data, error } = await supabase
+      .from('agendamentos')
+      .select('*')
+      .eq('cliente_id', clientId)
+      .eq('barbearia_id', barbeariaId)
+      .order('data', { ascending: false });
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
   // BARBEIRO - Dashboard & Agendamentos
   getBarberDashboardData: async (barbeiroId: string) => {
     const { data, error } = await supabase.functions.invoke('get-barber-dashboard', {

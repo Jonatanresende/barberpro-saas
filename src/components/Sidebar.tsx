@@ -41,6 +41,7 @@ const getNavItems = (role: UserRole, slug?: string) => {
         { to: `/${slug}/appointments`, icon: <CalendarIcon className="w-5 h-5" />, label: "Agendamentos" },
         { to: `/${slug}/barbers`, icon: <ScissorsIcon className="w-5 h-5" />, label: "Barbeiros" },
         { to: `/${slug}/services`, icon: <ClipboardListIcon className="w-5 h-5" />, label: "Serviços" },
+        { to: `/${slug}/clients`, icon: <UsersIcon className="w-5 h-5" />, label: "Clientes" },
         { to: `/${slug}/profile`, icon: <UserIcon className="w-5 h-5" />, label: "Meu Perfil" },
         { to: `/${slug}/settings`, icon: <SettingsIcon className="w-5 h-5" />, label: "Configurações" },
       ];

@@ -73,6 +73,7 @@ const AppRoutes = () => {
             <Route path="barbers" element={<BarbeariaPage />} />
             <Route path="services" element={<BarbeariaPage />} />
             <Route path="appointments" element={<BarbeariaPage />} />
+            <Route path="clients" element={<BarbeariaPage />} />
             <Route path="settings" element={<BarbeariaPage />} />
             <Route path="profile" element={<BarbeariaPage />} />
           </Route>
