@@ -50,8 +50,7 @@ const PublicProfilePage = () => {
             <div className="bg-[#121212] text-white font-sans">
                 {/* Header */}
                 <header className="bg-black/80 backdrop-blur-sm sticky top-0 z-50">
-                    <div className="container mx-auto px-4 h-16 flex justify-between items-center">
-                        <span className="text-sm">Seg. à Sáb.</span>
+                    <div className="container mx-auto px-4 h-16 flex justify-end items-center">
                         <button onClick={() => setIsAccountModalOpen(true)} className="text-sm flex items-center gap-2 hover:text-brand-gold transition-colors">
                             <UsersIcon className="h-5 w-5" />
                             Minha Conta
