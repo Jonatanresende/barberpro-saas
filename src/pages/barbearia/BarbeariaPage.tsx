@@ -251,11 +251,11 @@ const ManageServices = () => {
         setIsModalOpen(true);
     };
 
-    const handleSave = async (serviceData: any, photoFile?: File) => {
+    const handleSave = async (serviceData: any) => {
         if (!user?.barbeariaId) return;
         const promise = serviceToEdit
-            ? api.updateServico(serviceToEdit.id, serviceData, photoFile)
-            : api.createServico(serviceData, user.barbeariaId, photoFile);
+            ? api.updateServico(serviceToEdit.id, serviceData)
+            : api.createServico(serviceData, user.barbeariaId);
 
         toast.promise(promise, {
             loading: 'Salvando serviço...',
@@ -292,12 +292,9 @@ const ManageServices = () => {
                     <ul className="space-y-3">
                         {servicos.map(servico => (
                             <li key={servico.id} className="bg-brand-gray p-4 rounded-lg flex justify-between items-center">
-                                <div className="flex items-center space-x-4">
-                                    <img src={servico.imagem_url || 'https://via.placeholder.com/64'} alt={servico.nome} className="w-16 h-16 rounded-md object-cover bg-brand-dark" />
-                                    <div>
-                                        <p className="font-semibold text-white">{servico.nome}</p>
-                                        <p className="text-sm text-gray-400">{servico.duracao} min</p>
-                                    </div>
+                                <div>
+                                    <p className="font-semibold text-white">{servico.nome}</p>
+                                    <p className="text-sm text-gray-400">{servico.duracao} min</p>
                                 </div>
                                 <div className="flex items-center space-x-4">
                                     <p className="text-lg font-bold text-brand-gold">R$ {servico.preco.toFixed(2)}</p>

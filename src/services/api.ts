@@ -374,25 +374,20 @@ export const api = {
     return data;
   },
 
-  createServico: async (servicoData: any, barbeariaId: string, photoFile?: File): Promise<Servico> => {
-    const imageUrl = await uploadPhoto(photoFile!, 'fotos-servicos');
+  createServico: async (servicoData: any, barbeariaId: string): Promise<Servico> => {
     const { data, error } = await supabase
       .from('servicos')
-      .insert([{ ...servicoData, barbearia_id: barbeariaId, imagem_url: imageUrl }])
+      .insert([{ ...servicoData, barbearia_id: barbeariaId }])
       .select()
       .single();
     if (error) throw new Error(error.message);
     return data;
   },
 
-  updateServico: async (id: string, servicoData: any, photoFile?: File): Promise<Servico> => {
-    let finalUpdates = { ...servicoData };
-    if (photoFile) {
-      finalUpdates.imagem_url = await uploadPhoto(photoFile, 'fotos-servicos');
-    }
+  updateServico: async (id: string, servicoData: any): Promise<Servico> => {
     const { data, error } = await supabase
       .from('servicos')
-      .update(finalUpdates)
+      .update(servicoData)
       .eq('id', id)
       .select()
       .single();

@@ -85,18 +85,16 @@ const PublicProfilePage = () => {
                     <div className="container mx-auto px-4 text-center">
                         <h2 className="text-4xl font-bold mb-2">{barbearia.services_title}</h2>
                         <div className="w-24 h-1 bg-brand-gold mx-auto mb-12"></div>
-                        <div className="flex justify-center">
-                            <div className={`flex flex-wrap justify-center gap-8 ${servicos.length > 4 ? 'lg:max-w-screen-md' : ''}`}>
-                                {servicos.map(servico => (
-                                    <div key={servico.id} className="relative group overflow-hidden rounded-lg w-52">
-                                        <img src={servico.imagem_url || 'https://images.unsplash.com/photo-16222888432453-531452789e54?q=80&w=1974&auto=format&fit=crop'} alt={servico.nome} className="w-full h-60 object-cover transform group-hover:scale-110 transition-transform duration-300" />
-                                        <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-center p-2">
-                                            <ScissorsIcon className="w-10 h-10 text-brand-gold mb-2" />
-                                            <h3 className="text-2xl font-semibold">{servico.nome}</h3>
-                                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                            {servicos.map(servico => (
+                                <div key={servico.id} className="bg-brand-dark border border-brand-gray p-6 rounded-lg text-left">
+                                    <h3 className="text-xl font-bold text-white">{servico.nome}</h3>
+                                    <div className="flex justify-between items-baseline mt-2">
+                                        <span className="text-gray-400">{servico.duracao} min</span>
+                                        <span className="text-2xl font-bold text-brand-gold">R${servico.preco.toFixed(2)}</span>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
                         </div>
                         <Link to={`/${slug}/agendamento`} className="mt-12 inline-block bg-brand-gold text-brand-dark font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-colors">
                             Agende seu horário →
