@@ -17,6 +17,13 @@
     </style>
 
     <script>
+      // Redireciona para o app principal se uma rota hash for detectada
+      if (window.location.hash && window.location.hash.length > 1) {
+        window.location.href = '/app.html' + window.location.hash;
+      }
+    </script>
+
+    <script>
       tailwind.config = {
         theme: {
           extend: {
