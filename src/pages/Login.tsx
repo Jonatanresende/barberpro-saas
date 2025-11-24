@@ -57,6 +57,7 @@ const Login = () => {
         
         <Auth
           supabaseClient={supabase}
+          view="sign_in"
           appearance={{ 
             theme: ThemeSupa,
             variables: {
