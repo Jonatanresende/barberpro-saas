@@ -321,7 +321,7 @@ const ManageAppointments = () => {
     const [loading, setLoading] = useState(true);
 
     // Filter states
-    const [filterDate, setFilterDate] = useState('');
+    const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterStatus, setFilterStatus] = useState<'todos' | AppointmentStatus>('todos');
     const [filterBarber, setFilterBarber] = useState('todos');
 
