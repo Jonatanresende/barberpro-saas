@@ -74,7 +74,7 @@ const AdminDashboard = () => {
 
             <div className="bg-brand-dark p-4 rounded-lg border border-brand-gray">
                 <p className="text-sm text-gray-300">
-                    🔔 Última atividade: Novo usuário registrado - <span className="font-semibold text-brand-gold">{data.latestUsers[0]?.email}</span>
+                    🔔 Última atividade: Nova barbearia cadastrada - <span className="font-semibold text-brand-gold">{data.latestBarbershops[0]?.nome}</span>
                 </p>
             </div>
 
@@ -115,20 +115,20 @@ const AdminDashboard = () => {
             </div>
 
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                <h3 className="text-lg font-semibold text-white mb-4">Últimos Usuários Cadastrados</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Últimas Barbearias Cadastradas</h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm text-gray-300">
                         <thead className="bg-brand-gray text-xs uppercase">
                             <tr>
-                                <th className="px-6 py-3">E-mail</th>
+                                <th className="px-6 py-3">Nome da Barbearia</th>
                                 <th className="px-6 py-3">Data de Cadastro</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {data.latestUsers.map((user: any, index: number) => (
+                            {data.latestBarbershops.map((barbershop: any, index: number) => (
                                 <tr key={index} className="border-b border-brand-gray hover:bg-brand-gray">
-                                    <td className="px-6 py-4 font-medium text-white">{user.email}</td>
-                                    <td className="px-6 py-4">{new Date(user.created_at).toLocaleString('pt-BR')}</td>
+                                    <td className="px-6 py-4 font-medium text-white">{barbershop.nome}</td>
+                                    <td className="px-6 py-4">{new Date(barbershop.criado_em).toLocaleString('pt-BR')}</td>
                                 </tr>
                             ))}
                         </tbody>

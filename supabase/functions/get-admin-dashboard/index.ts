@@ -56,7 +56,7 @@ serve(async (req) => {
     const totalBarbershopUsers = barbershopUsers.length;
 
     // --- Busca de Dados de Barbearias e Planos ---
-    const { data: barbearias, error: barbeariasError } = await supabaseAdmin.from('barbearias').select('plano, status, criado_em');
+    const { data: barbearias, error: barbeariasError } = await supabaseAdmin.from('barbearias').select('nome, plano, status, criado_em');
     if (barbeariasError) throw barbeariasError;
     
     const { data: planos, error: planosError } = await supabaseAdmin.from('planos').select('nome, preco');
@@ -75,10 +75,10 @@ serve(async (req) => {
     const totalRevenue = barbearias.reduce((sum, b) => sum + (planPricesMap[b.plano] || 0), 0);
 
     // --- Dados Adicionais ---
-    const latestUsers = users
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    const latestBarbershops = barbearias
+      .sort((a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime())
       .slice(0, 5)
-      .map(u => ({ email: u.email, created_at: u.created_at }));
+      .map(b => ({ nome: b.nome, criado_em: b.criado_em }));
 
     // --- Preparação dos Dados para Gráficos ---
     const userGrowthChartData = aggregateByMonth(barbershopUsers, 'created_at').map(d => ({ name: d.name, Usuários: d.value }));
@@ -90,7 +90,7 @@ serve(async (req) => {
       totalBarbershopUsers,
       totalBarbearias,
       activeBarbearias,
-      latestUsers,
+      latestBarbershops,
       userGrowthChartData,
       monthlyRevenueChartData,
     };
