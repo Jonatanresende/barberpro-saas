@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect } from 'react';
+import React, { useState, ReactNode, useEffect, useCallback } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { User, UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,12 +8,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-  };
+  }, []);
 
-  const fetchUserAndBarbearia = async (session: Session | null) => {
+  const fetchUserAndBarbearia = useCallback(async (session: Session | null) => {
     if (!session) {
       setUser(null);
       setLoading(false);
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setUser(baseUser);
     setLoading(false);
-  };
+  }, [logout]);
 
   useEffect(() => {
     const getSession = async () => {
@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserAndBarbearia]);
 
   return (
     <AuthContext.Provider value={{ user, logout, loading }}>
