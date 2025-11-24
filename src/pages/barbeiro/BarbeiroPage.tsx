@@ -275,11 +275,19 @@ const BarberAvailability = () => {
 export const BarbeiroPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const pathEnd = location.pathname.split('/').pop();
-    const [activeTab, setActiveTab] = useState(pathEnd === 'dashboard' ? 'appointments' : pathEnd);
+    
+    const determineActiveTab = () => {
+        const pathEnd = location.pathname.split('/').pop();
+        return pathEnd === 'availability' ? 'availability' : 'appointments';
+    };
+
+    const [activeTab, setActiveTab] = useState(determineActiveTab());
+
+    useEffect(() => {
+        setActiveTab(determineActiveTab());
+    }, [location.pathname]);
 
     const handleTabChange = (tab: string) => {
-        setActiveTab(tab);
         navigate(`/barbeiro/${tab}`);
     };
 
