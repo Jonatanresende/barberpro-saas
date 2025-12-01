@@ -121,7 +121,40 @@ const PublicBookingPage = () => {
             .map(d => d.data);
     }, [disponibilidadesDoMes, selectedBarbeiro]);
 
-    const handleNext = () => setStep(s => s + 1);
+    const handleNext = () => {
+        switch (step) {
+            case 1:
+                if (!clienteNome.trim() || !clienteTelefone.trim()) {
+                    toast.error("Por favor, preencha seu nome e telefone.");
+                    return;
+                }
+                break;
+            case 2:
+                if (!selectedServico) {
+                    toast.error("Por favor, escolha um serviço.");
+                    return;
+                }
+                if (!selectedBarbeiro) {
+                    toast.error("Por favor, escolha um barbeiro.");
+                    return;
+                }
+                break;
+            case 3:
+                if (!selectedDate) {
+                    toast.error("Por favor, escolha uma data.");
+                    return;
+                }
+                if (!selectedTime) {
+                    toast.error("Por favor, escolha um horário.");
+                    return;
+                }
+                break;
+            default:
+                break;
+        }
+        setStep(s => s + 1);
+    };
+
     const handleBack = () => setStep(s => s - 1);
 
     const handleSubmit = async () => {
