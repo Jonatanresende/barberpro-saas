@@ -12,6 +12,22 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { email, password, fullName } = await req.json();
     if (!email || !password || !fullName) {
       throw new Error('E-mail, senha e nome completo são obrigatórios.');
@@ -25,9 +41,9 @@ serve(async (req) => {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
-      email_confirm: true, // Já confirma o e-mail
+      email_confirm: true,
       user_metadata: {
-        role: 'admin', // Atribui a permissão de administrador
+        role: 'admin',
         full_name: fullName,
       },
     });

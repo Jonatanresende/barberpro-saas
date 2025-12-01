@@ -12,9 +12,28 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { userId } = await req.json();
     if (!userId) {
       throw new Error('O ID do usuário é obrigatório.');
+    }
+    if (userId === user.id) {
+      throw new Error('Não é possível excluir a própria conta.');
     }
 
     const supabaseAdmin = createClient(
@@ -22,11 +41,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Camada de segurança: Busca o usuário alvo para verificar o e-mail
     const { data: { user: targetUser }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
     if (getUserError) throw getUserError;
 
-    // Impede a exclusão se for o admin principal
     if (targetUser && targetUser.email === 'jonne.obr@gmail.com') {
       throw new Error('A conta de administrador principal não pode ser excluída.');
     }

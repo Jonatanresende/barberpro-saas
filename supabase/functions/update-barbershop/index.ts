@@ -12,6 +12,19 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { barbeariaId, ownerId, updates } = await req.json()
 
     if (!barbeariaId || !ownerId || !updates) {
@@ -23,10 +36,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Separa as atualizações de autenticação das de banco de dados
+    // 3. OWNERSHIP CHECK
+    const userRole = user.user_metadata?.role;
+    if (userRole !== 'admin') {
+      if (userRole !== 'barbearia' || user.id !== ownerId) {
+        return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+      }
+      const { data: ownerBarbearia, error: ownerError } = await supabaseAdmin
+        .from('barbearias')
+        .select('id')
+        .eq('id', barbeariaId)
+        .eq('dono_id', user.id)
+        .single();
+      if (ownerError || !ownerBarbearia) {
+        return new Response(JSON.stringify({ error: 'Você não tem permissão para editar esta barbearia.' }), { status: 403, headers: corsHeaders });
+      }
+    }
+
+    // 4. EXECUTION
     const { dono_email, ...dbUpdates } = updates;
 
-    // 1. Atualiza o e-mail do usuário no Supabase Auth se ele foi alterado
     if (dono_email) {
       const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
         ownerId,
@@ -36,11 +65,9 @@ serve(async (req) => {
         console.error('Erro ao atualizar e-mail do usuário:', authError);
         throw new Error(`Falha ao atualizar o e-mail do proprietário: ${authError.message}`);
       }
-      // Também atualiza o e-mail desnormalizado na tabela barbearias
       dbUpdates.dono_email = dono_email;
     }
 
-    // 2. Atualiza o registro da barbearia no banco de dados
     const { data, error: dbError } = await supabaseAdmin
       .from('barbearias')
       .update(dbUpdates)

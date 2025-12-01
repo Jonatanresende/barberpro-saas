@@ -12,6 +12,22 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -23,7 +39,6 @@ serve(async (req) => {
       throw new Error(error.message);
     }
 
-    // Filtra para retornar apenas usuários com a role 'admin'
     const adminUsers = users.filter(user => user.user_metadata?.role === 'admin');
 
     return new Response(JSON.stringify(adminUsers), {

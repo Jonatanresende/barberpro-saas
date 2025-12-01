@@ -12,37 +12,63 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'barbeiro') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { barbeiroId } = await req.json();
     if (!barbeiroId) {
       throw new Error('O ID do barbeiro é obrigatório.');
     }
 
-    const supabase = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // --- Buscar dados essenciais ---
-    const { data: barbeiro, error: barbeiroError } = await supabase
+    // 3. OWNERSHIP CHECK
+    const { data: barberProfile, error: profileError } = await supabaseAdmin
+      .from('barbeiros')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !barberProfile || barberProfile.id !== barbeiroId) {
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para ver este dashboard.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 4. EXECUTION
+    const { data: barbeiro, error: barbeiroError } = await supabaseAdmin
       .from('barbeiros')
       .select('barbearia_id')
       .eq('id', barbeiroId)
       .single();
     if (barbeiroError) throw barbeiroError;
 
-    const { data: barbearia, error: barbeariaError } = await supabase
+    const { data: barbearia, error: barbeariaError } = await supabaseAdmin
       .from('barbearias')
       .select('comissao_padrao')
       .eq('id', barbeiro.barbearia_id)
       .single();
     if (barbeariaError) throw barbeariaError;
 
-    // --- Buscar agendamentos do mês atual ---
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    const { data: agendamentos, error: agendamentosError } = await supabase
+    const { data: agendamentos, error: agendamentosError } = await supabaseAdmin
       .from('agendamentos')
       .select('status, servicos(preco)')
       .eq('barbeiro_id', barbeiroId)
@@ -50,7 +76,6 @@ serve(async (req) => {
       .lte('data', endOfMonth);
     if (agendamentosError) throw agendamentosError;
 
-    // --- Calcular métricas ---
     const comissaoPercentual = (barbearia.comissao_padrao || 0) / 100;
     let comissaoDoMes = 0;
     let totalGeradoNoMes = 0;

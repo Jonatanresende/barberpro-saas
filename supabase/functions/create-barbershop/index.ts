@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Função auxiliar para gerar um link amigável (slug)
 const generateSlug = (name: string) => {
   return name
     .toLowerCase()
@@ -20,12 +19,27 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Lida com a requisição de pre-flight do CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user: authUser }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !authUser) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (authUser.user_metadata?.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { barbeariaData, password, photoUrl } = await req.json()
 
     const supabaseAdmin = createClient(
@@ -33,9 +47,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // --- LÓGICA ROBUSTA DE 2 ETAPAS ---
-
-    // 1. Cria o usuário primeiro, sem tentar confirmar o e-mail inicialmente.
     const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: barbeariaData.dono_email,
       password: password,
@@ -58,7 +69,6 @@ serve(async (req) => {
     if (!createData.user) throw new Error('Criação do usuário falhou silenciosamente.');
     const userId = createData.user.id;
 
-    // 2. IMEDIATAMENTE atualiza o usuário para confirmar o e-mail.
     const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       { email_confirm: true }
@@ -66,7 +76,6 @@ serve(async (req) => {
 
     if (updateError) {
         console.error('Erro ao confirmar e-mail do usuário:', updateError.message);
-        // Limpeza: se não for possível confirmar o e-mail, exclui o usuário recém-criado.
         await supabaseAdmin.auth.admin.deleteUser(userId);
         return new Response(JSON.stringify({ error: `Falha ao confirmar e-mail do novo usuário: ${updateError.message}` }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -75,11 +84,8 @@ serve(async (req) => {
     }
     
     const user = updateData.user;
-
-    // 3. Gera o link personalizado
     const slug = generateSlug(barbeariaData.nome);
 
-    // 4. Cria o registro da barbearia no banco de dados
     const { data: barbearia, error: dbError } = await supabaseAdmin
       .from('barbearias')
       .insert([{ 
@@ -93,7 +99,6 @@ serve(async (req) => {
       
     if (dbError) {
       console.error('Erro de banco de dados:', dbError)
-      // Limpeza: se a criação da barbearia falhar, exclui o usuário.
       await supabaseAdmin.auth.admin.deleteUser(user.id)
       return new Response(JSON.stringify({ error: `Falha ao criar barbearia no banco de dados: ${dbError.message}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

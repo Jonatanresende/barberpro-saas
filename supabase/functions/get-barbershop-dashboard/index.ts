@@ -6,11 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Helper to get start of week (Monday)
 const getStartOfWeek = (date: Date) => {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
   d.setHours(0, 0, 0, 0);
   return d;
@@ -22,19 +21,46 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'barbearia') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { barbeariaId } = await req.json();
     if (!barbeariaId) {
       throw new Error('O ID da barbearia é obrigatório.');
     }
 
-    const supabase = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // 3. OWNERSHIP CHECK
+    const { data: ownerBarbearia, error: ownerError } = await supabaseAdmin
+      .from('barbearias')
+      .select('id')
+      .eq('dono_id', user.id)
+      .single();
+
+    if (ownerError || !ownerBarbearia || ownerBarbearia.id !== barbeariaId) {
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para ver este dashboard.' }), { status: 403, headers: corsHeaders });
+    }
     
+    // 4. EXECUTION
     const todayISO = new Date().toISOString().split('T')[0];
 
-    // --- Fetch all necessary data in parallel ---
     const [
       { data: barbeariaData, error: barbeariaError },
       { data: servicos, error: servicosError },
@@ -42,11 +68,11 @@ serve(async (req) => {
       { data: barbeiros, error: barbeirosError },
       { data: disponibilidadesHoje, error: dispError }
     ] = await Promise.all([
-      supabase.from('barbearias').select('comissao_padrao').eq('id', barbeariaId).single(),
-      supabase.from('servicos').select('id, preco').eq('barbearia_id', barbeariaId),
-      supabase.from('agendamentos').select('servico_id, data, status, cliente_id, barbeiro_id').eq('barbearia_id', barbeariaId),
-      supabase.from('barbeiros').select('id, nome, foto_url').eq('barbearia_id', barbeariaId),
-      supabase.from('barbeiro_disponibilidade').select('barbeiro_id, disponivel').eq('data', todayISO)
+      supabaseAdmin.from('barbearias').select('comissao_padrao').eq('id', barbeariaId).single(),
+      supabaseAdmin.from('servicos').select('id, preco').eq('barbearia_id', barbeariaId),
+      supabaseAdmin.from('agendamentos').select('servico_id, data, status, cliente_id, barbeiro_id').eq('barbearia_id', barbeariaId),
+      supabaseAdmin.from('barbeiros').select('id, nome, foto_url').eq('barbearia_id', barbeariaId),
+      supabaseAdmin.from('barbeiro_disponibilidade').select('barbeiro_id, disponivel').eq('data', todayISO)
     ]);
 
     if (barbeariaError) throw barbeariaError;
@@ -55,7 +81,6 @@ serve(async (req) => {
     if (barbeirosError) throw barbeirosError;
     if (dispError) throw dispError;
 
-    // --- Process Data ---
     const servicePriceMap = new Map(servicos.map(s => [s.id, s.preco]));
     
     const today = new Date();
@@ -94,7 +119,6 @@ serve(async (req) => {
     const totalAgendamentosHoje = agendamentos.filter(a => a.data === todayISO).length;
     const uniqueClients = new Set(agendamentos.map(a => a.cliente_id));
 
-    // --- Process Barber Status for Today ---
     const availabilityMap = new Map(disponibilidadesHoje.map(d => [d.barbeiro_id, d.disponivel]));
     const barberStatusList = barbeiros.map(barbeiro => ({
         id: barbeiro.id,
@@ -103,7 +127,6 @@ serve(async (req) => {
         isAvailableToday: availabilityMap.has(barbeiro.id) ? availabilityMap.get(barbeiro.id) : true,
     }));
 
-    // --- Final Response ---
     const response = {
       rendaDiaria,
       rendaSemanal,

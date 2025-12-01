@@ -12,6 +12,22 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { barbeariaId, ownerId } = await req.json()
 
     if (!barbeariaId || !ownerId) {
@@ -23,7 +39,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Exclui o registro da barbearia do banco de dados.
     const { error: dbError } = await supabaseAdmin
       .from('barbearias')
       .delete()
@@ -34,11 +49,9 @@ serve(async (req) => {
       throw new Error(`Falha ao excluir barbearia: ${dbError.message}`);
     }
 
-    // 2. Exclui a conta de usuário do proprietário do Supabase Auth.
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(ownerId);
 
     if (authError) {
-      // Lança um erro para o admin saber que a conta do usuário não foi excluída.
       throw new Error(`Registro da barbearia excluído, mas falha ao excluir a conta do proprietário: ${authError.message}`);
     }
 

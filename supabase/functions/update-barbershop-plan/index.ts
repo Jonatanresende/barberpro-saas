@@ -12,6 +12,22 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { barbeariaId, newPlanName } = await req.json();
     if (!barbeariaId || !newPlanName) {
       throw new Error('ID da barbearia e nome do novo plano são obrigatórios.');
@@ -22,7 +38,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Buscar detalhes do novo plano
     const { data: targetPlan, error: planError } = await supabaseAdmin
       .from('planos')
       .select('limite_barbeiros')
@@ -33,7 +48,6 @@ serve(async (req) => {
 
     const newLimit = targetPlan.limite_barbeiros;
 
-    // 2. Contar barbeiros ativos
     const { count: activeBarberCount, error: countError } = await supabaseAdmin
       .from('barbeiros')
       .select('*', { count: 'exact', head: true })
@@ -42,7 +56,6 @@ serve(async (req) => {
 
     if (countError) throw new Error('Erro ao contar barbeiros ativos.');
 
-    // 3. Se o limite for excedido, remover os mais antigos
     if (newLimit !== null && activeBarberCount > newLimit) {
       const excessCount = activeBarberCount - newLimit;
       
@@ -76,7 +89,6 @@ serve(async (req) => {
       }
     }
 
-    // 4. Atualizar o plano da barbearia
     const { data: updatedBarbearia, error: updateError } = await supabaseAdmin
       .from('barbearias')
       .update({ plano: newPlanName })

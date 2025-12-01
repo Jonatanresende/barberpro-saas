@@ -12,6 +12,22 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'barbearia') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { barberData, password, photoUrl } = await req.json()
 
     if (!barberData.email || !password || !barberData.barbearia_id) {
@@ -23,26 +39,29 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // --- VALIDAÇÃO DO LIMITE DE BARBEIROS ---
-    // 1. Buscar o plano da barbearia
-    const { data: barbearia, error: barbeariaError } = await supabaseAdmin
+    // 3. OWNERSHIP CHECK
+    const { data: ownerBarbearia, error: ownerError } = await supabaseAdmin
       .from('barbearias')
-      .select('plano')
-      .eq('id', barberData.barbearia_id)
+      .select('id, plano')
+      .eq('dono_id', user.id)
       .single();
-    
-    if (barbeariaError) throw new Error(`Barbearia não encontrada: ${barbeariaError.message}`);
 
-    // 2. Buscar os detalhes do plano
+    if (ownerError || !ownerBarbearia) {
+        return new Response(JSON.stringify({ error: 'Barbearia do proprietário não encontrada.' }), { status: 403, headers: corsHeaders });
+    }
+    if (ownerBarbearia.id !== barberData.barbearia_id) {
+        return new Response(JSON.stringify({ error: 'Você não tem permissão para adicionar barbeiros a esta barbearia.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // --- VALIDAÇÃO DO LIMITE DE BARBEIROS ---
     const { data: plano, error: planoError } = await supabaseAdmin
       .from('planos')
       .select('limite_barbeiros')
-      .eq('nome', barbearia.plano)
+      .eq('nome', ownerBarbearia.plano)
       .single();
 
-    if (planoError) throw new Error(`Plano "${barbearia.plano}" não encontrado: ${planoError.message}`);
+    if (planoError) throw new Error(`Plano "${ownerBarbearia.plano}" não encontrado: ${planoError.message}`);
 
-    // 3. Se o plano tiver um limite, verificar
     if (plano.limite_barbeiros) {
       const { count, error: countError } = await supabaseAdmin
         .from('barbeiros')
@@ -61,7 +80,6 @@ serve(async (req) => {
     }
     // --- FIM DA VALIDAÇÃO ---
 
-    // 1. Create the user in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: barberData.email,
       password: password,
@@ -85,7 +103,6 @@ serve(async (req) => {
     if (!authData.user) throw new Error('Criação do usuário do barbeiro falhou silenciosamente.');
     const userId = authData.user.id;
 
-    // 2. Create the barber record in the database
     const { data: dbData, error: dbError } = await supabaseAdmin
       .from('barbeiros')
       .insert([{ 
@@ -98,7 +115,6 @@ serve(async (req) => {
       
     if (dbError) {
       console.error('Erro de banco de dados ao criar barbeiro:', dbError)
-      // Cleanup: if creating the barber record fails, delete the auth user.
       await supabaseAdmin.auth.admin.deleteUser(userId)
       return new Response(JSON.stringify({ error: `Falha ao criar barbeiro no banco de dados: ${dbError.message}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

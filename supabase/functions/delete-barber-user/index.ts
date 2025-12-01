@@ -12,6 +12,22 @@ serve(async (req) => {
   }
 
   try {
+    // 1. AUTHENTICATION & AUTHORIZATION
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
+    }
+    if (user.user_metadata?.role !== 'barbearia') {
+      return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 2. LOGIC
     const { barberId, userId } = await req.json()
 
     if (!barberId) {
@@ -23,7 +39,24 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Delete the barber record from the database.
+    // 3. OWNERSHIP CHECK
+    const { data: ownerBarbearia } = await supabaseAdmin
+      .from('barbearias')
+      .select('id')
+      .eq('dono_id', user.id)
+      .single();
+    
+    const { data: barberRecord } = await supabaseAdmin
+      .from('barbeiros')
+      .select('barbearia_id')
+      .eq('id', barberId)
+      .single();
+
+    if (!barberRecord || barberRecord.barbearia_id !== ownerBarbearia?.id) {
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para excluir este barbeiro.' }), { status: 403, headers: corsHeaders });
+    }
+
+    // 4. EXECUTION
     const { error: dbError } = await supabaseAdmin
       .from('barbeiros')
       .delete()
@@ -33,7 +66,6 @@ serve(async (req) => {
       throw new Error(`Falha ao excluir barbeiro: ${dbError.message}`);
     }
 
-    // 2. Delete the user account from Supabase Auth, if userId is provided.
     if (userId) {
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
         if (authError) {
