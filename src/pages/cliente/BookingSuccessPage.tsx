@@ -23,7 +23,10 @@ const BookingSuccessPage = () => {
 
   if (!agendamento || !barbearia) return null;
 
-  const bookingDate = new Date(`${agendamento.data}T${agendamento.hora}`);
+  // Correção: Usar o formato ISO 8601 completo (YYYY-MM-DDTTHH:MM) para garantir a análise correta.
+  const bookingDateTimeString = `${agendamento.data}T${agendamento.hora}:00`;
+  const bookingDate = new Date(bookingDateTimeString);
+  
   const formattedDate = bookingDate.toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: '2-digit',
@@ -51,10 +54,6 @@ const BookingSuccessPage = () => {
         </p>
 
         <div className="bg-brand-dark/60 rounded-xl border border-gray-700 p-6 text-left space-y-4">
-          <div>
-            <p className="text-sm uppercase text-gray-400">Serviço</p>
-            <p className="text-lg font-semibold">{agendamento.servico_nome}</p>
-          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-sm uppercase text-gray-400">Data</p>
@@ -97,4 +96,3 @@ const BookingSuccessPage = () => {
 };
 
 export default BookingSuccessPage;
-
