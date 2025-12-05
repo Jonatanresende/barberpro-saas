@@ -108,7 +108,7 @@ const PublicProfilePage = () => {
                     style={{ 
                         backgroundImage: `url(${barbearia.hero_image_url || defaultHeroImage})`,
                         backgroundSize: 'cover', // Garante que a imagem cubra toda a área
-                        backgroundPosition: 'center', // Centraliza a imagem
+                        backgroundPosition: 'center top', // ALTERADO: Prioriza o topo da imagem
                     }}
                 >
                     <div className="absolute inset-0 bg-black/60"></div>
