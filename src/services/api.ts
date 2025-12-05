@@ -11,7 +11,7 @@ const uploadPhoto = async (photoFile: File, bucket: string): Promise<string | nu
   const filePath = `public/${Date.now()}-${photoFile.name}`;
   const { error: uploadError } = await supabase.storage
     .from(bucket)
-    .upload(filePath, photoFile);
+    .upload(filePath, photoFile, { upsert: true }); // Adicionado upsert: true
 
   if (uploadError) {
     console.error('Error uploading photo:', uploadError);
@@ -182,7 +182,7 @@ export const api = {
       finalUpdates.foto_url = await uploadPhoto(photoFile, 'fotos-barbearias');
     }
     if (heroFile) {
-      // ALTERADO: Usando 'fotos-barbearias' em vez de 'hero-images'
+      // CORRIGIDO: Usando 'fotos-barbearias'
       finalUpdates.hero_image_url = await uploadPhoto(heroFile, 'fotos-barbearias');
     }
 
