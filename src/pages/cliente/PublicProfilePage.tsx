@@ -60,10 +60,21 @@ const PublicProfilePage = () => {
         setIsHistoryModalOpen(true);
     };
 
+    const resetAppointmentState = () => {
+        setFoundAppointment(null);
+        setClientPhone('');
+        setIsAppointmentModalOpen(false);
+    };
+
+    const resetHistoryState = () => {
+        setClientHistory([]);
+        setClientNameForHistory('');
+        setIsHistoryModalOpen(false);
+    };
+
     const handleAppointmentUpdate = () => {
         // Após cancelar, reabre o modal de busca para verificar o status ou fechar
-        setFoundAppointment(null);
-        setIsAppointmentModalOpen(false);
+        resetAppointmentState();
         // Reabre o modal de conta para que o cliente possa buscar novamente ou ver o histórico
         setIsAccountModalOpen(true); 
     };
@@ -172,7 +183,7 @@ const PublicProfilePage = () => {
             {barbearia && (
                 <ClientAppointmentModal
                     isOpen={isAppointmentModalOpen}
-                    onClose={() => setIsAppointmentModalOpen(false)}
+                    onClose={resetAppointmentState}
                     appointment={foundAppointment}
                     barbearia={barbearia}
                     clientPhone={clientPhone}
@@ -181,7 +192,7 @@ const PublicProfilePage = () => {
             )}
             <ClientHistoryModal
                 isOpen={isHistoryModalOpen}
-                onClose={() => setIsHistoryModalOpen(false)}
+                onClose={resetHistoryState}
                 clientName={clientNameForHistory}
                 appointments={clientHistory}
             />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Modal from '@/components/Modal';
 import { api } from '@/services/api';
@@ -16,6 +16,15 @@ const ClientAccountModal = ({ isOpen, onClose, onAppointmentFound, onHistoryFoun
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
   const [clientName, setClientName] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset state when modal closes
+      setPhone('');
+      setHasHistory(false);
+      setClientName('');
+    }
+  }, [isOpen]);
 
   const handleSearch = async (event: React.FormEvent) => {
     event.preventDefault();
