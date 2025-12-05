@@ -17,17 +17,14 @@ const BookingSuccessPage = () => {
 
   useEffect(() => {
     if (!agendamento || !barbearia) {
+      // Redireciona se não houver dados de agendamento
       navigate('/', { replace: true });
     }
   }, [agendamento, barbearia, navigate]);
 
   if (!agendamento || !barbearia) return null;
 
-  // Usamos o formato YYYY-MM-DDTHH:MM:SS, mas adicionamos 'Z' (UTC) para garantir que o JS
-  // não tente adivinhar o fuso horário, e depois ajustamos a exibição.
-  // No entanto, para evitar problemas de fuso horário que mudam o dia, vamos criar a data
-  // manualmente a partir dos componentes.
-  
+  // Acessamos as propriedades somente após a verificação de nulidade
   const [year, month, day] = agendamento.data.split('-').map(Number);
   const [hour, minute] = agendamento.hora.split(':').map(Number);
 
