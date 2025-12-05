@@ -23,9 +23,16 @@ const BookingSuccessPage = () => {
 
   if (!agendamento || !barbearia) return null;
 
-  // Correção: Usar o formato ISO 8601 completo (YYYY-MM-DDTTHH:MM) para garantir a análise correta.
-  const bookingDateTimeString = `${agendamento.data}T${agendamento.hora}:00`;
-  const bookingDate = new Date(bookingDateTimeString);
+  // Usamos o formato YYYY-MM-DDTHH:MM:SS, mas adicionamos 'Z' (UTC) para garantir que o JS
+  // não tente adivinhar o fuso horário, e depois ajustamos a exibição.
+  // No entanto, para evitar problemas de fuso horário que mudam o dia, vamos criar a data
+  // manualmente a partir dos componentes.
+  
+  const [year, month, day] = agendamento.data.split('-').map(Number);
+  const [hour, minute] = agendamento.hora.split(':').map(Number);
+
+  // Cria a data usando o construtor de data local (sem conversão de fuso horário)
+  const bookingDate = new Date(year, month - 1, day, hour, minute);
   
   const formattedDate = bookingDate.toLocaleDateString('pt-BR', {
     weekday: 'long',
