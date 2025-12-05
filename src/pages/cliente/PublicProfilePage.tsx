@@ -104,11 +104,11 @@ const PublicProfilePage = () => {
 
                 {/* Hero Section */}
                 <section 
-                    className="relative h-[60vh] flex items-center justify-center text-center bg-cover bg-center" 
+                    className="relative h-[70vh] flex items-center justify-center text-center bg-cover bg-center" 
                     style={{ 
                         backgroundImage: `url(${barbearia.hero_image_url || defaultHeroImage})`,
                         backgroundSize: 'cover', // Garante que a imagem cubra toda a área
-                        backgroundPosition: 'center top', // ALTERADO: Prioriza o topo da imagem
+                        backgroundPosition: 'center top', // Prioriza o topo da imagem
                     }}
                 >
                     <div className="absolute inset-0 bg-black/60"></div>
