@@ -27,10 +27,13 @@ serve(async (req) => {
       .eq('telefone', telefone)
       .single();
 
-    if (clientError || !client) {
-      return new Response(JSON.stringify({ message: 'Nenhum cliente encontrado com este telefone.' }), {
+    if (clientError && clientError.code !== 'PGRST116') throw clientError;
+    
+    if (!client) {
+      // Cliente não existe, retorna null
+      return new Response(JSON.stringify(null), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 404,
+        status: 200,
       });
     }
 
@@ -47,10 +50,13 @@ serve(async (req) => {
       .limit(1)
       .single();
 
-    if (appointmentError) {
-       return new Response(JSON.stringify({ message: 'Nenhum agendamento futuro encontrado.' }), {
+    if (appointmentError && appointmentError.code !== 'PGRST116') throw appointmentError;
+
+    // Se não encontrar agendamento futuro, retorna null
+    if (!appointment) {
+       return new Response(JSON.stringify(null), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 404,
+        status: 200,
       });
     }
 
@@ -60,9 +66,10 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    console.error('Erro ao buscar agendamento do cliente:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: 500,
     });
   }
 });

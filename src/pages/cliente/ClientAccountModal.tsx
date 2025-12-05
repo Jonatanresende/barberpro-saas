@@ -26,7 +26,6 @@ const ClientAccountModal = ({ isOpen, onClose, onAppointmentFound }: ClientAccou
     try {
       const appointment = await api.getClientAppointment(phone.trim());
       
-      // Se a API retornar 200, mas o agendamento for null (o que não deve acontecer se a função Edge estiver correta, mas por segurança)
       if (!appointment) {
         toast.error('Nenhum agendamento futuro encontrado para este telefone.');
         return;
@@ -35,10 +34,8 @@ const ClientAccountModal = ({ isOpen, onClose, onAppointmentFound }: ClientAccou
       onAppointmentFound(appointment, phone.trim());
       onClose();
     } catch (error: any) {
-      // A função Edge retorna 404 com a mensagem 'Nenhum agendamento futuro encontrado.'
-      const errorMessage = error.message.includes('404') 
-        ? 'Nenhum agendamento futuro encontrado para este telefone.' 
-        : `Falha na busca: ${error.message}`;
+      // Agora só esperamos erros 500 ou outros erros de rede/servidor
+      const errorMessage = `Falha na busca: ${error.message}`;
         
       toast.error(errorMessage);
     } finally {
