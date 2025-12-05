@@ -49,14 +49,20 @@ serve(async (req) => {
       cliente_id: client.id,
     };
 
+    // Selecionamos explicitamente todos os campos necessários para o frontend
     const { data: newAppointment, error: appointmentError } = await supabaseAdmin
       .from('agendamentos')
       .insert(finalAgendamentoData)
-      .select()
+      .select('id, barbeiro_nome, servico_nome, data, hora, barbearia_id')
       .single();
 
     if (appointmentError) {
       throw appointmentError;
+    }
+
+    // O frontend espera o objeto completo, incluindo data e hora
+    if (!newAppointment.data || !newAppointment.hora) {
+        throw new Error("Falha interna: Agendamento criado, mas data/hora ausentes no retorno.");
     }
 
     return new Response(JSON.stringify(newAppointment), {
