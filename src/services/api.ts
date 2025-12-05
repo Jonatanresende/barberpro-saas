@@ -560,8 +560,16 @@ export const api = {
     return data;
   },
 
-  getClientAppointment: async (telefone: string): Promise<Agendamento> => {
+  getClientAppointment: async (telefone: string): Promise<Agendamento | null> => {
     const { data, error } = await supabase.functions.invoke('get-client-appointment', {
+      body: { telefone },
+    });
+    if (error) throw new Error(data?.message || data?.error || error.message);
+    return data;
+  },
+
+  getClientAppointmentsHistory: async (telefone: string): Promise<{ clientName: string, appointments: Agendamento[] } | null> => {
+    const { data, error } = await supabase.functions.invoke('get-client-appointments-history', {
       body: { telefone },
     });
     if (error) throw new Error(data?.message || data?.error || error.message);

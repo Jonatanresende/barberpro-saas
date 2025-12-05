@@ -6,6 +6,7 @@ import { Barbearia, Servico, Agendamento } from '@/types';
 import { InstagramIcon, WhatsAppIcon, ScissorsIcon, CalendarIcon, UsersIcon } from '@/components/icons';
 import ClientAccountModal from '@/pages/cliente/ClientAccountModal';
 import ClientAppointmentModal from '@/pages/cliente/ClientAppointmentModal';
+import ClientHistoryModal from '@/pages/cliente/ClientHistoryModal';
 
 const PublicProfilePage = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -16,8 +17,13 @@ const PublicProfilePage = () => {
     // Modal States
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+    // Data States
     const [foundAppointment, setFoundAppointment] = useState<Agendamento | null>(null);
     const [clientPhone, setClientPhone] = useState('');
+    const [clientHistory, setClientHistory] = useState<Agendamento[]>([]);
+    const [clientNameForHistory, setClientNameForHistory] = useState('');
 
     const fetchData = async () => {
         if (!slug) return;
@@ -48,11 +54,18 @@ const PublicProfilePage = () => {
         setIsAppointmentModalOpen(true);
     };
 
+    const handleHistoryFound = (clientName: string, appointments: Agendamento[]) => {
+        setClientNameForHistory(clientName);
+        setClientHistory(appointments);
+        setIsHistoryModalOpen(true);
+    };
+
     const handleAppointmentUpdate = () => {
         // Após cancelar, reabre o modal de busca para verificar o status ou fechar
         setFoundAppointment(null);
         setIsAppointmentModalOpen(false);
-        setIsAccountModalOpen(true);
+        // Reabre o modal de conta para que o cliente possa buscar novamente ou ver o histórico
+        setIsAccountModalOpen(true); 
     };
 
     if (loading) {
@@ -154,6 +167,7 @@ const PublicProfilePage = () => {
                 isOpen={isAccountModalOpen} 
                 onClose={() => setIsAccountModalOpen(false)} 
                 onAppointmentFound={handleAppointmentFound}
+                onHistoryFound={handleHistoryFound}
             />
             {barbearia && (
                 <ClientAppointmentModal
@@ -165,6 +179,12 @@ const PublicProfilePage = () => {
                     onAppointmentUpdate={handleAppointmentUpdate}
                 />
             )}
+            <ClientHistoryModal
+                isOpen={isHistoryModalOpen}
+                onClose={() => setIsHistoryModalOpen(false)}
+                clientName={clientNameForHistory}
+                appointments={clientHistory}
+            />
         </>
     );
 };
