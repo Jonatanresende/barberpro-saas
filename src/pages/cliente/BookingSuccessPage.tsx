@@ -24,10 +24,11 @@ const BookingSuccessPage = () => {
 
   if (!agendamento || !barbearia) return null;
 
-  // Acessamos as propriedades somente após a verificação de nulidade
-  // Usamos encadeamento opcional e fallback para garantir que a desestruturação não falhe.
-  const [year, month, day] = (agendamento.data?.split('-') || ['1970', '01', '01']).map(Number);
-  const [hour, minute] = (agendamento.hora?.split(':') || ['00', '00']).map(Number);
+  // Se chegamos aqui, agendamento e barbearia existem.
+  // Se agendamento.data ou agendamento.hora estiver faltando, o erro será lançado,
+  // o que é o comportamento esperado para depurar a função Edge.
+  const [year, month, day] = agendamento.data.split('-').map(Number);
+  const [hour, minute] = agendamento.hora.split(':').map(Number);
 
   // Cria a data usando o construtor de data local (sem conversão de fuso horário)
   const bookingDate = new Date(year, month - 1, day, hour, minute);

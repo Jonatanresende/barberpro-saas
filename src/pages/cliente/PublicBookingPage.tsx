@@ -179,6 +179,11 @@ const PublicBookingPage = () => {
 
             const agendamento = await api.createAgendamento(agendamentoPayload);
             
+            // VERIFICAÇÃO DE SEGURANÇA: Garante que os dados essenciais estão presentes antes de navegar
+            if (!agendamento || !agendamento.data || !agendamento.hora) {
+                throw new Error("O agendamento foi criado, mas os dados de data/hora estão faltando no retorno.");
+            }
+
             navigate('/booking-success', { state: { agendamento, barbearia } });
         } catch (error: any) {
             toast.error(`Falha ao agendar: ${error.message}`);
