@@ -25,8 +25,6 @@ const BookingSuccessPage = () => {
   if (!agendamento || !barbearia) return null;
 
   // Se chegamos aqui, agendamento e barbearia existem.
-  // Se agendamento.data ou agendamento.hora estiver faltando, o erro será lançado,
-  // o que é o comportamento esperado para depurar a função Edge.
   const [year, month, day] = agendamento.data.split('-').map(Number);
   const [hour, minute] = agendamento.hora.split(':').map(Number);
 
@@ -68,6 +66,16 @@ const BookingSuccessPage = () => {
             <div>
               <p className="text-sm uppercase text-gray-400">Horário</p>
               <p className="text-lg font-semibold">{formattedTime}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm uppercase text-gray-400">Barbeiro</p>
+              <p className="text-lg font-semibold">{agendamento.barbeiro_nome}</p>
+            </div>
+            <div>
+              <p className="text-sm uppercase text-gray-400">Serviço</p>
+              <p className="text-lg font-semibold">{agendamento.servico_nome}</p>
             </div>
           </div>
           <div>
