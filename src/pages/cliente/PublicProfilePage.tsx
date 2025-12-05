@@ -2,38 +2,58 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { Barbearia, Servico } from '@/types';
+import { Barbearia, Servico, Agendamento } from '@/types';
 import { InstagramIcon, WhatsAppIcon, ScissorsIcon, CalendarIcon, UsersIcon } from '@/components/icons';
 import ClientAccountModal from '@/pages/cliente/ClientAccountModal';
+import ClientAppointmentModal from '@/pages/cliente/ClientAppointmentModal';
 
 const PublicProfilePage = () => {
     const { slug } = useParams<{ slug: string }>();
     const [barbearia, setBarbearia] = useState<Barbearia | null>(null);
     const [servicos, setServicos] = useState<Servico[]>([]);
     const [loading, setLoading] = useState(true);
+    
+    // Modal States
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+    const [foundAppointment, setFoundAppointment] = useState<Agendamento | null>(null);
+    const [clientPhone, setClientPhone] = useState('');
+
+    const fetchData = async () => {
+        if (!slug) return;
+        try {
+            setLoading(true);
+            const barbeariaData = await api.getBarbeariaBySlug(slug);
+            if (barbeariaData) {
+                setBarbearia(barbeariaData);
+                const servicosData = await api.getServicosByBarbearia(barbeariaData.id);
+                setServicos(servicosData);
+            } else {
+                toast.error("Barbearia não encontrada.");
+            }
+        } catch (error) {
+            toast.error("Falha ao carregar dados da barbearia.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (!slug) return;
-            try {
-                setLoading(true);
-                const barbeariaData = await api.getBarbeariaBySlug(slug);
-                if (barbeariaData) {
-                    setBarbearia(barbeariaData);
-                    const servicosData = await api.getServicosByBarbearia(barbeariaData.id);
-                    setServicos(servicosData);
-                } else {
-                    toast.error("Barbearia não encontrada.");
-                }
-            } catch (error) {
-                toast.error("Falha ao carregar dados da barbearia.");
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, [slug]);
+
+    const handleAppointmentFound = (appointment: Agendamento, phone: string) => {
+        setFoundAppointment(appointment);
+        setClientPhone(phone);
+        setIsAppointmentModalOpen(true);
+    };
+
+    const handleAppointmentUpdate = () => {
+        // Após cancelar, reabre o modal de busca para verificar o status ou fechar
+        setFoundAppointment(null);
+        setIsAppointmentModalOpen(false);
+        setIsAccountModalOpen(true);
+    };
 
     if (loading) {
         return <div className="flex items-center justify-center h-screen bg-black text-white">Carregando...</div>;
@@ -128,7 +148,23 @@ const PublicProfilePage = () => {
                     </div>
                 </footer>
             </div>
-            <ClientAccountModal isOpen={isAccountModalOpen} onClose={() => setIsAccountModalOpen(false)} />
+            
+            {/* Modals */}
+            <ClientAccountModal 
+                isOpen={isAccountModalOpen} 
+                onClose={() => setIsAccountModalOpen(false)} 
+                onAppointmentFound={handleAppointmentFound}
+            />
+            {barbearia && (
+                <ClientAppointmentModal
+                    isOpen={isAppointmentModalOpen}
+                    onClose={() => setIsAppointmentModalOpen(false)}
+                    appointment={foundAppointment}
+                    barbearia={barbearia}
+                    clientPhone={clientPhone}
+                    onAppointmentUpdate={handleAppointmentUpdate}
+                />
+            )}
         </>
     );
 };
