@@ -182,7 +182,8 @@ export const api = {
       finalUpdates.foto_url = await uploadPhoto(photoFile, 'fotos-barbearias');
     }
     if (heroFile) {
-      finalUpdates.hero_image_url = await uploadPhoto(heroFile, 'hero-images');
+      // ALTERADO: Usando 'fotos-barbearias' em vez de 'hero-images'
+      finalUpdates.hero_image_url = await uploadPhoto(heroFile, 'fotos-barbearias');
     }
 
     const { data, error } = await supabase.functions.invoke('update-barbershop', {
