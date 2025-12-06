@@ -104,7 +104,12 @@ export const api = {
     return data;
   },
 
-  getPlanoByName: async (nome: string): Promise<Plano | null> => {
+  getPlanoByName: async (nome: string | undefined | null): Promise<Plano | null> => {
+    if (!nome) {
+        console.warn(`Plano com nome "${nome}" não encontrado.`);
+        return null;
+    }
+    
     const { data, error } = await supabase
       .from('planos')
       .select('*')

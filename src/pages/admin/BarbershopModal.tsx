@@ -33,7 +33,7 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
   const [password, setPassword] = useState('');
   const [endereco, setEndereco] = useState('');
   const [documento, setDocumento] = useState('');
-  const [plano, setPlano] = useState('');
+  const [plano, setPlano] = useState(''); // Inicializado como string vazia
   const [status, setStatus] = useState<'ativa' | 'inativa'>('ativa');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -66,7 +66,7 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
       setTelefone(barbeariaToEdit.telefone || '');
       setEndereco(barbeariaToEdit.endereco || '');
       setDocumento(barbeariaToEdit.documento || '');
-      setPlano(barbeariaToEdit.plano);
+      setPlano(barbeariaToEdit.plano || ''); // Garante que é string vazia se for null
       setStatus(barbeariaToEdit.status);
       setPhotoPreview(barbeariaToEdit.foto_url || null);
       setPassword('');
