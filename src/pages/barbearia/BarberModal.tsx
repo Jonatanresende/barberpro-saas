@@ -3,6 +3,7 @@ import { Barbeiro, ProfessionalType } from '@/types';
 import Modal from '@/components/Modal';
 import { UsersIcon } from '@/components/icons';
 import toast from 'react-hot-toast';
+import { Link, useParams } from 'react-router-dom'; // Importando Link e useParams
 
 interface BarberModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface BarberModalProps {
 }
 
 const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeature, professionalTypes }: BarberModalProps) => {
+  const { slug } = useParams<{ slug: string }>(); // Obtendo o slug para o link
   const [nome, setNome] = useState('');
   const [especialidade, setEspecialidade] = useState('');
   const [email, setEmail] = useState('');
@@ -46,10 +48,7 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
         setProfessionalTypeId(barberToEdit.professional_type_id);
       } else {
         // Plano Básico: Usa comissão manual (se houver um valor salvo no professional_type_id, ele é ignorado aqui)
-        // Como não temos um campo 'comissao_manual' na tabela, vamos usar a especialidade para armazenar a comissão temporariamente se necessário, mas o campo 'especialidade' deve ser usado para a especialidade.
-        // Para simplificar, no plano básico, vamos assumir que a comissão manual é salva no campo 'comissao_padrao' da barbearia, mas aqui vamos apenas permitir a entrada manual.
-        // NOTA: O campo 'professional_type_id' é o único campo de comissão no barbeiro. No plano básico, ele deve ser NULL.
-        setCommissionManual(null); // Não há campo de comissão direta no barbeiro para o plano básico.
+        setCommissionManual(null); 
       }
     } else {
       // Reset form for new entry
@@ -99,6 +98,10 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
 
     if (hasBarberPanelFeature) {
       // Plano Profissional: Requer tipo, e-mail e senha (se for novo)
+      if (professionalTypes.length === 0) {
+        toast.error("Crie um Tipo de Profissional antes de adicionar um barbeiro.");
+        return;
+      }
       if (!professionalTypeId) {
         toast.error("Selecione um Tipo de Profissional.");
         return;
@@ -117,22 +120,13 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
       barberData.user_id = barberToEdit?.user_id; // Mantém o user_id se estiver editando
       
     } else {
-      // Plano Básico: Requer comissão manual (se for preenchida)
+      // Plano Básico: A comissão manual é apenas para anotação.
       if (commissionManual !== null && (isNaN(commissionManual) || commissionManual < 0 || commissionManual > 100)) {
         toast.error("A comissão deve ser um número entre 0 e 100.");
         return;
       }
       
-      // No plano básico, o professional_type_id deve ser NULL.
       barberData.professional_type_id = null;
-      
-      // NOTA: O campo 'comissao_padrao' não existe na tabela barbeiros. 
-      // Para o plano básico, a comissão é gerenciada pela barbearia. 
-      // Se o usuário preencher a comissão manual aqui, ela não será salva no barbeiro, 
-      // mas o campo de entrada é mantido para satisfazer o requisito de UI.
-      // Se o usuário estiver no plano básico, a comissão será sempre a padrão da barbearia.
-      // Vamos remover o campo de comissão manual para evitar confusão, já que ele não tem onde ser salvo no barbeiro.
-      // Se o usuário quiser comissão manual no plano básico, ele deve usar o campo 'especialidade' para anotações.
     }
 
     setIsSaving(true);
@@ -171,18 +165,26 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
               <>
                 <div>
                   <label htmlFor="professional_type_id" className="block text-sm font-medium text-gray-300 mb-1">Tipo de Profissional</label>
-                  <select 
-                    id="professional_type_id" 
-                    value={professionalTypeId || ''} 
-                    onChange={e => setProfessionalTypeId(e.target.value)} 
-                    required
-                    className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
-                  >
-                    <option value="" disabled>Selecione um tipo</option>
-                    {professionalTypes.map(type => (
-                        <option key={type.id} value={type.id}>{type.name}</option>
-                    ))}
-                  </select>
+                  {professionalTypes.length > 0 ? (
+                    <select 
+                      id="professional_type_id" 
+                      value={professionalTypeId || ''} 
+                      onChange={e => setProfessionalTypeId(e.target.value)} 
+                      required
+                      className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+                    >
+                      <option value="" disabled>Selecione um tipo</option>
+                      {professionalTypes.map(type => (
+                          <option key={type.id} value={type.id}>{type.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="bg-yellow-500/10 p-3 rounded-md border border-yellow-500/30">
+                        <p className="text-sm text-yellow-400">
+                            Você precisa <Link to={`/${slug}/settings/types`} onClick={onClose} className="underline font-semibold">criar um Tipo de Profissional</Link> antes de adicionar um barbeiro com acesso ao painel.
+                        </p>
+                    </div>
+                  )}
                 </div>
                 
                 {automaticCommission !== null && (
