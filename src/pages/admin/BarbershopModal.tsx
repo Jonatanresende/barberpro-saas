@@ -105,6 +105,10 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
         alert("A senha é obrigatória para cadastrar uma nova barbearia.");
         return;
     }
+    if (!plano) {
+        toast.error("O plano é obrigatório.");
+        return;
+    }
     setIsSaving(true);
     const barbeariaData = {
       nome,
@@ -152,7 +156,8 @@ const BarbershopModal = ({ isOpen, onClose, onSave, barbeariaToEdit }: Barbersho
 
         <div>
           <label htmlFor="plano" className="block text-sm font-medium text-gray-300 mb-1">Plano</label>
-          <select id="plano" value={plano} onChange={e => setPlano(e.target.value)} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white">
+          <select id="plano" value={plano} onChange={e => setPlano(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white">
+            <option value="" disabled>Selecione um plano</option>
             {availablePlans.map(p => (
                 <option key={p.id} value={p.nome}>{p.nome} - R${p.preco.toFixed(2)}</option>
             ))}
