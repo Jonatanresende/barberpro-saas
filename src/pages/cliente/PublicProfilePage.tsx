@@ -164,8 +164,8 @@ const PublicProfilePage = () => {
                                 </a>
                             )}
                             {barbearia.whatsapp_url && (
-                                <a href={barbearia.whatsapp_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 bg-[#4caf50] rounded-full flex items-center justify-center text-white hover:opacity-80 transition-opacity">
-                                    <WhatsAppIcon className="w-8 h-8" />
+                                <a href={barbearia.whatsapp_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity">
+                                    <WhatsAppIcon className="w-16 h-16" />
                                 </a>
                             )}
                         </div>
