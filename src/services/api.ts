@@ -197,9 +197,10 @@ export const api = {
 
   // ADMIN - Barbearias
   getBarbearias: async (): Promise<Barbearia[]> => {
+    // Solicitando explicitamente todos os campos necessários para a tabela e o modal de edição
     const { data, error } = await supabase
       .from('barbearias')
-      .select('*')
+      .select('id, nome, dono_email, dono_id, plano, status, criado_em, foto_url, dono_nome, telefone, endereco, documento, link_personalizado')
       .order('criado_em', { ascending: false });
     if (error) throw new Error(error.message);
     return data as Barbearia[];
