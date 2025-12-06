@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus, Cliente, BarbeiroDisponibilidade } from '@/types';
+import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus, Cliente, BarbeiroDisponibilidade, ProfessionalType } from '@/types';
 
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
@@ -145,6 +145,46 @@ export const api = {
   deletePlano: async (id: string): Promise<void> => {
     const { error } = await supabase
       .from('planos')
+      .delete()
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+  },
+
+  // Tipos de Profissional (ProfessionalType)
+  getProfessionalTypes: async (barbershopId: string): Promise<ProfessionalType[]> => {
+    const { data, error } = await supabase
+      .from('professional_types')
+      .select('*')
+      .eq('barbershop_id', barbershopId)
+      .order('name', { ascending: true });
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  createProfessionalType: async (barbershopId: string, typeData: Omit<ProfessionalType, 'id' | 'barbershop_id' | 'created_at'>): Promise<ProfessionalType> => {
+    const { data, error } = await supabase
+      .from('professional_types')
+      .insert([{ ...typeData, barbershop_id: barbershopId }])
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  updateProfessionalType: async (id: string, typeData: Partial<Omit<ProfessionalType, 'id' | 'barbershop_id' | 'created_at'>>): Promise<ProfessionalType> => {
+    const { data, error } = await supabase
+      .from('professional_types')
+      .update(typeData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  deleteProfessionalType: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('professional_types')
       .delete()
       .eq('id', id);
     if (error) throw new Error(error.message);
@@ -310,7 +350,7 @@ export const api = {
   getBarbeirosByBarbearia: async (barbeariaId: string): Promise<Barbeiro[]> => {
     const { data, error } = await supabase
       .from('barbeiros')
-      .select('*')
+      .select('*, professional_types(name, commission_percent)') // Incluindo o join
       .eq('barbearia_id', barbeariaId);
     if (error) throw new Error(error.message);
     return data;
@@ -334,7 +374,7 @@ export const api = {
     const { data, error } = await supabase
       .from('barbeiros')
       .insert([{ ...barberData, barbearia_id: barbeariaId, foto_url: photoUrl, user_id: null }])
-      .select()
+      .select('*, professional_types(name, commission_percent)') // Incluindo o join
       .single();
     if (error) throw new Error(error.message);
     return data;
@@ -352,7 +392,15 @@ export const api = {
       const errorMessage = data?.error || error.message;
       throw new Error(errorMessage);
     }
-    return data as Barbeiro;
+    // Após a atualização, buscamos o registro completo com o join para retornar o tipo de profissional
+    const { data: updatedBarber, error: fetchError } = await supabase
+      .from('barbeiros')
+      .select('*, professional_types(name, commission_percent)')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw new Error(fetchError.message);
+    return updatedBarber;
   },
 
   deleteBarbeiro: async (id: string, userId?: string): Promise<void> => {
@@ -405,7 +453,7 @@ export const api = {
   getAgendamentosByBarbearia: async (barbeariaId: string): Promise<Agendamento[]> => {
     const { data, error } = await supabase
       .from('agendamentos')
-      .select('*, servicos(preco)')
+      .select('*, servicos(preco), barbeiros(professional_types(commission_percent))') // Incluindo join para comissão
       .eq('barbearia_id', barbeariaId)
       .order('data', { ascending: false });
     if (error) throw new Error(error.message);
@@ -417,7 +465,7 @@ export const api = {
       .from('agendamentos')
       .update(updates)
       .eq('id', id)
-      .select('*, servicos(preco)')
+      .select('*, servicos(preco), barbeiros(professional_types(commission_percent))') // Incluindo join para comissão
       .single();
     if (error) throw new Error(error.message);
     return data;
@@ -459,7 +507,7 @@ export const api = {
   getAppointmentsByClient: async (clientId: string, barbeariaId: string): Promise<Agendamento[]> => {
     const { data, error } = await supabase
       .from('agendamentos')
-      .select('*')
+      .select('*, servicos(preco), barbeiros(professional_types(commission_percent))') // Incluindo join para comissão
       .eq('cliente_id', clientId)
       .eq('barbearia_id', barbeariaId)
       .order('data', { ascending: false });
@@ -482,7 +530,7 @@ export const api = {
   getAgendamentosByBarbeiro: async (barbeiroId: string): Promise<Agendamento[]> => {
     const { data, error } = await supabase
       .from('agendamentos')
-      .select('*, servicos(preco)')
+      .select('*, servicos(preco), barbeiros(professional_types(commission_percent))') // Incluindo join para comissão
       .eq('barbeiro_id', barbeiroId)
       .order('data', { ascending: false });
     if (error) throw new Error(error.message);

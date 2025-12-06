@@ -48,10 +48,21 @@ const BarberStatsDashboard = () => {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard title="Sua Comissão (Mês)" value={formatCurrency(dashboardData?.comissaoDoMes || 0)} icon={<DollarSignIcon className="w-5 h-5 text-white"/>} colorClass="bg-green-500" />
-            <StatCard title="Total Gerado (Mês)" value={formatCurrency(dashboardData?.totalGeradoNoMes || 0)} icon={<ClockIcon className="w-5 h-5 text-white"/>} colorClass="bg-yellow-500" />
-            <StatCard title="Serviços Concluídos (Mês)" value={dashboardData?.agendamentosConcluidos || 0} icon={<ScissorsIcon className="w-5 h-5 text-white"/>} colorClass="bg-blue-500" />
+        <div className="space-y-6">
+            <div className="bg-brand-dark p-4 rounded-lg border border-brand-gray">
+                <h3 className="text-lg font-semibold text-white mb-2">Seu Perfil</h3>
+                <p className="text-sm text-gray-300">
+                    Tipo de Profissional: <span className="font-semibold text-brand-gold">{dashboardData?.professionalTypeName || 'Não Definido'}</span>
+                </p>
+                <p className="text-sm text-gray-300">
+                    Comissão: <span className="font-semibold text-brand-gold">{dashboardData?.commissionRate}%</span>
+                </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatCard title="Sua Comissão (Mês)" value={formatCurrency(dashboardData?.comissaoDoMes || 0)} icon={<DollarSignIcon className="w-5 h-5 text-white"/>} colorClass="bg-green-500" />
+                <StatCard title="Total Gerado (Mês)" value={formatCurrency(dashboardData?.totalGeradoNoMes || 0)} icon={<DollarSignIcon className="w-5 h-5 text-white"/>} colorClass="bg-yellow-500" />
+                <StatCard title="Serviços Concluídos (Mês)" value={dashboardData?.agendamentosConcluidos || 0} icon={<ScissorsIcon className="w-5 h-5 text-white"/>} colorClass="bg-blue-500" />
+            </div>
         </div>
     );
 };

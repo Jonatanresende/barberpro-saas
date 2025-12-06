@@ -4,15 +4,16 @@ import toast from 'react-hot-toast';
 import { api } from '@/services/api';
 import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano, Cliente } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
-import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon } from '@/components/icons';
+import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon, SettingsIcon } from '@/components/icons';
 import BarberModal from '@/pages/barbearia/BarberModal';
 import ServiceModal from '@/pages/barbearia/ServiceModal';
 import ProfilePage from './ProfilePage';
 import ClientEditModal from './ClientEditModal';
 import ClientHistoryModal from './ClientHistoryModal';
+import ManageProfessionalTypes from './ManageProfessionalTypes';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
-  <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center">
+  <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">
     <div className="p-3 rounded-full bg-brand-gray mr-4">{icon}</div>
     <div>
       <p className="text-sm text-gray-400">{title}</p>
@@ -57,7 +58,7 @@ const BarbeariaDashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {stats.barberStatusList && stats.barberStatusList.map((barber: any) => (
                         <div key={barber.id} className="bg-brand-gray p-4 rounded-lg flex items-center space-x-4">
-                            <img src={barber.foto_url || 'https://via.placeholder.com/48'} alt={barber.nome} className="w-12 h-12 rounded-full object-cover" />
+                            <img src={barber.foto_url || 'https://via.placeholder.com/48'} alt={barber.nome} className="w-12 h-12 rounded-full mx-auto mb-4 border-2 border-brand-gold object-cover" />
                             <div>
                                 <p className="font-semibold text-white">{barber.nome}</p>
                                 <div className="flex items-center text-xs mt-1">
@@ -100,6 +101,7 @@ const BarbeariaDashboard = () => {
 const ManageBarbers = () => {
     const { user } = useAuth();
     const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
+    const [types, setTypes] = useState<ProfessionalType[]>([]);
     const [plano, setPlano] = useState<Plano | null>(null);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,6 +119,10 @@ const ManageBarbers = () => {
                 if (barbeariaData) {
                     const planData = await api.getPlanoByName(barbeariaData.plano);
                     setPlano(planData);
+                    if (planData?.nome.toLowerCase() === 'profissional') {
+                        const typesData = await api.getProfessionalTypes(user.barbeariaId);
+                        setTypes(typesData);
+                    }
                 }
             } catch (error) {
                 toast.error("Falha ao carregar dados dos barbeiros e do plano.");
@@ -130,7 +136,7 @@ const ManageBarbers = () => {
         fetchBarbersAndPlan();
     }, [fetchBarbersAndPlan]);
 
-    const hasBarberPanelFeature = useMemo(() => 
+    const hasProfessionalPlan = useMemo(() => 
         plano?.nome.toLowerCase() === 'profissional', 
     [plano]);
 
@@ -150,7 +156,7 @@ const ManageBarbers = () => {
         if (barberToEdit) {
             promise = api.updateBarbeiro(barberToEdit.id, barberToEdit.user_id, barberData, photoFile);
         } else {
-            if (hasBarberPanelFeature) {
+            if (hasProfessionalPlan) {
                 promise = api.createBarbeiro(barberData, user.barbeariaId, password!, photoFile);
             } else {
                 promise = api.createBarbeiroWithoutAuth(barberData, user.barbeariaId, photoFile);
@@ -188,7 +194,7 @@ const ManageBarbers = () => {
                     <div>
                         <h2 className="text-xl font-semibold text-white">Gerenciar Barbeiros</h2>
                         {!loading && (
-                            hasBarberPanelFeature ? (
+                            hasProfessionalPlan ? (
                                 <p className="text-xs text-green-400 mt-1">Seu plano permite criar acessos individuais para barbeiros.</p>
                             ) : (
                                 <p className="text-xs text-yellow-400 mt-1">Seu plano não inclui acesso individual para barbeiros.</p>
@@ -204,6 +210,9 @@ const ManageBarbers = () => {
                                 <img src={barbeiro.foto_url} alt={barbeiro.nome} className="w-24 h-24 rounded-full mx-auto mb-4 border-2 border-brand-gold object-cover"/>
                                 <h3 className="font-semibold text-white">{barbeiro.nome}</h3>
                                 <p className="text-sm text-gray-400">{barbeiro.especialidade}</p>
+                                {hasProfessionalPlan && barbeiro.professional_types && (
+                                    <p className="text-xs text-brand-gold mt-1">{barbeiro.professional_types.name} ({barbeiro.professional_types.commission_percent}%)</p>
+                                )}
                                 <span className={`mt-2 inline-block px-2 py-1 rounded-full text-xs font-semibold ${barbeiro.ativo ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                                 {barbeiro.ativo ? 'Ativo' : 'Inativo'}
                                 </span>
@@ -216,7 +225,16 @@ const ManageBarbers = () => {
                     </div>
                 )}
             </div>
-            <BarberModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} barberToEdit={barberToEdit} hasBarberPanelFeature={hasBarberPanelFeature} />
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={barberToEdit ? 'Editar Barbeiro' : 'Adicionar Barbeiro'}>
+                <BarberModal 
+                    isOpen={isModalOpen} 
+                    onClose={() => setIsModalOpen(false)} 
+                    onSave={handleSave} 
+                    barberToEdit={barberToEdit} 
+                    hasBarberPanelFeature={hasProfessionalPlan} 
+                    professionalTypes={types} // Passando os tipos
+                />
+            </Modal>
         </>
     );
 };
@@ -800,6 +818,51 @@ const Settings = () => {
     )
 };
 
+const SettingsWrapper = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { slug } = useParams();
+    const { user } = useAuth();
+
+    const hasProfessionalPlan = user?.plano?.toLowerCase() === 'profissional';
+
+    const determineSettingsTab = () => {
+        const pathEnd = location.pathname.split('/').pop();
+        if (pathEnd === 'types') return 'types';
+        return 'general';
+    };
+
+    const [activeSettingsTab, setActiveSettingsTab] = useState(determineSettingsTab());
+
+    useEffect(() => {
+        setActiveSettingsTab(determineSettingsTab());
+    }, [location.pathname]);
+
+    const handleTabChange = (tab: string) => {
+        navigate(`/${slug}/settings/${tab}`);
+    };
+
+    const renderContent = () => {
+        switch (activeSettingsTab) {
+            case 'types': return <ManageProfessionalTypes />;
+            case 'general':
+            default: return <Settings />;
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex border-b border-brand-gray flex-wrap">
+                <button onClick={() => handleTabChange('general')} className={`px-4 py-2 text-sm font-medium ${activeSettingsTab === 'general' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Geral</button>
+                {hasProfessionalPlan && (
+                    <button onClick={() => handleTabChange('types')} className={`px-4 py-2 text-sm font-medium ${activeSettingsTab === 'types' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Tipos de Profissional</button>
+                )}
+            </div>
+            {renderContent()}
+        </div>
+    );
+};
+
 
 export const BarbeariaPage = () => {
     const location = useLocation();
@@ -837,7 +900,7 @@ export const BarbeariaPage = () => {
             case 'services': return <ManageServices />;
             case 'appointments': return <ManageAppointments />;
             case 'clients': return <ManageClients />;
-            case 'settings': return <Settings />;
+            case 'settings': return <SettingsWrapper />;
             case 'profile': return <ProfilePage />;
             default: return <BarbeariaDashboard />;
         }

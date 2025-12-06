@@ -38,25 +38,20 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 3. OWNERSHIP CHECK
+    // 3. OWNERSHIP CHECK & FETCH BARBER INFO
     const { data: barberProfile, error: profileError } = await supabaseAdmin
       .from('barbeiros')
-      .select('id')
+      .select('id, barbearia_id, professional_types(name, commission_percent)') // Incluindo professional_types
       .eq('user_id', user.id)
       .single();
 
     if (profileError || !barberProfile || barberProfile.id !== barbeiroId) {
       return new Response(JSON.stringify({ error: 'Você não tem permissão para ver este dashboard.' }), { status: 403, headers: corsHeaders });
     }
+    
+    const barbeiro = barberProfile;
 
-    // 4. EXECUTION
-    const { data: barbeiro, error: barbeiroError } = await supabaseAdmin
-      .from('barbeiros')
-      .select('barbearia_id')
-      .eq('id', barbeiroId)
-      .single();
-    if (barbeiroError) throw barbeiroError;
-
+    // 4. FETCH BARBERSHOP INFO (for default commission if type is missing)
     const { data: barbearia, error: barbeariaError } = await supabaseAdmin
       .from('barbearias')
       .select('comissao_padrao')
@@ -68,6 +63,7 @@ serve(async (req) => {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
 
+    // 5. FETCH APPOINTMENTS
     const { data: agendamentos, error: agendamentosError } = await supabaseAdmin
       .from('agendamentos')
       .select('status, servicos(preco)')
@@ -76,7 +72,10 @@ serve(async (req) => {
       .lte('data', endOfMonth);
     if (agendamentosError) throw agendamentosError;
 
-    const comissaoPercentual = (barbearia.comissao_padrao || 0) / 100;
+    // Determine the commission rate: use professional type commission if available, otherwise use barbershop default.
+    const commissionRate = barbeiro.professional_types?.commission_percent ?? barbearia.comissao_padrao;
+    const comissaoPercentual = (commissionRate || 0) / 100;
+    
     let comissaoDoMes = 0;
     let totalGeradoNoMes = 0;
     let agendamentosConcluidos = 0;
@@ -95,6 +94,8 @@ serve(async (req) => {
       totalGeradoNoMes,
       agendamentosConcluidos,
       totalAgendamentosMes: agendamentos.length,
+      professionalTypeName: barbeiro.professional_types?.name,
+      commissionRate: commissionRate,
     };
 
     return new Response(JSON.stringify(response), {

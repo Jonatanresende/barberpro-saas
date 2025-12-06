@@ -8,7 +8,7 @@ export enum UserRole {
 export enum AppointmentStatus {
   PENDENTE = 'pendente',
   CONFIRMADO = 'confirmado',
-  CONCLUIDO = 'concluído',
+  CONCLUIDO = 'concluido',
   CANCELADO = 'cancelado',
 }
 
@@ -66,6 +66,14 @@ export interface Barbearia {
   trial_expires_at?: string;
 }
 
+export interface ProfessionalType {
+  id: string;
+  barbershop_id: string;
+  name: string;
+  commission_percent: number;
+  created_at: string;
+}
+
 export interface Barbeiro {
   id: string;
   user_id?: string;
@@ -76,6 +84,8 @@ export interface Barbeiro {
   especialidade: string;
   foto_url: string;
   ativo: boolean;
+  professional_type_id?: string; // Novo campo
+  professional_types?: ProfessionalType; // Para join
 }
 
 export interface Servico {
@@ -110,6 +120,11 @@ export interface Agendamento {
   servicos?: { // Adicionado para buscar o preço
     preco: number;
   };
+  barbeiros?: { // Adicionado para buscar a comissão do barbeiro
+    professional_types: {
+      commission_percent: number;
+    } | null;
+  }
 }
 
 export interface BarbeiroDisponibilidade {

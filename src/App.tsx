@@ -75,6 +75,8 @@ const AppRoutes = () => {
             <Route path="appointments" element={<BarbeariaPage />} />
             <Route path="clients" element={<BarbeariaPage />} />
             <Route path="settings" element={<BarbeariaPage />} />
+            <Route path="settings/types" element={<BarbeariaPage />} /> {/* Nova rota */}
+            <Route path="settings/general" element={<BarbeariaPage />} /> {/* Rota explícita para a aba geral */}
             <Route path="profile" element={<BarbeariaPage />} />
           </Route>
         </Route>
