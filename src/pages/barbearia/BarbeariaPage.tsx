@@ -11,6 +11,7 @@ import ProfilePage from './ProfilePage';
 import ClientEditModal from './ClientEditModal';
 import ClientHistoryModal from './ClientHistoryModal';
 import ManageProfessionalTypes from './ManageProfessionalTypes';
+import Modal from '@/components/Modal'; // <-- Importação adicionada
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">
