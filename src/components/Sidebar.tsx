@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { UserRole } from '@/types';
-import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon, ActivityIcon, UserIcon, ClockIcon } from '@/components/icons';
+import { StoreIcon, ScissorsIcon, UsersIcon, SettingsIcon, CalendarIcon, ClipboardListIcon, ActivityIcon, UserIcon, ClockIcon, DollarSignIcon } from '@/components/icons';
 import { useSettings } from '@/hooks/useSettings';
 
 const defaultLogo = '/landing/images/logo.png';
@@ -32,6 +32,7 @@ const getNavItems = (role: UserRole, slug?: string) => {
         { to: "/admin/dashboard", icon: <UsersIcon className="w-5 h-5" />, label: "Dashboard" },
         { to: "/admin/barbershops", icon: <StoreIcon className="w-5 h-5" />, label: "Barbearias" },
         { to: "/admin/plans", icon: <ClipboardListIcon className="w-5 h-5" />, label: "Planos" },
+        { to: "/admin/expenses", icon: <DollarSignIcon className="w-5 h-5" />, label: "Gastos" },
         { to: "/admin/settings", icon: <SettingsIcon className="w-5 h-5" />, label: "Configurações" },
       ];
     case UserRole.BARBEARIA:
