@@ -669,7 +669,7 @@ const Settings = () => {
             operating_days: barbearia.operating_days,
             start_time: barbearia.start_time,
             end_time: barbearia.end_time,
-            comissao_padrao: barbearia.comissao_padrao,
+            // Removido comissao_padrao
         };
 
         setIsSaving(true);
@@ -746,10 +746,7 @@ const Settings = () => {
                         </button>
                     </div>
                 </div>
-                <div>
-                    <label htmlFor="comissao_padrao" className="block text-sm font-medium text-gray-300 mb-2">Comissão Padrão (%)</label>
-                    <input type="number" id="comissao_padrao" name="comissao_padrao" value={barbearia.comissao_padrao || ''} onChange={handleInputChange} placeholder="Ex: 50" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
-                </div>
+                {/* Campo Comissão Padrão (%) removido */}
                 <div>
                     <label htmlFor="instagram_url" className="block text-sm font-medium text-gray-300 mb-2">URL do Instagram</label>
                     <input type="url" id="instagram_url" name="instagram_url" value={barbearia.instagram_url || ''} onChange={handleInputChange} placeholder="https://instagram.com/suabarbearia" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
