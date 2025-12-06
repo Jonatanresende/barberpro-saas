@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano, Cliente } from '@/types';
+import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano, Cliente, ProfessionalType } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon, SettingsIcon } from '@/components/icons';
 import BarberModal from '@/pages/barbearia/BarberModal';
@@ -824,8 +824,21 @@ const SettingsWrapper = () => {
     const navigate = useNavigate();
     const { slug } = useParams();
     const { user } = useAuth();
+    
+    // State to hold the plan data
+    const [barbeariaPlan, setBarbeariaPlan] = useState<Plano | null>(null);
 
-    const hasProfessionalPlan = user?.plano?.toLowerCase() === 'profissional';
+    useEffect(() => {
+        if (user?.barbeariaId) {
+            // Fetch the full barbershop data to get the plan name
+            api.getBarbeariaById(user.barbeariaId)
+                .then(data => api.getPlanoByName(data.plano))
+                .then(setBarbeariaPlan)
+                .catch(() => toast.error("Falha ao carregar dados do plano para configurações."));
+        }
+    }, [user]);
+
+    const hasProfessionalPlan = barbeariaPlan?.nome.toLowerCase() === 'profissional';
 
     const determineSettingsTab = () => {
         const pathEnd = location.pathname.split('/').pop();
@@ -855,6 +868,7 @@ const SettingsWrapper = () => {
         <div className="space-y-6">
             <div className="flex border-b border-brand-gray flex-wrap">
                 <button onClick={() => handleTabChange('general')} className={`px-4 py-2 text-sm font-medium ${activeSettingsTab === 'general' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Geral</button>
+                {/* Conditionally render the Types tab based on the fetched plan */}
                 {hasProfessionalPlan && (
                     <button onClick={() => handleTabChange('types')} className={`px-4 py-2 text-sm font-medium ${activeSettingsTab === 'types' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Tipos de Profissional</button>
                 )}
@@ -872,12 +886,21 @@ export const BarbeariaPage = () => {
 
     const determineActiveTab = () => {
         const pathParts = location.pathname.split('/');
+        // We need to look at the last part and the second to last part
         const lastPart = pathParts[pathParts.length - 1];
+        const secondLastPart = pathParts[pathParts.length - 2];
+
         const validTabs = ['dashboard', 'appointments', 'barbers', 'services', 'clients', 'settings', 'profile'];
         
         if (validTabs.includes(lastPart)) {
             return lastPart;
         }
+        
+        // Handle nested routes like /settings/types
+        if (secondLastPart && validTabs.includes(secondLastPart)) {
+            return secondLastPart;
+        }
+        
         if (lastPart === slug || lastPart === '') {
             return 'dashboard';
         }
