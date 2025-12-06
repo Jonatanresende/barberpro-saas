@@ -68,6 +68,18 @@ serve(async (req) => {
       dbUpdates.dono_email = dono_email;
     }
 
+    // Adicionando a atualização do full_name do dono no Auth, se dono_nome estiver presente
+    if (dbUpdates.dono_nome) {
+        const { error: authNameError } = await supabaseAdmin.auth.admin.updateUserById(
+            ownerId,
+            { user_metadata: { full_name: dbUpdates.dono_nome } }
+        );
+        if (authNameError) {
+            console.error('Erro ao atualizar nome do usuário no Auth:', authNameError);
+            // Não lançamos erro fatal, apenas logamos, pois o foco é o registro da barbearia.
+        }
+    }
+
     const { data, error: dbError } = await supabaseAdmin
       .from('barbearias')
       .update(dbUpdates)
