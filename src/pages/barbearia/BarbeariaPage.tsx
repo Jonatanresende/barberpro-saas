@@ -11,7 +11,7 @@ import ProfilePage from './ProfilePage';
 import ClientEditModal from './ClientEditModal';
 import ClientHistoryModal from './ClientHistoryModal';
 import ManageProfessionalTypes from './ManageProfessionalTypes';
-import Modal from '@/components/Modal'; // <-- Importação adicionada
+import Modal from '@/components/Modal';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">
@@ -23,7 +23,12 @@ const StatCard = ({ title, value, icon }: { title: string, value: string | numbe
   </div>
 );
 
-const BarbeariaDashboard = () => {
+interface DashboardProps {
+    barbeariaData: Barbearia | null;
+    barbeariaPlan: Plano | null;
+}
+
+const BarbeariaDashboard = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
     const { user } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -42,6 +47,7 @@ const BarbeariaDashboard = () => {
     if (!stats) return <p className="text-center text-gray-400">Não foi possível carregar os dados.</p>;
 
     const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
+    const hasProfessionalPlan = barbeariaPlan?.nome.toLowerCase() === 'profissional';
 
     return (
         <div className="space-y-8">
@@ -76,34 +82,44 @@ const BarbeariaDashboard = () => {
 
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
                 <h3 className="text-lg font-semibold text-white mb-4">Comissões do Mês (A Pagar)</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-gray-300">
-                        <thead className="bg-brand-gray text-xs uppercase">
-                            <tr>
-                                <th className="px-6 py-3">Barbeiro</th>
-                                <th className="px-6 py-3">Valor da Comissão</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {stats.comissoes && stats.comissoes.map((c: any, index: number) => (
-                                <tr key={index} className="border-b border-brand-gray hover:bg-brand-gray">
-                                    <td className="px-6 py-4 font-medium text-white">{c.nome}</td>
-                                    <td className="px-6 py-4 font-semibold text-brand-gold">{formatCurrency(c.valor)}</td>
+                {!hasProfessionalPlan ? (
+                    <div className="bg-yellow-500/10 p-4 rounded-md border border-yellow-500/30 text-yellow-400">
+                        <p className="font-semibold">Recurso Exclusivo do Plano Profissional.</p>
+                        <p className="text-sm mt-1">Faça upgrade para gerenciar comissões individuais e ter relatórios detalhados por barbeiro.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-gray-300">
+                            <thead className="bg-brand-gray text-xs uppercase">
+                                <tr>
+                                    <th className="px-6 py-3">Barbeiro</th>
+                                    <th className="px-6 py-3">Valor da Comissão</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {stats.comissoes && stats.comissoes.map((c: any, index: number) => (
+                                    <tr key={index} className="border-b border-brand-gray hover:bg-brand-gray">
+                                        <td className="px-6 py-4 font-medium text-white">{c.nome}</td>
+                                        <td className="px-6 py-4 font-semibold text-brand-gold">{formatCurrency(c.valor)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-const ManageBarbers = () => {
+interface ManageBarbersProps {
+    barbeariaPlan: Plano | null;
+}
+
+const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
     const { user } = useAuth();
     const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
     const [types, setTypes] = useState<ProfessionalType[]>([]);
-    const [plano, setPlano] = useState<Plano | null>(null);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [barberToEdit, setBarberToEdit] = useState<Barbeiro | null>(null);
@@ -112,18 +128,16 @@ const ManageBarbers = () => {
         if (user?.barbeariaId) {
             try {
                 setLoading(true);
-                const [barbersData, barbeariaData] = await Promise.all([
+                const [barbersData] = await Promise.all([
                     api.getBarbeirosByBarbearia(user.barbeariaId),
-                    api.getBarbeariaById(user.barbeariaId)
                 ]);
                 setBarbeiros(barbersData);
-                if (barbeariaData) {
-                    const planData = await api.getPlanoByName(barbeariaData.plano);
-                    setPlano(planData);
-                    if (planData?.nome.toLowerCase() === 'profissional') {
-                        const typesData = await api.getProfessionalTypes(user.barbeariaId);
-                        setTypes(typesData);
-                    }
+                
+                if (barbeariaPlan?.nome.toLowerCase() === 'profissional') {
+                    const typesData = await api.getProfessionalTypes(user.barbeariaId);
+                    setTypes(typesData);
+                } else {
+                    setTypes([]);
                 }
             } catch (error) {
                 toast.error("Falha ao carregar dados dos barbeiros e do plano.");
@@ -131,18 +145,18 @@ const ManageBarbers = () => {
                 setLoading(false);
             }
         }
-    }, [user]);
+    }, [user, barbeariaPlan]);
 
     useEffect(() => {
         fetchBarbersAndPlan();
     }, [fetchBarbersAndPlan]);
 
     const hasProfessionalPlan = useMemo(() => 
-        plano?.nome.toLowerCase() === 'profissional', 
-    [plano]);
+        barbeariaPlan?.nome.toLowerCase() === 'profissional', 
+    [barbeariaPlan]);
 
     const handleOpenModal = (barber: Barbeiro | null = null) => {
-        if (!barber && plano?.limite_barbeiros && barbeiros.filter(b => b.ativo).length >= plano.limite_barbeiros) {
+        if (!barber && barbeariaPlan?.limite_barbeiros && barbeiros.filter(b => b.ativo).length >= barbeariaPlan.limite_barbeiros) {
             toast.error('Você atingiu o limite de barbeiros do seu plano. Faça um upgrade para adicionar mais.');
             return;
         }
@@ -233,7 +247,7 @@ const ManageBarbers = () => {
                     onSave={handleSave} 
                     barberToEdit={barberToEdit} 
                     hasBarberPanelFeature={hasProfessionalPlan} 
-                    professionalTypes={types} // Passando os tipos
+                    professionalTypes={types} 
                 />
             </Modal>
         </>
@@ -428,7 +442,7 @@ const ManageAppointments = () => {
                         id="barber-filter"
                         value={filterBarber}
                         onChange={e => setFilterBarber(e.target.value)}
-                        className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+                        className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
                     >
                         <option value="todos">Todos os Barbeiros</option>
                         {barbeiros.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}
@@ -581,7 +595,7 @@ const ManageClients = () => {
     );
 };
 
-const Settings = () => {
+const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
     const { user } = useAuth();
     const [barbearia, setBarbearia] = useState<Partial<Barbearia>>({ operating_days: [] });
     const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -600,18 +614,13 @@ const Settings = () => {
     ];
 
     useEffect(() => {
-        if (user?.barbeariaId) {
-            setLoading(true);
-            api.getBarbeariaById(user.barbeariaId)
-                .then(data => {
-                    setBarbearia(data);
-                    setHeroPreview(data.hero_image_url || null);
-                    setLogoPreview(data.foto_url || null);
-                })
-                .catch(() => toast.error("Falha ao carregar dados da barbearia."))
-                .finally(() => setLoading(false));
+        if (barbeariaData) {
+            setBarbearia(barbeariaData);
+            setHeroPreview(barbeariaData.hero_image_url || null);
+            setLogoPreview(barbeariaData.foto_url || null);
+            setLoading(false);
         }
-    }, [user]);
+    }, [barbeariaData]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -669,7 +678,6 @@ const Settings = () => {
             operating_days: barbearia.operating_days,
             start_time: barbearia.start_time,
             end_time: barbearia.end_time,
-            // Removido comissao_padrao
         };
 
         setIsSaving(true);
@@ -835,25 +843,11 @@ const Settings = () => {
     )
 };
 
-const SettingsWrapper = () => {
+const SettingsWrapper = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { slug } = useParams();
-    const { user } = useAuth();
     
-    // State to hold the plan data
-    const [barbeariaPlan, setBarbeariaPlan] = useState<Plano | null>(null);
-
-    useEffect(() => {
-        if (user?.barbeariaId) {
-            // Fetch the full barbershop data to get the plan name
-            api.getBarbeariaById(user.barbeariaId)
-                .then(data => api.getPlanoByName(data.plano))
-                .then(setBarbeariaPlan)
-                .catch(() => toast.error("Falha ao carregar dados do plano para configurações."));
-        }
-    }, [user]);
-
     const hasProfessionalPlan = barbeariaPlan?.nome.toLowerCase() === 'profissional';
 
     const determineSettingsTab = () => {
@@ -874,9 +868,18 @@ const SettingsWrapper = () => {
 
     const renderContent = () => {
         switch (activeSettingsTab) {
-            case 'types': return <ManageProfessionalTypes />;
+            case 'types': 
+                if (!hasProfessionalPlan) {
+                    return (
+                        <div className="bg-red-500/10 p-6 rounded-lg border border-red-500/30 text-red-400">
+                            <p className="font-semibold">Acesso Negado.</p>
+                            <p className="text-sm mt-1">O gerenciamento de Tipos de Profissional é um recurso exclusivo do Plano Profissional.</p>
+                        </div>
+                    );
+                }
+                return <ManageProfessionalTypes />;
             case 'general':
-            default: return <Settings />;
+            default: return <Settings barbeariaData={barbeariaData} />;
         }
     };
 
@@ -899,10 +902,33 @@ export const BarbeariaPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { slug } = useParams();
+    const { user } = useAuth();
+
+    const [barbeariaData, setBarbeariaData] = useState<Barbearia | null>(null);
+    const [barbeariaPlan, setBarbeariaPlan] = useState<Plano | null>(null);
+    const [loadingData, setLoadingData] = useState(true);
+
+    const fetchBarbeariaInfo = useCallback(async () => {
+        if (user?.barbeariaId) {
+            try {
+                const data = await api.getBarbeariaById(user.barbeariaId);
+                setBarbeariaData(data);
+                const plan = await api.getPlanoByName(data.plano);
+                setBarbeariaPlan(plan);
+            } catch (error) {
+                toast.error("Falha ao carregar dados essenciais da barbearia.");
+            } finally {
+                setLoadingData(false);
+            }
+        }
+    }, [user]);
+
+    useEffect(() => {
+        fetchBarbeariaInfo();
+    }, [fetchBarbeariaInfo]);
 
     const determineActiveTab = () => {
         const pathParts = location.pathname.split('/');
-        // We need to look at the last part and the second to last part
         const lastPart = pathParts[pathParts.length - 1];
         const secondLastPart = pathParts[pathParts.length - 2];
 
@@ -912,7 +938,6 @@ export const BarbeariaPage = () => {
             return lastPart;
         }
         
-        // Handle nested routes like /settings/types
         if (secondLastPart && validTabs.includes(secondLastPart)) {
             return secondLastPart;
         }
@@ -933,16 +958,20 @@ export const BarbeariaPage = () => {
         navigate(`/${slug}/${tab}`);
     };
     
+    if (loadingData) {
+        return <p className="text-center py-10 text-gray-400">Carregando dados da barbearia...</p>;
+    }
+
     const renderContent = () => {
         switch (activeTab) {
-            case 'dashboard': return <BarbeariaDashboard />;
-            case 'barbers': return <ManageBarbers />;
+            case 'dashboard': return <BarbeariaDashboard barbeariaData={barbeariaData} barbeariaPlan={barbeariaPlan} />;
+            case 'barbers': return <ManageBarbers barbeariaPlan={barbeariaPlan} />;
             case 'services': return <ManageServices />;
             case 'appointments': return <ManageAppointments />;
             case 'clients': return <ManageClients />;
-            case 'settings': return <SettingsWrapper />;
+            case 'settings': return <SettingsWrapper barbeariaData={barbeariaData} barbeariaPlan={barbeariaPlan} />;
             case 'profile': return <ProfilePage />;
-            default: return <BarbeariaDashboard />;
+            default: return <BarbeariaDashboard barbeariaData={barbeariaData} barbeariaPlan={barbeariaPlan} />;
         }
     };
     

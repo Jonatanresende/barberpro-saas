@@ -97,7 +97,7 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
     };
 
     if (hasBarberPanelFeature) {
-      // Plano Profissional: Requer tipo, e-mail e senha (se for novo)
+      // PLANO PROFISSIONAL: Requer tipo, e-mail e senha (se for novo)
       if (professionalTypes.length === 0) {
         toast.error("Crie um Tipo de Profissional antes de adicionar um barbeiro.");
         return;
@@ -120,13 +120,16 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
       barberData.user_id = barberToEdit?.user_id; // Mantém o user_id se estiver editando
       
     } else {
-      // Plano Básico: A comissão manual é apenas para anotação.
+      // PLANO BÁSICO: A comissão manual é apenas para anotação.
       if (commissionManual !== null && (isNaN(commissionManual) || commissionManual < 0 || commissionManual > 100)) {
         toast.error("A comissão deve ser um número entre 0 e 100.");
         return;
       }
       
+      // Garante que não há user_id ou professional_type_id para planos básicos
       barberData.professional_type_id = null;
+      barberData.user_id = null;
+      barberData.email = null;
     }
 
     setIsSaving(true);
@@ -214,20 +217,16 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
             ) : (
               // PLANO BÁSICO: Comissão Manual (para anotação)
               <>
-                <div>
-                    <label htmlFor="commission_manual" className="block text-sm font-medium text-gray-300 mb-1">Adicione o valor da comissão (%)</label>
-                    <input 
-                        type="number" 
-                        id="commission_manual" 
-                        value={commissionManual || ''} 
-                        onChange={e => setCommissionManual(parseInt(e.target.value, 10))} 
-                        min="0" 
-                        max="100" 
-                        placeholder="Ex: 40"
-                        className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" 
-                    />
-                    <p className="text-xs text-gray-500 mt-1">A comissão real será a padrão da barbearia, este campo é apenas para referência interna.</p>
+                <div className="bg-brand-dark p-4 rounded-lg border border-gray-700">
+                    <p className="text-sm text-yellow-400 mb-2">
+                        <span className="font-bold">Plano Básico:</span> A comissão é definida pelo padrão da barbearia.
+                    </p>
+                    <p className="text-xs text-gray-500">
+                        Para gerenciar comissões individuais e dar acesso ao painel para o barbeiro, faça upgrade para o Plano Profissional.
+                    </p>
                 </div>
+                {/* Removendo o campo de comissão manual, pois ele não é usado no backend e pode confundir */}
+                {/* Removendo campos de E-mail e Senha, pois não há acesso ao painel */}
               </>
             )}
             
