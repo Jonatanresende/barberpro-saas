@@ -23,7 +23,7 @@ const PublicBookingPage = () => {
     const [clienteTelefone, setClienteTelefone] = useState('');
     const [selectedServico, setSelectedServico] = useState<Servico | null>(null);
     const [selectedBarbeiro, setSelectedBarbeiro] = useState<Barbeiro | null>(null);
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null); // Inicializa como null para forçar a seleção
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -71,55 +71,84 @@ const PublicBookingPage = () => {
         return disponibilidadesDoMes.find(d => d.barbeiro_id === barbeiroId && d.data === dateString);
     };
 
-    const availableTimes = useMemo(() => {
-        if (!barbearia || !selectedDate) return [];
-
-        const availability = selectedBarbeiro ? getBarberAvailabilityForDate(selectedBarbeiro.id, selectedDate) : null;
-        
-        const startTime = availability?.hora_inicio || barbearia.start_time || '09:00';
-        const endTime = availability?.hora_fim || barbearia.end_time || '18:00';
-
-        const times = [];
-        const [startHour, startMinute] = startTime.split(':').map(Number);
-        const [endHour, endMinute] = endTime.split(':').map(Number);
-        let currentTime = new Date();
-        currentTime.setHours(startHour, startMinute, 0, 0);
-        let endDateTime = new Date();
-        endDateTime.setHours(endHour, endMinute, 0, 0);
-
-        while (currentTime < endDateTime) {
-            times.push(currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-            currentTime.setMinutes(currentTime.getMinutes() + 30);
-        }
-
-        const isToday = selectedDate.toDateString() === new Date().toDateString();
-        if (isToday) {
-            const now = new Date();
-            return times.filter(time => {
-                const [hour, minute] = time.split(':').map(Number);
-                const slotTime = new Date(selectedDate);
-                slotTime.setHours(hour, minute, 0, 0);
-                return slotTime > now;
-            });
-        }
-
-        return times;
-    }, [barbearia, selectedDate, selectedBarbeiro, disponibilidadesDoMes]);
-
-    const bookedTimes = useMemo(() => {
-        if (!selectedBarbeiro || !selectedDate) return [];
-        const dateString = selectedDate.toISOString().split('T')[0];
-        return agendamentosDoMes
-            .filter(ag => ag.barbeiro_id === selectedBarbeiro.id && ag.data === dateString)
-            .map(ag => ag.hora.slice(0, 5));
-    }, [agendamentosDoMes, selectedBarbeiro, selectedDate]);
-
     const barberDaysOff = useMemo(() => {
         if (!selectedBarbeiro) return [];
         return disponibilidadesDoMes
             .filter(d => d.barbeiro_id === selectedBarbeiro.id && d.disponivel === false)
             .map(d => d.data);
     }, [disponibilidadesDoMes, selectedBarbeiro]);
+
+    const availableTimes = useMemo(() => {
+        if (!barbearia || !selectedDate || !selectedServico || !selectedBarbeiro) return [];
+
+        const dateString = selectedDate.toISOString().split('T')[0];
+        const dayOfWeek = selectedDate.getDay();
+        
+        // 1. Verificar se o dia é de funcionamento da barbearia
+        if (!barbearia.operating_days?.includes(dayOfWeek)) {
+            return [];
+        }
+
+        // 2. Verificar se o barbeiro tirou folga neste dia
+        if (barberDaysOff.includes(dateString)) {
+            return [];
+        }
+
+        // 3. Determinar horários de início e fim (priorizando a disponibilidade específica do barbeiro)
+        const availability = getBarberAvailabilityForDate(selectedBarbeiro.id, selectedDate);
+        
+        const startTime = availability?.hora_inicio || barbearia.start_time || '09:00';
+        const endTime = availability?.hora_fim || barbearia.end_time || '18:00';
+        const serviceDuration = selectedServico.duracao; // Duração do serviço em minutos
+
+        const times: string[] = [];
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
+        
+        let currentTime = new Date(selectedDate);
+        currentTime.setHours(startHour, startMinute, 0, 0);
+        
+        let endDateTime = new Date(selectedDate);
+        endDateTime.setHours(endHour, endMinute, 0, 0);
+
+        const now = new Date();
+        const isToday = selectedDate.toDateString() === now.toDateString();
+
+        while (currentTime.getTime() + serviceDuration * 60 * 1000 <= endDateTime.getTime()) {
+            
+            // Se for hoje, verifica se o slot já passou
+            if (isToday && currentTime <= now) {
+                currentTime.setMinutes(currentTime.getMinutes() + serviceDuration);
+                continue;
+            }
+
+            const timeString = currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            times.push(timeString);
+            currentTime.setMinutes(currentTime.getMinutes() + serviceDuration);
+        }
+
+        return times;
+    }, [barbearia, selectedDate, selectedServico, selectedBarbeiro, barberDaysOff]);
+
+    const bookedTimes = useMemo(() => {
+        if (!selectedBarbeiro || !selectedDate) return [];
+        const dateString = selectedDate.toISOString().split('T')[0];
+        
+        // Filtra agendamentos para o barbeiro e data selecionados
+        const appointments = agendamentosDoMes
+            .filter(ag => ag.barbeiro_id === selectedBarbeiro.id && ag.data === dateString)
+            .map(ag => ag.hora.slice(0, 5)); // Pega apenas HH:MM
+
+        // Se o serviço selecionado for de 60 minutos, precisamos marcar slots de 30 minutos como ocupados também.
+        // No entanto, a lógica de `availableTimes` já garante que os slots gerados são múltiplos da duração do serviço.
+        // Portanto, basta verificar se o slot gerado está na lista de agendamentos.
+        return appointments;
+    }, [agendamentosDoMes, selectedBarbeiro, selectedDate]);
+
+    const handleDateSelect = (date: Date) => {
+        setSelectedDate(date);
+        setSelectedTime(null);
+    };
 
     const handleNext = () => {
         switch (step) {
@@ -137,6 +166,10 @@ const PublicBookingPage = () => {
                 if (!selectedBarbeiro) {
                     toast.error("Por favor, escolha um barbeiro.");
                     return;
+                }
+                // Se o barbeiro não tiver horários disponíveis para a data atual, forçamos a seleção de data
+                if (!selectedDate) {
+                    setSelectedDate(new Date()); // Define a data atual como padrão para ir para o próximo passo
                 }
                 break;
             case 3:
@@ -222,8 +255,8 @@ const PublicBookingPage = () => {
                             <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Barbeiro</h3>
                             <div className="flex space-x-4 overflow-x-auto pb-2">
                                 {barbeiros.map(barbeiro => {
+                                    // A disponibilidade aqui é apenas para fins visuais, a lógica principal de horário é feita no useMemo
                                     const availabilityRecord = selectedDate ? getBarberAvailabilityForDate(barbeiro.id, selectedDate) : null;
-                                    // A barber is available if there's no specific record, or if the record explicitly says they are available.
                                     const isAvailable = availabilityRecord ? availabilityRecord.disponivel === true : true;
                                     
                                     const handleBarberClick = () => {
@@ -252,17 +285,21 @@ const PublicBookingPage = () => {
                             <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha a Data</h3>
                             <Calendar 
                                 selectedDate={selectedDate} 
-                                onDateSelect={(date) => { setSelectedDate(date); setSelectedTime(null); }} 
+                                onDateSelect={handleDateSelect} 
                                 operatingDays={barbearia.operating_days || []}
                                 fullyBookedDays={barberDaysOff}
                                 onMonthChange={setCurrentMonth}
                                 currentMonth={currentMonth}
                             />
                         </section>
-                        {selectedDate && selectedBarbeiro && (
+                        {selectedDate && selectedBarbeiro && selectedServico && (
                             <section>
-                                <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Horário</h3>
-                                <TimeSlots availableTimes={availableTimes} bookedTimes={bookedTimes} selectedTime={selectedTime} onTimeSelect={setSelectedTime} />
+                                <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Horário ({selectedServico.duracao} min)</h3>
+                                {availableTimes.length > 0 ? (
+                                    <TimeSlots availableTimes={availableTimes} bookedTimes={bookedTimes} selectedTime={selectedTime} onTimeSelect={setSelectedTime} />
+                                ) : (
+                                    <p className="text-gray-400">Nenhum horário disponível para este dia e serviço.</p>
+                                )}
                             </section>
                         )}
                     </div>
