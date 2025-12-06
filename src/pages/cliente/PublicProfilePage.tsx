@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
 import { Barbearia, Servico, Agendamento } from '@/types';
-import { InstagramIcon, WhatsAppIcon, ScissorsIcon, CalendarIcon, UsersIcon } from '@/components/icons';
+import { ScissorsIcon, CalendarIcon, UsersIcon } from '@/components/icons';
 import ClientAccountModal from '@/pages/cliente/ClientAccountModal';
 import ClientAppointmentModal from '@/pages/cliente/ClientAppointmentModal';
 import ClientHistoryModal from '@/pages/cliente/ClientHistoryModal';
@@ -159,13 +159,13 @@ const PublicProfilePage = () => {
                         <p className="text-gray-600 mt-2 mb-8">{barbearia.social_subtitle}</p>
                         <div className="flex justify-center items-center gap-6">
                             {barbearia.instagram_url && (
-                                <a href={barbearia.instagram_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 bg-black rounded-full flex items-center justify-center text-white hover:opacity-80 transition-opacity">
-                                    <InstagramIcon className="w-8 h-8" />
+                                <a href={barbearia.instagram_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 transition-opacity hover:opacity-80">
+                                    <img src="/icons/instagram.svg" alt="Instagram" className="w-full h-full object-contain" />
                                 </a>
                             )}
                             {barbearia.whatsapp_url && (
-                                <a href={barbearia.whatsapp_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity">
-                                    <WhatsAppIcon className="w-16 h-16" />
+                                <a href={barbearia.whatsapp_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 transition-opacity hover:opacity-80">
+                                    <img src="/icons/whatsapp.svg" alt="WhatsApp" className="w-full h-full object-contain" />
                                 </a>
                             )}
                         </div>

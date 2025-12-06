@@ -96,6 +96,7 @@ export const ActivityIcon = ({ className = 'w-6 h-6' }: IconProps) => (
     </svg>
 );
 
+// Restaurando InstagramIcon (Lucide)
 export const InstagramIcon = ({ className = 'w-6 h-6' }: IconProps) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
@@ -104,12 +105,10 @@ export const InstagramIcon = ({ className = 'w-6 h-6' }: IconProps) => (
     </svg>
 );
 
+// Restaurando WhatsAppIcon (Lucide)
 export const WhatsAppIcon = ({ className = 'w-6 h-6' }: IconProps) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 58 58">
-        <g>
-            <path style={{fill: '#2CB742'}} d="M0,58l4.988-14.963C2.475,38.08,1,32.23,1,26.147C1,12.343,12.343,1,26.147,1S51.293,12.343,51.293,26.147 c0,13.804-11.343,25.147-25.147,25.147c-4.594,0-8.933-1.222-12.76-3.41L0,58z"/>
-            <path style={{fill: '#FFFFFF'}} d="M41.559,32.545c-0.227-0.122-1.343-0.663-1.551-0.738c-0.208-0.075-0.358-0.122-0.508,0.122 c-0.15,0.244-0.586,0.738-0.719,0.888c-0.133,0.15-0.267,0.175-0.494,0.05c-0.227-0.125-0.967-0.358-1.842-1.15 c-0.683-0.611-1.144-1.358-1.319-1.582c-0.175-0.225-0.013-0.342,0.11-0.458c0.112-0.108,0.247-0.283,0.372-0.425 c0.125-0.142,0.167-0.244,0.25-0.413c0.083-0.167,0.042-0.317-0.013-0.433c-0.054-0.117-0.494-1.188-0.679-1.625 c-0.185-0.438-0.375-0.375-0.508-0.375h-0.4c-0.133,0-0.342,0.05-0.529,0.225c-0.188,0.175-0.738,0.725-0.738,1.788 c0,1.063,0.752,2.088,0.854,2.238c0.102,0.15,1.488,2.375,3.65,3.25c0.467,0.183,0.833,0.292,1.125,0.375 c0.458,0.125,0.883,0.108,1.217,0.067c0.375-0.042,1.142-0.467,1.304-0.917c0.162-0.45,0.162-0.838,0.112-0.917 C41.95,32.712,41.787,32.667,41.559,32.545z"/>
-        </g>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
 );
 
