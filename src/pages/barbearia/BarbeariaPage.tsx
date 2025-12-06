@@ -690,6 +690,17 @@ const Settings = () => {
         });
     };
 
+    const handleCopyLink = () => {
+        if (barbearia.link_personalizado) {
+            const fullUrl = `${window.location.origin}/#/${barbearia.link_personalizado}`;
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                toast.success('Link copiado para a área de transferência!');
+            }).catch(() => {
+                toast.error('Falha ao copiar o link.');
+            });
+        }
+    };
+
     if (loading) return <p className="text-center text-gray-400">Carregando...</p>;
 
     return (
@@ -725,6 +736,14 @@ const Settings = () => {
                     <div className="flex items-center">
                         <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-l-md border border-r-0 border-gray-600">barberpro.app/</span>
                         <input type="text" id="link_personalizado" name="link_personalizado" value={barbearia.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-r-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                        <button 
+                            type="button" 
+                            onClick={handleCopyLink} 
+                            disabled={!barbearia.link_personalizado}
+                            className="ml-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-50"
+                        >
+                            Copiar URL
+                        </button>
                     </div>
                 </div>
                 <div>
