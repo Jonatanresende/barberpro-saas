@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus, Cliente, BarbeiroDisponibilidade, ProfessionalType } from '@/types';
+import { Agendamento, Barbearia, Barbeiro, Servico, User, Plano, AppointmentStatus, Cliente, BarbeiroDisponibilidade, ProfessionalType, GastoSaas } from '@/types';
 
 export type BarbeariaInsert = Omit<Barbearia, 'id' | 'criado_em' | 'dono_id'>;
 export type BarbeariaUpdate = Partial<BarbeariaInsert>;
@@ -92,6 +92,48 @@ export const api = {
     
     if (error) throw new Error(error.message);
     return data;
+  },
+
+  // Gastos SaaS (Admin)
+  getSaasExpenses: async (): Promise<GastoSaas[]> => {
+    const { data, error } = await supabase
+      .from('gastos_saas')
+      .select('*')
+      .order('data', { ascending: false });
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  createSaasExpense: async (expenseData: Omit<GastoSaas, 'id' | 'user_id' | 'created_at'>): Promise<GastoSaas> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const { data, error } = await supabase
+      .from('gastos_saas')
+      .insert([{ ...expenseData, user_id: user.id }])
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  updateSaasExpense: async (id: string, expenseData: Partial<Omit<GastoSaas, 'id' | 'user_id' | 'created_at'>>): Promise<GastoSaas> => {
+    const { data, error } = await supabase
+      .from('gastos_saas')
+      .update(expenseData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  deleteSaasExpense: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('gastos_saas')
+      .delete()
+      .eq('id', id);
+    if (error) throw new Error(error.message);
   },
 
   // Planos

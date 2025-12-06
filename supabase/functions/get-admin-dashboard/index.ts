@@ -61,17 +61,22 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 10000 });
-    if (usersError) throw usersError;
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
 
-    const barbershopUsers = users.filter(u => u.user_metadata?.role === 'barbearia');
-    const totalBarbershopUsers = barbershopUsers.length;
+    const [
+      { data: barbearias, error: barbeariasError },
+      { data: planos, error: planosError },
+      { data: gastos, error: gastosError }
+    ] = await Promise.all([
+      supabaseAdmin.from('barbearias').select('nome, plano, status, criado_em'),
+      supabaseAdmin.from('planos').select('nome, preco'),
+      supabaseAdmin.from('gastos_saas').select('valor').gte('data', startOfMonth)
+    ]);
 
-    const { data: barbearias, error: barbeariasError } = await supabaseAdmin.from('barbearias').select('nome, plano, status, criado_em');
     if (barbeariasError) throw barbeariasError;
-    
-    const { data: planos, error: planosError } = await supabaseAdmin.from('planos').select('nome, preco');
     if (planosError) throw planosError;
+    if (gastosError) throw gastosError;
 
     const totalBarbearias = barbearias.length;
     const activeBarbearias = barbearias.filter(b => b.status === 'ativa').length;
@@ -82,18 +87,26 @@ serve(async (req) => {
     }, {} as { [key: string]: number });
 
     const totalRevenue = barbearias.reduce((sum, b) => sum + (planPricesMap[b.plano] || 0), 0);
+    
+    const totalMonthlyExpense = gastos.reduce((sum, g) => sum + (g.valor || 0), 0);
 
     const latestBarbershops = barbearias
       .sort((a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime())
       .slice(0, 5)
       .map(b => ({ nome: b.nome, criado_em: b.criado_em }));
 
-    const userGrowthChartData = aggregateByMonth(barbershopUsers, 'created_at').map(d => ({ name: d.name, Usuários: d.value }));
+    // Para o gráfico de crescimento, ainda precisamos dos usuários, então buscamos separadamente
+    const { data: { users: barbershopUsers }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 10000 });
+    if (usersError) throw usersError;
+    const filteredBarbershopUsers = barbershopUsers.filter(u => u.user_metadata?.role === 'barbearia');
+
+
+    const userGrowthChartData = aggregateByMonth(filteredBarbershopUsers, 'created_at').map(d => ({ name: d.name, Usuários: d.value }));
     const monthlyRevenueChartData = aggregateByMonth(barbearias, 'criado_em', 'plano', planPricesMap).map(d => ({ name: d.name, Receita: d.value }));
 
     const response = {
       totalRevenue,
-      totalBarbershopUsers,
+      totalMonthlyExpense,
       totalBarbearias,
       activeBarbearias,
       latestBarbershops,
@@ -104,7 +117,7 @@ serve(async (req) => {
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
-    })
+    });
   } catch (error) {
     console.error('Erro ao buscar dados do dashboard:', error)
     return new Response(JSON.stringify({ error: error.message }), {
@@ -112,4 +125,4 @@ serve(async (req) => {
       status: 500,
     })
   }
-})
+});

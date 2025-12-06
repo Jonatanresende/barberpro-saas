@@ -8,6 +8,7 @@ import Modal from '@/components/Modal';
 import BarbershopModal from '@/pages/admin/BarbershopModal';
 import PlanModal from '@/pages/admin/PlanModal';
 import SettingsPage from '@/pages/admin/SettingsPage';
+import ManageExpenses from '@/pages/admin/ManageExpenses';
 import {
     LineChart,
     Line,
@@ -60,9 +61,9 @@ const AdminDashboard = () => {
         <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Receita Mensal Estimada" value={formatCurrency(stats.totalRevenue)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Gasto Mensal Total" value={formatCurrency(stats.totalMonthlyExpense)} icon={<DollarSignIcon className="w-6 h-6 text-red-400" />} />
                 <StatCard title="Total de Barbearias" value={stats.totalBarbearias} icon={<StoreIcon className="w-6 h-6 text-brand-gold" />} />
                 <StatCard title="Barbearias Ativas" value={stats.activeBarbearias} icon={<StoreIcon className="w-6 h-6 text-green-400" />} />
-                <StatCard title="Total de Usuários (Barbearia)" value={stats.totalBarbershopUsers} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -364,6 +365,7 @@ const AdminPage = () => {
             case 'barbershops': return 'barbershops';
             case 'plans': return 'plans';
             case 'settings': return 'settings';
+            case 'expenses': return 'expenses'; // Nova aba
             case 'dashboard':
             default: return 'dashboard';
         }
@@ -384,6 +386,7 @@ const AdminPage = () => {
             case 'dashboard': return <AdminDashboard />;
             case 'barbershops': return <ManageBarbershops />;
             case 'plans': return <ManagePlans />;
+            case 'expenses': return <ManageExpenses />; // Novo componente
             case 'settings': return <SettingsPage />;
             default: return <AdminDashboard />;
         }
@@ -395,6 +398,7 @@ const AdminPage = () => {
                 <button onClick={() => handleTabChange('dashboard')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
                 <button onClick={() => handleTabChange('barbershops')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'barbershops' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbearias</button>
                 <button onClick={() => handleTabChange('plans')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'plans' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Planos</button>
+                <button onClick={() => handleTabChange('expenses')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'expenses' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Gastos</button>
                 <button onClick={() => handleTabChange('settings')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
             </div>
             {renderContent()}

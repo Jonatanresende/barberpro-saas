@@ -42,6 +42,7 @@ const AppRoutes = () => {
             <Route path="dashboard" element={<AdminPage />} />
             <Route path="barbershops" element={<AdminPage />} />
             <Route path="plans" element={<AdminPage />} />
+            <Route path="expenses" element={<AdminPage />} /> {/* NOVA ROTA */}
             <Route path="settings" element={<AdminPage />} />
             <Route index element={<Navigate to="dashboard" />} />
         </Route>
@@ -75,8 +76,8 @@ const AppRoutes = () => {
             <Route path="appointments" element={<BarbeariaPage />} />
             <Route path="clients" element={<BarbeariaPage />} />
             <Route path="settings" element={<BarbeariaPage />} />
-            <Route path="settings/types" element={<BarbeariaPage />} /> {/* Nova rota */}
-            <Route path="settings/general" element={<BarbeariaPage />} /> {/* Rota explícita para a aba geral */}
+            <Route path="settings/types" element={<BarbeariaPage />} /> 
+            <Route path="settings/general" element={<BarbeariaPage />} /> 
             <Route path="profile" element={<BarbeariaPage />} />
           </Route>
         </Route>

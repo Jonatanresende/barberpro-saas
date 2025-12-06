@@ -135,3 +135,12 @@ export interface BarbeiroDisponibilidade {
   hora_fim: string | null; // HH:MM
   disponivel: boolean;
 }
+
+export interface GastoSaas {
+  id: string;
+  descricao: string;
+  valor: number;
+  data: string; // YYYY-MM-DD
+  user_id: string;
+  created_at: string;
+}
