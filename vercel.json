@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/:path((?!app\\.html|index\\.html|landing|icons|assets|vite\\.svg|src).*)",
+      "source": "/:path((?!index\\.html|landing|icons|assets|vite\\.svg|src).*)",
       "destination": "/app.html"
     }
   ]
