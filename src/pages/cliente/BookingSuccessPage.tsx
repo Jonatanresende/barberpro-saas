@@ -17,20 +17,13 @@ const BookingSuccessPage = () => {
 
   useEffect(() => {
     if (!agendamento || !barbearia) {
-      // Redireciona se não houver dados de agendamento
       navigate('/', { replace: true });
     }
   }, [agendamento, barbearia, navigate]);
 
   if (!agendamento || !barbearia) return null;
 
-  // Se chegamos aqui, agendamento e barbearia existem.
-  const [year, month, day] = agendamento.data.split('-').map(Number);
-  const [hour, minute] = agendamento.hora.split(':').map(Number);
-
-  // Cria a data usando o construtor de data local (sem conversão de fuso horário)
-  const bookingDate = new Date(year, month - 1, day, hour, minute);
-  
+  const bookingDate = new Date(`${agendamento.data}T${agendamento.hora}`);
   const formattedDate = bookingDate.toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: '2-digit',
@@ -66,16 +59,6 @@ const BookingSuccessPage = () => {
             <div>
               <p className="text-sm uppercase text-gray-400">Horário</p>
               <p className="text-lg font-semibold">{formattedTime}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm uppercase text-gray-400">Barbeiro</p>
-              <p className="text-lg font-semibold">{agendamento.barbeiro_nome}</p>
-            </div>
-            <div>
-              <p className="text-sm uppercase text-gray-400">Serviço</p>
-              <p className="text-lg font-semibold">{agendamento.servico_nome}</p>
             </div>
           </div>
           <div>
