@@ -179,9 +179,9 @@ const ManageBarbershops = () => {
     return (
         <>
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                     <h2 className="text-xl font-semibold text-white">Gerenciar Barbearias</h2>
-                    <button onClick={handleOpenCreateModal} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90">Adicionar Barbearia</button>
+                    <button onClick={handleOpenCreateModal} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar Barbearia</button>
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <div className="overflow-x-auto">
@@ -190,10 +190,9 @@ const ManageBarbershops = () => {
                                 <tr>
                                     <th className="px-6 py-3">Logo</th>
                                     <th className="px-6 py-3">Nome</th>
-                                    <th className="px-6 py-3">E-mail Dono</th>
-                                    <th className="px-6 py-3">Plano</th>
+                                    <th className="px-6 py-3 hidden sm:table-cell">E-mail Dono</th>
+                                    <th className="px-6 py-3 hidden md:table-cell">Plano</th>
                                     <th className="px-6 py-3">Status</th>
-                                    <th className="px-6 py-3">Criado Em</th>
                                     <th className="px-6 py-3">Ações</th>
                                 </tr>
                             </thead>
@@ -204,16 +203,15 @@ const ManageBarbershops = () => {
                                             <img src={b.foto_url || 'https://via.placeholder.com/40'} alt={b.nome} className="w-10 h-10 rounded-full object-cover" />
                                         </td>
                                         <td className="px-6 py-4 font-medium text-white align-middle">{b.nome}</td>
-                                        <td className="px-6 py-4 align-middle">{b.dono_email}</td>
-                                        <td className="px-6 py-4 align-middle">{b.plano || 'N/A'}</td>
+                                        <td className="px-6 py-4 align-middle hidden sm:table-cell">{b.dono_email}</td>
+                                        <td className="px-6 py-4 align-middle hidden md:table-cell">{b.plano || 'N/A'}</td>
                                         <td className="px-6 py-4 align-middle">
                                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${b.status === 'ativa' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                                                 {b.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 align-middle">{new Date(b.criado_em).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 align-middle">
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex flex-col space-y-1 sm:flex-row sm:space-x-2 sm:space-y-0 text-xs">
                                                 <button onClick={() => handleOpenEditModal(b)} className="text-blue-400 hover:text-blue-300">Editar</button>
                                                 <button onClick={() => handleToggleStatus(b)} className="text-yellow-400 hover:text-yellow-300">{b.status === 'ativa' ? 'Desativar' : 'Ativar'}</button>
                                                 <button onClick={() => handleDelete(b)} className="text-red-400 hover:text-red-300">Excluir</button>
@@ -300,9 +298,9 @@ const ManagePlans = () => {
     return (
         <>
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                     <h2 className="text-xl font-semibold text-white">Gerenciar Planos</h2>
-                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90">Adicionar Plano</button>
+                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar Plano</button>
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <div className="overflow-x-auto">
@@ -311,8 +309,8 @@ const ManagePlans = () => {
                                 <tr>
                                     <th className="px-6 py-3">Nome</th>
                                     <th className="px-6 py-3">Preço</th>
-                                    <th className="px-6 py-3">Limite Barbeiros</th>
-                                    <th className="px-6 py-3">Popular</th>
+                                    <th className="px-6 py-3 hidden sm:table-cell">Limite Barbeiros</th>
+                                    <th className="px-6 py-3 hidden md:table-cell">Popular</th>
                                     <th className="px-6 py-3">Ativo</th>
                                     <th className="px-6 py-3">Ações</th>
                                 </tr>
@@ -322,14 +320,14 @@ const ManagePlans = () => {
                                     <tr key={plano.id} className="border-b border-brand-gray hover:bg-brand-gray">
                                         <td className="px-6 py-4 font-medium text-white">{plano.nome}</td>
                                         <td className="px-6 py-4 text-brand-gold">R$ {plano.preco.toFixed(2)}</td>
-                                        <td className="px-6 py-4">{plano.limite_barbeiros || 'Ilimitado'}</td>
-                                        <td className="px-6 py-4">{plano.popular ? 'Sim' : 'Não'}</td>
+                                        <td className="px-6 py-4 hidden sm:table-cell">{plano.limite_barbeiros || 'Ilimitado'}</td>
+                                        <td className="px-6 py-4 hidden md:table-cell">{plano.popular ? 'Sim' : 'Não'}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${plano.ativo ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                                                 {plano.ativo ? 'Ativo' : 'Inativo'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 space-x-2">
+                                        <td className="px-6 py-4 space-x-2 text-xs">
                                             <button onClick={() => handleOpenModal(plano)} className="text-blue-400 hover:text-blue-300">Editar</button>
                                             <button onClick={() => handleDelete(plano.id)} className="text-red-400 hover:text-red-300">Excluir</button>
                                         </td>
@@ -365,7 +363,7 @@ const AdminPage = () => {
             case 'barbershops': return 'barbershops';
             case 'plans': return 'plans';
             case 'settings': return 'settings';
-            case 'expenses': return 'expenses'; // Nova aba
+            case 'expenses': return 'expenses';
             case 'dashboard':
             default: return 'dashboard';
         }
@@ -386,7 +384,7 @@ const AdminPage = () => {
             case 'dashboard': return <AdminDashboard />;
             case 'barbershops': return <ManageBarbershops />;
             case 'plans': return <ManagePlans />;
-            case 'expenses': return <ManageExpenses />; // Novo componente
+            case 'expenses': return <ManageExpenses />;
             case 'settings': return <SettingsPage />;
             default: return <AdminDashboard />;
         }
@@ -394,12 +392,12 @@ const AdminPage = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex border-b border-brand-gray flex-wrap">
-                <button onClick={() => handleTabChange('dashboard')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
-                <button onClick={() => handleTabChange('barbershops')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'barbershops' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbearias</button>
-                <button onClick={() => handleTabChange('plans')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'plans' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Planos</button>
-                <button onClick={() => handleTabChange('expenses')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'expenses' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Gastos</button>
-                <button onClick={() => handleTabChange('settings')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
+            <div className="flex border-b border-brand-gray flex-wrap gap-2 overflow-x-auto pb-2">
+                <button onClick={() => handleTabChange('dashboard')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
+                <button onClick={() => handleTabChange('barbershops')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'barbershops' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbearias</button>
+                <button onClick={() => handleTabChange('plans')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'plans' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Planos</button>
+                <button onClick={() => handleTabChange('expenses')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'expenses' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Gastos</button>
+                <button onClick={() => handleTabChange('settings')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
             </div>
             {renderContent()}
         </div>
