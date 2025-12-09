@@ -678,6 +678,7 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
             operating_days: barbearia.operating_days,
             start_time: barbearia.start_time,
             end_time: barbearia.end_time,
+            comissao_padrao: barbearia.comissao_padrao, // Adicionado de volta
         };
 
         setIsSaving(true);
@@ -754,7 +755,11 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                         </button>
                     </div>
                 </div>
-                {/* Campo Comissão Padrão (%) removido */}
+                <div>
+                    <label htmlFor="comissao_padrao" className="block text-sm font-medium text-gray-300 mb-2">Comissão Padrão (%)</label>
+                    <input type="number" id="comissao_padrao" name="comissao_padrao" value={barbearia.comissao_padrao || ''} onChange={handleInputChange} min="0" max="100" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <p className="text-xs text-gray-500 mt-1">Comissão aplicada a barbeiros sem um Tipo de Profissional definido.</p>
+                </div>
                 <div>
                     <label htmlFor="instagram_url" className="block text-sm font-medium text-gray-300 mb-2">URL do Instagram</label>
                     <input type="url" id="instagram_url" name="instagram_url" value={barbearia.instagram_url || ''} onChange={handleInputChange} placeholder="https://instagram.com/suabarbearia" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
@@ -885,11 +890,11 @@ const SettingsWrapper = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
 
     return (
         <div className="space-y-6">
-            <div className="flex border-b border-brand-gray flex-wrap">
-                <button onClick={() => handleTabChange('general')} className={`px-4 py-2 text-sm font-medium ${activeSettingsTab === 'general' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Geral</button>
+            <div className="flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
+                <button onClick={() => handleTabChange('general')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeSettingsTab === 'general' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Geral</button>
                 {/* Conditionally render the Types tab based on the fetched plan */}
                 {hasProfessionalPlan && (
-                    <button onClick={() => handleTabChange('types')} className={`px-4 py-2 text-sm font-medium ${activeSettingsTab === 'types' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Tipos de Profissional</button>
+                    <button onClick={() => handleTabChange('types')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeSettingsTab === 'types' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Tipos de Profissional</button>
                 )}
             </div>
             {renderContent()}
@@ -977,13 +982,13 @@ export const BarbeariaPage = () => {
     
     return (
         <div className="space-y-6">
-            <div className="flex border-b border-brand-gray flex-wrap">
-                <button onClick={() => handleTabChange('dashboard')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
-                <button onClick={() => handleTabChange('appointments')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Agendamentos</button>
-                <button onClick={() => handleTabChange('barbers')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'barbers' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbeiros</button>
-                <button onClick={() => handleTabChange('services')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'services' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Serviços</button>
-                <button onClick={() => handleTabChange('clients')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'clients' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Clientes</button>
-                <button onClick={() => handleTabChange('settings')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
+            <div className="flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
+                <button onClick={() => handleTabChange('dashboard')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
+                <button onClick={() => handleTabChange('appointments')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Agendamentos</button>
+                <button onClick={() => handleTabChange('barbers')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'barbers' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbeiros</button>
+                <button onClick={() => handleTabChange('services')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'services' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Serviços</button>
+                <button onClick={() => handleTabChange('clients')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'clients' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Clientes</button>
+                <button onClick={() => handleTabChange('settings')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
             </div>
             {renderContent()}
         </div>
