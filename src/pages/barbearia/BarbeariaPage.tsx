@@ -65,7 +65,11 @@ const BarbeariaDashboard = ({ barbeariaData, barbeariaPlan }: DashboardProps) =>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {stats.barberStatusList && stats.barberStatusList.map((barber: any) => (
                         <div key={barber.id} className="bg-brand-gray p-4 rounded-lg flex items-center space-x-4">
-                            <img src={barber.foto_url || 'https://via.placeholder.com/48'} alt={barber.nome} className="w-12 h-12 rounded-full mx-auto mb-4 border-2 border-brand-gold object-cover" />
+                            <img 
+                                src={barber.foto_url || 'https://via.placeholder.com/48'} 
+                                alt={barber.nome} 
+                                className="w-12 h-12 rounded-full object-cover border-2 border-brand-gold" 
+                            />
                             <div>
                                 <p className="font-semibold text-white">{barber.nome}</p>
                                 <div className="flex items-center text-xs mt-1">
