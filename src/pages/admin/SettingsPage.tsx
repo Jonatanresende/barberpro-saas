@@ -11,7 +11,7 @@ import { useSettings } from '@/hooks/useSettings';
 
 const SettingsCard = ({ title, children, actions }: { title: string, children: React.ReactNode, actions?: React.ReactNode }) => (
     <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-        <div className="flex justify-between items-center mb-6 border-b border-brand-gray pb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-brand-gray pb-4 gap-3">
             <h3 className="text-xl font-semibold text-white">{title}</h3>
             {actions && <div>{actions}</div>}
         </div>
@@ -116,7 +116,7 @@ const AccountSettings = () => {
             <SettingsCard 
                 title="Conta Principal"
                 actions={
-                    <button onClick={handleOpenCreateUserModal} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 text-sm">
+                    <button onClick={handleOpenCreateUserModal} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 text-sm w-full sm:w-auto">
                         Adicionar Novo Administrador
                     </button>
                 }
@@ -131,12 +131,12 @@ const AccountSettings = () => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Senha</label>
-                    <button onClick={() => setIsPasswordModalOpen(true)} className="bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    <button onClick={() => setIsPasswordModalOpen(true)} className="bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto">
                         Alterar Senha
                     </button>
                 </div>
                 <div className="pt-4">
-                    <button onClick={handleAccountUpdate} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50">
+                    <button onClick={handleAccountUpdate} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50 w-full sm:w-auto">
                         {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
                 </div>
@@ -147,12 +147,12 @@ const AccountSettings = () => {
                     <h3 className="text-xl font-semibold text-white mb-6 border-b border-brand-gray pb-4">Outros Administradores</h3>
                     <div className="space-y-4">
                         {otherAdmins.map(admin => (
-                            <div key={admin.id} className="flex items-center justify-between bg-brand-gray p-4 rounded-lg">
-                                <div>
+                            <div key={admin.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-brand-gray p-4 rounded-lg">
+                                <div className="mb-2 sm:mb-0">
                                     <p className="font-semibold text-white">{admin.full_name}</p>
                                     <p className="text-sm text-gray-400">{admin.email}</p>
                                 </div>
-                                <div className="flex space-x-3">
+                                <div className="flex space-x-3 text-sm">
                                     {admin.email !== 'jonne.obr@gmail.com' && (
                                         <>
                                             <button onClick={() => handleOpenEditUserModal(admin)} className="text-blue-400 hover:text-blue-300 font-semibold">Editar</button>
@@ -268,7 +268,7 @@ const SystemSettings = () => {
                 <input type="url" id="tos_link" name="tos_link" value={localSettings.tos_link} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
             </div>
             <div className="pt-4">
-                <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50">
+                <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50 w-full sm:w-auto">
                     {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
             </div>

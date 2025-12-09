@@ -140,9 +140,9 @@ const ManageExpenses = () => {
     return (
         <>
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                     <h2 className="text-xl font-semibold text-white">Gastos Mensais do SaaS</h2>
-                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90">Adicionar Gasto</button>
+                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar Gasto</button>
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <div className="overflow-x-auto">
@@ -161,10 +161,10 @@ const ManageExpenses = () => {
                                 ) : (
                                     expenses.map(expense => (
                                         <tr key={expense.id} className="border-b border-brand-gray hover:bg-brand-gray">
-                                            <td className="px-6 py-4">{new Date(expense.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                                            <td className="px-6 py-4 font-medium text-white">{expense.descricao}</td>
+                                            <td className="px-6 py-4 font-medium text-white">{new Date(expense.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                                            <td className="px-6 py-4">{expense.descricao}</td>
                                             <td className="px-6 py-4 text-red-400 font-semibold">{formatCurrency(expense.valor)}</td>
-                                            <td className="px-6 py-4 space-x-2">
+                                            <td className="px-6 py-4 space-x-2 text-xs">
                                                 <button onClick={() => handleOpenModal(expense)} className="text-blue-400 hover:text-blue-300">Editar</button>
                                                 <button onClick={() => handleDelete(expense.id)} className="text-red-400 hover:text-red-300">Remover</button>
                                             </td>
