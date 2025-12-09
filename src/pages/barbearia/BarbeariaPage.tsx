@@ -324,12 +324,12 @@ const ManageServices = () => {
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <ul className="space-y-3">
                         {servicos.map(servico => (
-                            <li key={servico.id} className="bg-brand-gray p-4 rounded-lg flex justify-between items-center">
+                            <li key={servico.id} className="bg-brand-gray p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center">
                                 <div>
                                     <p className="font-semibold text-white">{servico.nome}</p>
                                     <p className="text-sm text-gray-400">{servico.duracao} min</p>
                                 </div>
-                                <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-4 mt-2 sm:mt-0">
                                     <p className="text-lg font-bold text-brand-gold">R$ {servico.preco.toFixed(2)}</p>
                                     <button onClick={() => handleOpenModal(servico)} className="text-blue-400 hover:text-blue-300 text-sm">Editar</button>
                                     <button onClick={() => handleDelete(servico.id)} className="text-red-400 hover:text-red-300 text-sm">Excluir</button>
@@ -410,24 +410,24 @@ const ManageAppointments = () => {
     return (
         <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray space-y-6">
             <div className="flex flex-wrap items-center gap-4">
-                <h2 className="text-xl font-semibold text-white">Filtros</h2>
-                <div>
+                <h2 className="text-xl font-semibold text-white w-full sm:w-auto">Filtros</h2>
+                <div className="w-full sm:w-auto">
                     <label htmlFor="date-filter" className="sr-only">Data</label>
                     <input 
                         type="date" 
                         id="date-filter"
                         value={filterDate}
                         onChange={e => setFilterDate(e.target.value)}
-                        className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+                        className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white w-full"
                     />
                 </div>
-                <div>
+                <div className="w-full sm:w-auto">
                     <label htmlFor="status-filter" className="sr-only">Status</label>
                     <select 
                         id="status-filter"
                         value={filterStatus}
                         onChange={e => setFilterStatus(e.target.value as any)}
-                        className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+                        className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white w-full"
                     >
                         <option value="todos">Todos os Status</option>
                         <option value={AppointmentStatus.PENDENTE}>Pendente</option>
@@ -436,7 +436,7 @@ const ManageAppointments = () => {
                         <option value={AppointmentStatus.CANCELADO}>Cancelado</option>
                     </select>
                 </div>
-                <div>
+                <div className="w-full sm:w-auto">
                     <label htmlFor="barber-filter" className="sr-only">Barbeiro</label>
                     <select 
                         id="barber-filter"
@@ -448,17 +448,17 @@ const ManageAppointments = () => {
                         {barbeiros.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}
                     </select>
                 </div>
-                 <button onClick={() => setFilterDate('')} className="text-sm text-gray-400 hover:text-white">Limpar Data</button>
+                 <button onClick={() => setFilterDate('')} className="text-sm text-gray-400 hover:text-white w-full sm:w-auto">Limpar Data</button>
             </div>
 
             <div className="overflow-x-auto">
                 {loading ? <p className="text-center text-gray-400 py-8">Carregando...</p> : (
-                    <table className="w-full text-left text-sm text-gray-300">
+                    <table className="w-full text-left text-sm text-gray-300 min-w-[800px]">
                         <thead className="bg-brand-gray text-xs uppercase">
                             <tr>
                                 <th className="px-6 py-3">Cliente</th>
-                                <th className="px-6 py-3">Serviço</th>
-                                <th className="px-6 py-3">Barbeiro</th>
+                                <th className="px-6 py-3 hidden sm:table-cell">Serviço</th>
+                                <th className="px-6 py-3 hidden md:table-cell">Barbeiro</th>
                                 <th className="px-6 py-3">Data & Hora</th>
                                 <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3">Ações</th>
@@ -468,15 +468,15 @@ const ManageAppointments = () => {
                             {filteredAgendamentos.length > 0 ? filteredAgendamentos.map(ag => (
                                 <tr key={ag.id} className="border-b border-brand-gray hover:bg-brand-gray">
                                     <td className="px-6 py-4 font-medium text-white">{ag.cliente_nome}</td>
-                                    <td className="px-6 py-4">{ag.servico_nome}</td>
-                                    <td className="px-6 py-4">{ag.barbeiro_nome}</td>
+                                    <td className="px-6 py-4 hidden sm:table-cell">{ag.servico_nome}</td>
+                                    <td className="px-6 py-4 hidden md:table-cell">{ag.barbeiro_nome}</td>
                                     <td className="px-6 py-4">{new Date(ag.data + 'T00:00:00').toLocaleDateString('pt-BR')} - {ag.hora}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(ag.status)}`}>
                                             {ag.status}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 space-x-2 text-xs">
+                                    <td className="px-6 py-4 space-x-2 text-xs flex flex-col space-y-1 sm:flex-row sm:space-x-2 sm:space-y-0">
                                         {ag.status === AppointmentStatus.PENDENTE && (
                                             <button onClick={() => handleStatusUpdate(ag.id, AppointmentStatus.CONFIRMADO)} className="text-blue-400 hover:text-blue-300">Confirmar</button>
                                         )}
@@ -563,7 +563,7 @@ const ManageClients = () => {
                 <h2 className="text-xl font-semibold text-white mb-4">Gerenciar Clientes</h2>
                 <div className="overflow-x-auto">
                     {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
-                        <table className="w-full text-left text-sm text-gray-300">
+                        <table className="w-full text-left text-sm text-gray-300 min-w-[500px]">
                             <thead className="bg-brand-gray text-xs uppercase">
                                 <tr>
                                     <th className="px-6 py-3">Nome</th>
@@ -577,9 +577,9 @@ const ManageClients = () => {
                                         <td className="px-6 py-4 font-medium text-white">{client.nome}</td>
                                         <td className="px-6 py-4">{client.telefone}</td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-4">
-                                                <button onClick={() => handleOpenEditModal(client)} className="text-blue-400 hover:text-blue-300">Editar</button>
-                                                <button onClick={() => handleOpenHistoryModal(client)} className="text-green-400 hover:text-green-300">Ver Histórico</button>
+                                            <div className="flex flex-col space-y-1 sm:flex-row sm:space-x-4 sm:space-y-0">
+                                                <button onClick={() => handleOpenEditModal(client)} className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm">Editar</button>
+                                                <button onClick={() => handleOpenHistoryModal(client)} className="text-green-400 hover:text-green-300 text-xs sm:text-sm">Ver Histórico</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -722,7 +722,7 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Logo da Barbearia</label>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <div className="w-20 h-20 bg-brand-gray rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-600">
                             {logoPreview ? (
                                 <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
@@ -731,7 +731,7 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                             )}
                         </div>
                         <input type="file" id="logo-upload" ref={logoFileInputRef} onChange={handleLogoFileChange} accept="image/*" className="hidden" />
-                        <button type="button" onClick={() => logoFileInputRef.current?.click()} className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <button type="button" onClick={() => logoFileInputRef.current?.click()} className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto">
                             Fazer Upload
                         </button>
                     </div>
@@ -742,14 +742,14 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                 </div>
                 <div>
                     <label htmlFor="link_personalizado" className="block text-sm font-medium text-gray-300 mb-2">Link Personalizado</label>
-                    <div className="flex items-center">
-                        <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-l-md border border-r-0 border-gray-600">barberpro.app/</span>
-                        <input type="text" id="link_personalizado" name="link_personalizado" value={barbearia.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-r-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center">
+                        <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-t-md sm:rounded-l-md sm:rounded-t-none border border-b-0 sm:border-r-0 border-gray-600">barberpro.app/</span>
+                        <input type="text" id="link_personalizado" name="link_personalizado" value={barbearia.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-b-md sm:rounded-r-md sm:rounded-b-none border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                         <button 
                             type="button" 
                             onClick={handleCopyLink} 
                             disabled={!barbearia.link_personalizado}
-                            className="ml-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-50"
+                            className="mt-2 sm:mt-0 sm:ml-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-50"
                         >
                             Copiar URL
                         </button>
@@ -807,12 +807,12 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Imagem de Fundo (Banner)</label>
                     <p className="text-xs text-gray-500 mb-2">Recomendado: 1920x1080 pixels</p>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <div className="w-32 h-20 bg-brand-gray rounded-md flex items-center justify-center overflow-hidden border-2 border-gray-600">
                             {heroPreview ? <img src={heroPreview} alt="Banner Preview" className="w-full h-full object-cover" /> : <span className="text-gray-400 text-xs">Banner</span>}
                         </div>
                         <input type="file" id="hero-upload" ref={heroFileInputRef} onChange={handleHeroFileChange} accept="image/*" className="hidden" />
-                        <button type="button" onClick={() => heroFileInputRef.current?.click()} className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <button type="button" onClick={() => heroFileInputRef.current?.click()} className="cursor-pointer bg-brand-gray hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto">
                             Fazer Upload
                         </button>
                     </div>
@@ -840,7 +840,7 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
             </div>
 
             <div className="max-w-3xl">
-                <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50">
+                <button onClick={handleSave} disabled={isSaving} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50 w-full sm:w-auto">
                     {isSaving ? 'Salvando...' : 'Salvar Todas as Alterações'}
                 </button>
             </div>

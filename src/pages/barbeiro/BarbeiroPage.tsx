@@ -58,6 +58,7 @@ const BarberStatsDashboard = () => {
                     Comissão: <span className="font-semibold text-brand-gold">{dashboardData?.commissionRate}%</span>
                 </p>
             </div>
+            {/* Ajuste de responsividade: grid de 1 coluna em mobile, 3 em md+ */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard title="Sua Comissão (Mês)" value={formatCurrency(dashboardData?.comissaoDoMes || 0)} icon={<DollarSignIcon className="w-5 h-5 text-white"/>} colorClass="bg-green-500" />
                 <StatCard title="Total Gerado (Mês)" value={formatCurrency(dashboardData?.totalGeradoNoMes || 0)} icon={<DollarSignIcon className="w-5 h-5 text-white"/>} colorClass="bg-yellow-500" />
@@ -128,23 +129,23 @@ const BarberAppointments = () => {
 
     return (
         <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-            <div className="flex flex-wrap justify-between items-center gap-4 mb-4 border-b border-brand-gray pb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-brand-gray pb-4">
                 <h3 className="text-lg font-semibold text-white">Agenda do Dia</h3>
-                <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+                <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white w-full sm:w-auto" />
             </div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
                 <button onClick={() => setActiveFilter('pending')} className={`px-3 py-1 text-sm rounded-md ${activeFilter === 'pending' ? 'bg-brand-gold text-brand-dark font-bold' : 'bg-brand-gray text-white'}`}>Pendentes</button>
                 <button onClick={() => setActiveFilter('completed')} className={`px-3 py-1 text-sm rounded-md ${activeFilter === 'completed' ? 'bg-brand-gold text-brand-dark font-bold' : 'bg-brand-gray text-white'}`}>Finalizados</button>
                 <button onClick={() => setActiveFilter('canceled')} className={`px-3 py-1 text-sm rounded-md ${activeFilter === 'canceled' ? 'bg-brand-gold text-brand-dark font-bold' : 'bg-brand-gray text-white'}`}>Cancelados</button>
             </div>
             <div className="overflow-x-auto">
                 {loadingAppointments ? <p className="text-center py-8 text-gray-400">Carregando...</p> : (
-                    <table className="w-full text-left text-sm text-gray-300">
+                    <table className="w-full text-left text-sm text-gray-300 min-w-[600px]"> {/* Adicionado min-w para garantir scroll */}
                         <thead className="bg-brand-gray text-xs uppercase">
                             <tr>
                                 <th className="px-6 py-3">Horário</th>
                                 <th className="px-6 py-3">Cliente</th>
-                                <th className="px-6 py-3">Serviço</th>
+                                <th className="px-6 py-3 hidden sm:table-cell">Serviço</th>
                                 <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3">Ações</th>
                             </tr>
@@ -157,11 +158,11 @@ const BarberAppointments = () => {
                                     <tr key={ag.id} className="border-b border-brand-gray hover:bg-brand-gray">
                                         <td className="px-6 py-4 font-bold text-white">{ag.hora}</td>
                                         <td className="px-6 py-4 font-medium text-white">{ag.cliente_nome}</td>
-                                        <td className="px-6 py-4">{ag.servico_nome}</td>
+                                        <td className="px-6 py-4 hidden sm:table-cell">{ag.servico_nome}</td>
                                         <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(ag.status)}`}>{ag.status}</span></td>
-                                        <td className="px-6 py-4 flex items-center space-x-2">
-                                            {ag.status === AppointmentStatus.PENDENTE && <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CONFIRMADO)} className="text-blue-400 hover:text-blue-300 text-xs font-semibold">Confirmar</button>}
-                                            {ag.status === AppointmentStatus.CONFIRMADO && <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CONCLUIDO)} className="text-green-400 hover:text-green-300 text-xs font-semibold">Finalizar</button>}
+                                        <td className="px-6 py-4 flex flex-col space-y-1 sm:flex-row sm:space-x-2 sm:space-y-0 text-xs">
+                                            {ag.status === AppointmentStatus.PENDENTE && <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CONFIRMADO)} className="text-blue-400 hover:text-blue-300 font-semibold">Confirmar</button>}
+                                            {ag.status === AppointmentStatus.CONFIRMADO && <button onClick={() => handleUpdateStatus(ag.id, AppointmentStatus.CONCLUIDO)} className="text-green-400 hover:text-green-300 font-semibold">Finalizar</button>}
                                         </td>
                                     </tr>
                                 ))
@@ -274,7 +275,7 @@ const BarberAvailability = () => {
                     )}
                     {!disponivel && <p className="text-yellow-400 bg-yellow-500/10 p-3 rounded-md text-sm">Você marcou este dia como folga.</p>}
                     <div className="pt-4">
-                        <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-brand-gold hover:opacity-90 text-brand-dark font-bold">Salvar Horário do Dia</button>
+                        <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-brand-gold hover:opacity-90 text-brand-dark font-bold w-full sm:w-auto">Salvar Horário do Dia</button>
                     </div>
                 </div>
             </div>
@@ -313,9 +314,10 @@ export const BarbeiroPage = () => {
     return (
         <div className="space-y-6">
             <BarberStatsDashboard />
-            <div className="flex border-b border-brand-gray flex-wrap">
-                <button onClick={() => handleTabChange('appointments')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Meus Agendamentos</button>
-                <button onClick={() => handleTabChange('availability')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'availability' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Minha Disponibilidade</button>
+            {/* Ajuste de responsividade para as abas */}
+            <div className="flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
+                <button onClick={() => handleTabChange('appointments')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Meus Agendamentos</button>
+                <button onClick={() => handleTabChange('availability')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'availability' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Minha Disponibilidade</button>
             </div>
             {renderContent()}
         </div>
