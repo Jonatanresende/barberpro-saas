@@ -205,7 +205,7 @@ const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
     return (
         <>
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                     <div>
                         <h2 className="text-xl font-semibold text-white">Gerenciar Barbeiros</h2>
                         {!loading && (
@@ -216,7 +216,7 @@ const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
                             )
                         )}
                     </div>
-                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90">Adicionar Barbeiro</button>
+                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar Barbeiro</button>
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -317,9 +317,9 @@ const ManageServices = () => {
     return (
         <>
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                     <h2 className="text-xl font-semibold text-white">Gerenciar Serviços</h2>
-                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90">Adicionar Serviço</button>
+                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar Serviço</button>
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <ul className="space-y-3">
@@ -749,7 +749,7 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                             type="button" 
                             onClick={handleCopyLink} 
                             disabled={!barbearia.link_personalizado}
-                            className="mt-2 sm:mt-0 sm:ml-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-50"
+                            className="mt-2 sm:mt-0 sm:ml-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-50 w-full sm:w-auto"
                         >
                             Copiar URL
                         </button>
