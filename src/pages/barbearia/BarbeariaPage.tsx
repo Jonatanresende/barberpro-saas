@@ -894,7 +894,8 @@ const SettingsWrapper = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
+            {/* Adicionando 'hidden sm:flex' para ocultar em mobile */}
+            <div className="hidden sm:flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
                 <button onClick={() => handleTabChange('general')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeSettingsTab === 'general' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Geral</button>
                 {/* Conditionally render the Types tab based on the fetched plan */}
                 {hasProfessionalPlan && (
@@ -986,7 +987,8 @@ export const BarbeariaPage = () => {
     
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
+            {/* Adicionando 'hidden sm:flex' para ocultar em mobile */}
+            <div className="hidden sm:flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
                 <button onClick={() => handleTabChange('dashboard')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
                 <button onClick={() => handleTabChange('appointments')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Agendamentos</button>
                 <button onClick={() => handleTabChange('barbers')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'barbers' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbeiros</button>

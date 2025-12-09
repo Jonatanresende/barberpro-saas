@@ -314,8 +314,8 @@ export const BarbeiroPage = () => {
     return (
         <div className="space-y-6">
             <BarberStatsDashboard />
-            {/* Ajuste de responsividade para as abas */}
-            <div className="flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
+            {/* Adicionando 'hidden sm:flex' para ocultar em mobile */}
+            <div className="hidden sm:flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
                 <button onClick={() => handleTabChange('appointments')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Meus Agendamentos</button>
                 <button onClick={() => handleTabChange('availability')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'availability' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Minha Disponibilidade</button>
             </div>
