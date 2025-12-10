@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import { Barbearia, Barbeiro, Plano } from '@/types';
 import toast from 'react-hot-toast';
+import { KIWIFY_PLAN_LINKS } from '@/utils/constants';
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -72,7 +73,7 @@ const ProfilePage = () => {
         return;
     }
 
-    // Verifica se é um downgrade que excede o limite
+    // 1. Validação de Downgrade (mantida para UX)
     const isProblematicDowngrade = 
         (targetPlan.limite_barbeiros !== null && activeBarberCount > targetPlan.limite_barbeiros) &&
         (currentPlan.limite_barbeiros === null || targetPlan.limite_barbeiros < currentPlan.limite_barbeiros);
@@ -89,20 +90,50 @@ const ProfilePage = () => {
             return;
         }
     }
+    
+    // 2. Redirecionamento para Kiwify
+    const checkoutLink = KIWIFY_PLAN_LINKS[targetPlan.nome];
 
-    setIsSavingPlan(true);
-    toast.promise(
-      api.updateBarbershopPlan(user.barbeariaId, profile.plano),
-      {
-        loading: 'Atualizando plano...',
-        success: (updatedBarbearia) => {
-          setProfile(updatedBarbearia);
-          setInitialProfile(updatedBarbearia);
-          return 'Plano atualizado com sucesso!';
-        },
-        error: (err) => `Falha ao atualizar plano: ${err.message}`,
-      }
-    ).finally(() => setIsSavingPlan(false));
+    if (!checkoutLink) {
+        toast.error("Link de checkout não encontrado para este plano.");
+        setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
+        return;
+    }
+
+    const confirmationMessage = 
+        `Você está prestes a mudar para o plano ${targetPlan.nome}. ` +
+        `Você será redirecionado para a Kiwify para finalizar a compra. ` +
+        `Lembre-se de cancelar sua assinatura anterior, se necessário. Deseja continuar?`;
+
+    if (window.confirm(confirmationMessage)) {
+        // Se for um downgrade problemático, chamamos a função de atualização do plano no backend
+        // para que a lógica de remoção de barbeiros seja executada ANTES do redirecionamento.
+        if (isProblematicDowngrade) {
+            setIsSavingPlan(true);
+            try {
+                await api.updateBarbershopPlan(user.barbeariaId, profile.plano);
+                toast.success('Barbeiros em excesso removidos. Redirecionando para o checkout...');
+            } catch (err: any) {
+                toast.error(`Falha na pré-validação: ${err.message}`);
+                setIsSavingPlan(false);
+                setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
+                return;
+            } finally {
+                setIsSavingPlan(false);
+            }
+        }
+        
+        // Redireciona o usuário para o link de checkout
+        window.open(checkoutLink, '_blank');
+        
+        // O plano no DB só será atualizado quando o webhook da Kiwify retornar o sucesso da compra.
+        toast.success("Redirecionando para o checkout. Após a compra, seu painel será atualizado automaticamente.");
+        
+        // Reverte a seleção visualmente para o plano inicial até que o webhook confirme a mudança.
+        setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
+    } else {
+        setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
+    }
   };
 
   if (loading) return <p className="text-center text-gray-400">Carregando perfil...</p>;
@@ -158,9 +189,12 @@ const ProfilePage = () => {
         </div>
         <div className="mt-6 pt-4 border-t border-brand-gray">
           <button onClick={handleSavePlan} disabled={isSavingPlan} className="bg-brand-gold text-brand-dark font-bold py-2 px-6 rounded-lg hover:opacity-90 disabled:opacity-50">
-            {isSavingPlan ? 'Atualizando...' : 'Mudar de Plano'}
+            {isSavingPlan ? 'Validando...' : 'Mudar de Plano'}
           </button>
         </div>
+        <p className="text-xs text-gray-500 mt-4">
+            Ao clicar em "Mudar de Plano", você será redirecionado para a Kiwify para concluir a compra da nova assinatura.
+        </p>
       </div>
     </div>
   );
