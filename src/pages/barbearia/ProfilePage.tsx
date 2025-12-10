@@ -103,7 +103,7 @@ const ProfilePage = () => {
     const confirmationMessage = 
         `Você está prestes a mudar para o plano ${targetPlan.nome}. ` +
         `Você será redirecionado para a Kiwify para finalizar a compra. ` +
-        `Lembre-se de cancelar sua assinatura anterior, se necessário. Deseja continuar?`;
+        `IMPORTANTE: Após a compra, lembre-se de cancelar sua assinatura anterior na Kiwify para evitar cobranças duplicadas. Deseja continuar?`;
 
     if (window.confirm(confirmationMessage)) {
         // Se for um downgrade problemático, chamamos a função de atualização do plano no backend
