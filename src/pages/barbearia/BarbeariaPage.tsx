@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { api } from '@/services/api';
 import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano, Cliente, ProfessionalType } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications'; // Importado
 import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon, SettingsIcon } from '@/components/icons';
 import BarberModal from '@/pages/barbearia/BarberModal';
 import ServiceModal from '@/pages/barbearia/ServiceModal';
@@ -68,7 +69,7 @@ const BarbeariaDashboard = ({ barbeariaData, barbeariaPlan }: DashboardProps) =>
                             <img 
                                 src={barber.foto_url || 'https://via.placeholder.com/48'} 
                                 alt={barber.nome} 
-                                className="w-12 h-12 rounded-full object-cover border-2 border-brand-gold" 
+                                className="w-12 h-12 rounded-full mx-auto mb-4 border-2 border-brand-gold object-cover" 
                             />
                             <div>
                                 <p className="font-semibold text-white">{barber.nome}</p>
@@ -350,6 +351,7 @@ const ManageServices = () => {
 
 const ManageAppointments = () => {
     const { user } = useAuth();
+    const { resetAppointmentCount } = useNotifications(); // Usando o hook de notificação
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
     const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
     const [loading, setLoading] = useState(true);
@@ -379,7 +381,8 @@ const ManageAppointments = () => {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+        resetAppointmentCount(); // Zera a contagem ao carregar a página
+    }, [fetchData, resetAppointmentCount]);
 
     const filteredAgendamentos = useMemo(() => {
         return agendamentos.filter(ag => {

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { api } from '@/services/api';
 import { Agendamento, AppointmentStatus, BarbeiroDisponibilidade } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications'; // Importado
 import { DollarSignIcon, XCircleIcon, ClockIcon, ScissorsIcon } from '@/components/icons';
 import Calendar from '@/components/booking/Calendar';
 
@@ -71,6 +72,7 @@ const BarberStatsDashboard = () => {
 // Componente para a Agenda de Agendamentos
 const BarberAppointments = () => {
     const { user } = useAuth();
+    const { resetAppointmentCount } = useNotifications(); // Usando o hook de notificação
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
     const [loadingAppointments, setLoadingAppointments] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -92,7 +94,8 @@ const BarberAppointments = () => {
 
     useEffect(() => {
         fetchAgendamentos();
-    }, [fetchAgendamentos]);
+        resetAppointmentCount(); // Zera a contagem ao carregar a página
+    }, [fetchAgendamentos, resetAppointmentCount]);
 
     const filteredAppointments = useMemo(() => {
         return agendamentos.filter(ag => {

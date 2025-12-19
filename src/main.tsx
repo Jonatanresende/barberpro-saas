@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { SettingsProvider } from '@/providers/SettingsProvider';
+import { NotificationProvider } from '@/providers/NotificationProvider';
 import App from './App';
 import './index.css';
 
@@ -17,7 +18,9 @@ root.render(
     <HashRouter>
       <AuthProvider>
         <SettingsProvider>
-          <App />
+          <NotificationProvider>
+            <App />
+          </NotificationProvider>
         </SettingsProvider>
       </AuthProvider>
     </HashRouter>
