@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { NotificationContext, NotificationContextType } from '@/context/NotificationContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,8 @@ const getStorageKey = (userId: string) => `notifications_count_${userId}`;
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   const [newAppointmentCount, setNewAppointmentCount] = useState(0);
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  // Usamos useRef para armazenar o canal, evitando que ele se torne uma dependência do useCallback
+  const channelRef = useRef<RealtimeChannel | null>(null); 
 
   // 1. Inicializa o estado a partir do localStorage
   useEffect(() => {
@@ -37,7 +38,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       }
       return newCount;
     });
-  }, [user]);
+  }, [user]); // Depende apenas de 'user'
 
   const resetAppointmentCount = useCallback(() => {
     setNewAppointmentCount(0);
@@ -46,14 +47,17 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  // 3. Lógica de Realtime (mantida)
-  const setupRealtime = useCallback(() => {
-    if (channel) {
-      supabase.removeChannel(channel);
-      setChannel(null);
+  // 3. Lógica de Realtime
+  useEffect(() => {
+    if (authLoading) return;
+
+    // Limpa o canal anterior antes de configurar um novo
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
 
-    if (!user || authLoading) return;
+    if (!user) return;
 
     let filter: string | undefined;
     let channelName: string;
@@ -91,17 +95,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     )
     .subscribe();
 
-    setChannel(newChannel);
+    channelRef.current = newChannel;
 
+    // Função de limpeza: remove o canal quando o componente é desmontado ou as dependências mudam
     return () => {
-      supabase.removeChannel(newChannel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [user, authLoading, incrementAppointmentCount, channel]);
-
-  useEffect(() => {
-    const cleanup = setupRealtime();
-    return cleanup;
-  }, [setupRealtime]);
+  }, [user, authLoading, incrementAppointmentCount]); // Dependências: user, authLoading, incrementAppointmentCount
 
   const contextValue: NotificationContextType = {
     newAppointmentCount,
