@@ -6,21 +6,48 @@ import { UserRole } from '@/types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
 
+// Chave de armazenamento local para a contagem de notificações
+const getStorageKey = (userId: string) => `notifications_count_${userId}`;
+
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   const [newAppointmentCount, setNewAppointmentCount] = useState(0);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
+  // 1. Inicializa o estado a partir do localStorage
+  useEffect(() => {
+    if (user) {
+      const storedCount = localStorage.getItem(getStorageKey(user.id));
+      if (storedCount) {
+        setNewAppointmentCount(parseInt(storedCount, 10));
+      } else {
+        setNewAppointmentCount(0);
+      }
+    } else {
+      setNewAppointmentCount(0);
+    }
+  }, [user]);
+
+  // 2. Funções de manipulação que atualizam o localStorage
   const incrementAppointmentCount = useCallback(() => {
-    setNewAppointmentCount(prev => prev + 1);
-  }, []);
+    setNewAppointmentCount(prev => {
+      const newCount = prev + 1;
+      if (user) {
+        localStorage.setItem(getStorageKey(user.id), String(newCount));
+      }
+      return newCount;
+    });
+  }, [user]);
 
   const resetAppointmentCount = useCallback(() => {
     setNewAppointmentCount(0);
-  }, []);
+    if (user) {
+      localStorage.removeItem(getStorageKey(user.id));
+    }
+  }, [user]);
 
+  // 3. Lógica de Realtime (mantida)
   const setupRealtime = useCallback(() => {
-    // 1. Remove o canal anterior, se existir
     if (channel) {
       supabase.removeChannel(channel);
       setChannel(null);
@@ -32,15 +59,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     let channelName: string;
 
     if (user.role === UserRole.BARBEARIA && user.barbeariaId) {
-      // Dono da Barbearia: escuta todos os agendamentos da sua barbearia
       filter = `barbearia_id=eq.${user.barbeariaId}`;
       channelName = `appointments:barbearia_id=eq.${user.barbeariaId}`;
     } else if (user.role === UserRole.BARBEIRO && user.barbeiroId) {
-      // Barbeiro: escuta apenas os agendamentos destinados a ele
       filter = `barbeiro_id=eq.${user.barbeiroId}`;
       channelName = `appointments:barbeiro_id=eq.${user.barbeiroId}`;
     } else {
-      return; // Não é um usuário que precisa de notificações de agendamento
+      return;
     }
 
     const newChannel = supabase.channel(channelName);
@@ -74,7 +99,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   }, [user, authLoading, incrementAppointmentCount, channel]);
 
   useEffect(() => {
-    // Configura o Realtime sempre que o usuário ou o estado de autenticação mudar
     const cleanup = setupRealtime();
     return cleanup;
   }, [setupRealtime]);
