@@ -12,7 +12,6 @@ const getStorageKey = (userId: string) => `notifications_count_${userId}`;
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   const [newAppointmentCount, setNewAppointmentCount] = useState(0);
-  // Usamos useRef para armazenar o canal, evitando que ele se torne uma dependência do useCallback
   const channelRef = useRef<RealtimeChannel | null>(null); 
 
   // 1. Inicializa o estado a partir do localStorage
@@ -38,7 +37,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       }
       return newCount;
     });
-  }, [user]); // Depende apenas de 'user'
+  }, [user]);
 
   const resetAppointmentCount = useCallback(() => {
     setNewAppointmentCount(0);
@@ -71,6 +70,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     } else {
       return;
     }
+    
+    console.log(`[Realtime] Tentando assinar canal: ${channelName} com filtro: ${filter}`);
 
     const newChannel = supabase.channel(channelName);
 
@@ -85,6 +86,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       (payload) => {
         const newAppointment = payload.new as any;
         
+        console.log("[Realtime] Novo agendamento recebido:", newAppointment); // LOG DE VERIFICAÇÃO
+        
         // Incrementa a contagem e mostra um toast
         incrementAppointmentCount();
         toast(`Novo Agendamento: ${newAppointment.cliente_nome} para ${newAppointment.servico_nome}!`, {
@@ -93,7 +96,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+        console.log(`[Realtime] Status da assinatura: ${status}`);
+    });
 
     channelRef.current = newChannel;
 
@@ -104,7 +109,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         channelRef.current = null;
       }
     };
-  }, [user, authLoading, incrementAppointmentCount]); // Dependências: user, authLoading, incrementAppointmentCount
+  }, [user, authLoading, incrementAppointmentCount]);
 
   const contextValue: NotificationContextType = {
     newAppointmentCount,
