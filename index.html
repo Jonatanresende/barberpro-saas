@@ -209,7 +209,9 @@
 
         const SUPABASE_URL = "https://staimtbbfkfexekkimiw.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YWltdGJiZmtmZXhla2tpbWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MDM3ODcsImV4cCI6MjA3ODM3OTc4N30.Gu6W-UngOWMC8dYOp8qBzKKR5k84Rn3ztYiyGrtE10w";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Usando 'var' para evitar conflito de escopo global com outras bibliotecas/scripts
+        var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const planLinks = {
             'Básico': 'https://pay.kiwify.com.br/7LfyG5Z',
@@ -217,7 +219,8 @@
         };
 
         async function fetchSettings() {
-            const { data, error } = await supabase.from('system_settings').select('logo_url').eq('id', 1).single();
+            // Usando supabaseClient
+            const { data, error } = await supabaseClient.from('system_settings').select('logo_url').eq('id', 1).single();
             if (data && data.logo_url) {
                 document.getElementById('header-logo').src = data.logo_url;
                 document.getElementById('footer-logo').src = data.logo_url;
@@ -226,7 +229,8 @@
 
         async function fetchPlans() {
             const container = document.getElementById('pricing-container');
-            const { data, error } = await supabase.from('planos').select('*').eq('ativo', true).order('preco', { ascending: true });
+            // Usando supabaseClient
+            const { data, error } = await supabaseClient.from('planos').select('*').eq('ativo', true).order('preco', { ascending: true });
             
             if (error || !data) {
                 container.innerHTML = '<p class="text-red-400">Não foi possível carregar os planos.</p>';
