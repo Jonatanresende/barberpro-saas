@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-  }, []);
+  }, []); // Logout não depende de nada, é estável.
 
   const fetchUserAndBarbearia = useCallback(async (session: Session | null) => {
     if (!session) {
@@ -54,8 +54,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Could not find barbershop for owner:", error);
-        logout();
-        return;
+        // Não faz logout aqui, apenas define o usuário base se a barbearia não for encontrada
+        // logout(); 
+        // return;
       }
 
       if (barbearia) {
@@ -74,8 +75,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Could not find barber profile for user:", error);
-        logout();
-        return;
+        // Não faz logout aqui, apenas define o usuário base se o barbeiro não for encontrado
+        // logout();
+        // return;
       }
 
       if (barbeiro) {
@@ -93,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setUser(baseUser);
     setLoading(false);
-  }, [logout]);
+  }, []); // Removendo 'logout' das dependências, pois ele é estável.
 
   useEffect(() => {
     const getSession = async () => {
@@ -104,7 +106,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      fetchUserAndBarbearia(session);
+      // Adicionando um pequeno delay para evitar race conditions ou re-renderizações excessivas
+      // quando múltiplos eventos de auth disparam em sequência.
+      setTimeout(() => {
+        fetchUserAndBarbearia(session);
+      }, 100);
     });
 
     return () => {
