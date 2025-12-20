@@ -131,7 +131,7 @@ const BarberAppointments = () => {
     };
 
     return (
-        <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
+        <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-brand-gray pb-4">
                 <h3 className="text-lg font-semibold text-white">Agenda do Dia</h3>
                 <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="bg-brand-gray px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white w-full sm:w-auto" />
@@ -143,7 +143,7 @@ const BarberAppointments = () => {
             </div>
             <div className="overflow-x-auto">
                 {loadingAppointments ? <p className="text-center py-8 text-gray-400">Carregando...</p> : (
-                    <table className="w-full text-left text-sm text-gray-300 min-w-[600px]"> {/* Adicionado min-w para garantir scroll */}
+                    <table className="w-full text-left text-sm text-gray-300 min-w-[600px]">
                         <thead className="bg-brand-gray text-xs uppercase">
                             <tr>
                                 <th className="px-6 py-3">Horário</th>
