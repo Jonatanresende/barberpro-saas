@@ -48,15 +48,21 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   // 3. Lógica de Realtime
   useEffect(() => {
-    if (authLoading) return;
-
-    // Limpa o canal anterior antes de configurar um novo
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+    if (authLoading || !user) {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
     }
 
-    if (!user) return;
+    // Se o canal já existe e o filtro é o mesmo, não faz nada.
+    // Como o filtro depende do user.id, se o user for o mesmo, o canal deve ser o mesmo.
+    if (channelRef.current) {
+        // Remove o canal anterior para garantir que não haja duplicação de escutas
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+    }
 
     let filter: string | undefined;
     let channelName: string;
@@ -71,8 +77,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    console.log(`[Realtime] Tentando assinar canal: ${channelName} com filtro: ${filter}`);
-
     const newChannel = supabase.channel(channelName);
 
     newChannel.on(
@@ -86,8 +90,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       (payload) => {
         const newAppointment = payload.new as any;
         
-        console.log("[Realtime] Novo agendamento recebido:", newAppointment); // LOG DE VERIFICAÇÃO
-        
         // Incrementa a contagem e mostra um toast
         incrementAppointmentCount();
         toast(`Novo Agendamento: ${newAppointment.cliente_nome} para ${newAppointment.servico_nome}!`, {
@@ -96,9 +98,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     )
-    .subscribe((status) => {
-        console.log(`[Realtime] Status da assinatura: ${status}`);
-    });
+    .subscribe();
 
     channelRef.current = newChannel;
 
@@ -109,7 +109,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         channelRef.current = null;
       }
     };
-  }, [user, authLoading, incrementAppointmentCount]);
+  }, [user?.id, authLoading, incrementAppointmentCount]); // Dependência alterada para user?.id
 
   const contextValue: NotificationContextType = {
     newAppointmentCount,
