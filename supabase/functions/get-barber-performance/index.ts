@@ -42,7 +42,7 @@ serve(async (req) => {
     // 3. FETCH BARBER PROFILE AND OWNERSHIP CHECK
     const { data: barbeiro, error: barberError } = await supabaseAdmin
         .from('barbeiros')
-        .select('nome, professional_types(commission_percent), barbearia_id')
+        .select('nome, professional_types(commission_percent), barbearia_id, user_id') // Adicionado user_id
         .eq('id', barbeiroId)
         .single();
 
@@ -50,7 +50,7 @@ serve(async (req) => {
     if (!barbeiro) throw new Error('Barbeiro não encontrado.');
 
     // Ownership check for Barbeiro role (self-check)
-    if (user.user_metadata?.role === 'barbeiro' && user.id !== barbeiro.user_id) {
+    if (user.user_metadata?.role === 'barbeiro' && barbeiro.user_id && user.id !== barbeiro.user_id) {
         return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste barbeiro.' }), { status: 403, headers: corsHeaders });
     }
     // Ownership check for Barbearia role is handled by RLS, but we ensure barbearia_id exists.
