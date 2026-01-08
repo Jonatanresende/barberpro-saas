@@ -53,6 +53,7 @@ const BarberStatsDashboard = () => {
     // Criando um objeto Barbeiro simulado para o modal de desempenho
     const selfBarberProfile = user?.barbeiroId ? {
         id: user.barbeiroId,
+        user_id: user.id, // Adicionado user_id
         nome: user.full_name || user.email,
         foto_url: '', // Não precisamos da foto aqui
         especialidade: '',

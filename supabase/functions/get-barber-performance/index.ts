@@ -39,18 +39,23 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 3. OWNERSHIP CHECK (Se for barbeiro, verifica se é o próprio ID)
-    if (user.user_metadata?.role === 'barbeiro') {
-        const { data: barberProfile } = await supabaseAdmin
-            .from('barbeiros')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
-        if (!barberProfile || barberProfile.id !== barbeiroId) {
-            return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste barbeiro.' }), { status: 403, headers: corsHeaders });
-        }
+    // 3. FETCH BARBER PROFILE AND OWNERSHIP CHECK
+    const { data: barbeiro, error: barberError } = await supabaseAdmin
+        .from('barbeiros')
+        .select('nome, professional_types(commission_percent), barbearia_id')
+        .eq('id', barbeiroId)
+        .single();
+
+    if (barberError) throw new Error(`Barbeiro não encontrado: ${barberError.message}`);
+    if (!barbeiro) throw new Error('Barbeiro não encontrado.');
+
+    // Ownership check for Barbeiro role (self-check)
+    if (user.user_metadata?.role === 'barbeiro' && user.id !== barbeiro.user_id) {
+        return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste barbeiro.' }), { status: 403, headers: corsHeaders });
     }
-    // Se for barbearia, a RLS deve garantir que só veja barbeiros da sua barbearia.
+    // Ownership check for Barbearia role is handled by RLS, but we ensure barbearia_id exists.
+    if (!barbeiro.barbearia_id) throw new Error('Barbearia ID ausente no perfil do barbeiro.');
+
 
     // 4. DATE RANGE (Last 30 days)
     const today = new Date();
@@ -59,21 +64,15 @@ serve(async (req) => {
     const startDate = thirtyDaysAgo.toISOString().split('T')[0];
     const endDate = today.toISOString().split('T')[0];
 
-    // 5. FETCH DATA
+    // 5. FETCH DEPENDENT DATA
     const [
-        { data: barbeiro, error: barberError },
         { data: barbearia, error: barbeariaError },
         { data: agendamentos, error: agendamentosError }
     ] = await Promise.all([
         supabaseAdmin
-            .from('barbeiros')
-            .select('nome, professional_types(commission_percent), barbearia_id')
-            .eq('id', barbeiroId)
-            .single(),
-        supabaseAdmin
             .from('barbearias')
             .select('comissao_padrao')
-            .eq('id', barbeiro?.barbearia_id)
+            .eq('id', barbeiro.barbearia_id)
             .single(),
         supabaseAdmin
             .from('agendamentos')
@@ -85,7 +84,6 @@ serve(async (req) => {
             .order('data', { ascending: false })
     ]);
 
-    if (barberError) throw barberError;
     if (barbeariaError) throw barbeariaError;
     if (agendamentosError) throw agendamentosError;
 
