@@ -609,6 +609,18 @@ export const api = {
     return data;
   },
 
+  // BARBEARIA/BARBEIRO - Desempenho do Barbeiro (Últimos 30 dias)
+  getBarberPerformanceData: async (barbeiroId: string) => {
+    const { data, error } = await supabase.functions.invoke('get-barber-performance', {
+      body: { barbeiroId },
+    });
+    if (error) {
+      const errorMessage = data?.error || error.message;
+      throw new Error(errorMessage);
+    }
+    return data;
+  },
+
   // PUBLIC/CLIENTE
   getBarbeariaBySlug: async (slug: string): Promise<Barbearia | null> => {
     const { data, error } = await supabase

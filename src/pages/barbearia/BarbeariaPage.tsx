@@ -13,6 +13,7 @@ import ClientEditModal from './ClientEditModal';
 import ClientHistoryModal from './ClientHistoryModal';
 import ManageProfessionalTypes from './ManageProfessionalTypes';
 import Modal from '@/components/Modal';
+import BarberPerformanceModal from './BarberPerformanceModal'; // Importando o novo modal
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">
@@ -35,7 +36,7 @@ const BarbeariaDashboard = ({ barbeariaData, barbeariaPlan }: DashboardProps) =>
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if(user?.barbeariaId) {
+        if (user?.barbeariaId) {
             setLoading(true);
             api.getBarbeariaDashboardData(user.barbeariaId)
                 .then(setStats)
@@ -127,7 +128,9 @@ const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
     const [types, setTypes] = useState<ProfessionalType[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false); // Novo estado
     const [barberToEdit, setBarberToEdit] = useState<Barbeiro | null>(null);
+    const [barberToViewPerformance, setBarberToViewPerformance] = useState<Barbeiro | null>(null); // Novo estado
 
     const fetchBarbersAndPlan = useCallback(async () => {
         if (user?.barbeariaId) {
@@ -167,6 +170,11 @@ const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
         }
         setBarberToEdit(barber);
         setIsModalOpen(true);
+    };
+
+    const handleOpenPerformanceModal = (barber: Barbeiro) => {
+        setBarberToViewPerformance(barber);
+        setIsPerformanceModalOpen(true);
     };
 
     const handleSave = async (barberData: any, password?: string, photoFile?: File) => {
@@ -227,7 +235,13 @@ const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {barbeiros.map(barbeiro => (
                             <div key={barbeiro.id} className="bg-brand-gray p-4 rounded-lg text-center relative group">
-                                <img src={barbeiro.foto_url} alt={barbeiro.nome} className="w-24 h-24 rounded-full mx-auto mb-4 border-2 border-brand-gold object-cover"/>
+                                <button 
+                                    onClick={() => handleOpenPerformanceModal(barbeiro)}
+                                    className="block w-24 h-24 rounded-full mx-auto mb-4 border-2 border-brand-gold object-cover overflow-hidden transition-opacity hover:opacity-80"
+                                    title="Ver Desempenho"
+                                >
+                                    <img src={barbeiro.foto_url} alt={barbeiro.nome} className="w-full h-full object-cover"/>
+                                </button>
                                 <h3 className="font-semibold text-white">{barbeiro.nome}</h3>
                                 <p className="text-sm text-gray-400">{barbeiro.especialidade}</p>
                                 {hasProfessionalPlan && barbeiro.professional_types && (
@@ -255,11 +269,18 @@ const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
                     professionalTypes={types} 
                 />
             </Modal>
+            <BarberPerformanceModal
+                isOpen={isPerformanceModalOpen}
+                onClose={() => setIsPerformanceModalOpen(false)}
+                barber={barberToViewPerformance}
+                isProfessionalPlan={hasProfessionalPlan}
+            />
         </>
     );
 };
 
 const ManageServices = () => {
+// ... (restante do código ManageServices permanece inalterado)
     const { user } = useAuth();
     const [servicos, setServicos] = useState<Servico[]>([]);
     const [loading, setLoading] = useState(true);
@@ -350,6 +371,7 @@ const ManageServices = () => {
 };
 
 const ManageAppointments = () => {
+// ... (restante do código ManageAppointments permanece inalterado)
     const { user } = useAuth();
     const { resetAppointmentCount } = useNotifications(); // Usando o hook de notificação
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
@@ -509,6 +531,7 @@ const ManageAppointments = () => {
 };
 
 const ManageClients = () => {
+// ... (restante do código ManageClients permanece inalterado)
     const { user } = useAuth();
     const [clients, setClients] = useState<Cliente[]>([]);
     const [loading, setLoading] = useState(true);
@@ -603,6 +626,7 @@ const ManageClients = () => {
 };
 
 const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
+// ... (restante do código Settings permanece inalterado)
     const { user } = useAuth();
     const [barbearia, setBarbearia] = useState<Partial<Barbearia>>({ operating_days: [] });
     const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -856,6 +880,7 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
 };
 
 const SettingsWrapper = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
+// ... (restante do código SettingsWrapper permanece inalterado)
     const location = useLocation();
     const navigate = useNavigate();
     const { slug } = useParams();

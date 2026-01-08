@@ -7,12 +7,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications'; // Importado
 import { DollarSignIcon, XCircleIcon, ClockIcon, ScissorsIcon } from '@/components/icons';
 import Calendar from '@/components/booking/Calendar';
+import BarberPerformanceModal from '@/pages/barbearia/BarberPerformanceModal'; // Importando o modal
 
 // Componente para o Dashboard de Estatísticas
 const BarberStatsDashboard = () => {
     const { user } = useAuth();
     const [dashboardData, setDashboardData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
 
     const fetchDashboardData = useCallback(async () => {
         if (user?.barbeiroId) {
@@ -48,16 +50,35 @@ const BarberStatsDashboard = () => {
         return <div className="text-center py-10 text-gray-400">Carregando...</div>;
     }
 
+    // Criando um objeto Barbeiro simulado para o modal de desempenho
+    const selfBarberProfile = user?.barbeiroId ? {
+        id: user.barbeiroId,
+        nome: user.full_name || user.email,
+        foto_url: '', // Não precisamos da foto aqui
+        especialidade: '',
+        ativo: true,
+    } : null;
+
     return (
         <div className="space-y-6">
-            <div className="bg-brand-dark p-4 rounded-lg border border-brand-gray">
-                <h3 className="text-lg font-semibold text-white mb-2">Seu Perfil</h3>
-                <p className="text-sm text-gray-300">
-                    Tipo de Profissional: <span className="font-semibold text-brand-gold">{dashboardData?.professionalTypeName || 'Não Definido'}</span>
-                </p>
-                <p className="text-sm text-gray-300">
-                    Comissão: <span className="font-semibold text-brand-gold">{dashboardData?.commissionRate}%</span>
-                </p>
+            <div className="bg-brand-dark p-4 rounded-lg border border-brand-gray flex justify-between items-center">
+                <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Seu Perfil</h3>
+                    <p className="text-sm text-gray-300">
+                        Tipo de Profissional: <span className="font-semibold text-brand-gold">{dashboardData?.professionalTypeName || 'Não Definido'}</span>
+                    </p>
+                    <p className="text-sm text-gray-300">
+                        Comissão: <span className="font-semibold text-brand-gold">{dashboardData?.commissionRate}%</span>
+                    </p>
+                </div>
+                {selfBarberProfile && (
+                    <button 
+                        onClick={() => setIsPerformanceModalOpen(true)}
+                        className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 text-sm"
+                    >
+                        Ver Desempenho (30 dias)
+                    </button>
+                )}
             </div>
             {/* Ajuste de responsividade: grid de 1 coluna em mobile, 3 em md+ */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -65,12 +86,21 @@ const BarberStatsDashboard = () => {
                 <StatCard title="Total Gerado (Mês)" value={formatCurrency(dashboardData?.totalGeradoNoMes || 0)} icon={<DollarSignIcon className="w-5 h-5 text-white"/>} colorClass="bg-yellow-500" />
                 <StatCard title="Serviços Concluídos (Mês)" value={dashboardData?.agendamentosConcluidos || 0} icon={<ScissorsIcon className="w-5 h-5 text-white"/>} colorClass="bg-blue-500" />
             </div>
+            
+            {/* Modal de Desempenho Pessoal */}
+            <BarberPerformanceModal
+                isOpen={isPerformanceModalOpen}
+                onClose={() => setIsPerformanceModalOpen(false)}
+                barber={selfBarberProfile}
+                isProfessionalPlan={true} // O barbeiro só tem acesso ao painel se o plano for profissional (ou equivalente)
+            />
         </div>
     );
 };
 
 // Componente para a Agenda de Agendamentos
 const BarberAppointments = () => {
+// ... (restante do código BarberAppointments permanece inalterado)
     const { user } = useAuth();
     const { resetAppointmentCount } = useNotifications(); // Usando o hook de notificação
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
@@ -180,6 +210,7 @@ const BarberAppointments = () => {
 
 // Componente para Gerenciar Disponibilidade
 const BarberAvailability = () => {
+// ... (restante do código BarberAvailability permanece inalterado)
     const { user } = useAuth();
     const [disponibilidades, setDisponibilidades] = useState<Record<string, BarbeiroDisponibilidade>>({});
     const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
