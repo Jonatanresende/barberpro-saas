@@ -41,7 +41,7 @@ serve(async (req) => {
     // 3. OWNERSHIP CHECK & FETCH BARBER INFO
     const { data: barberProfile, error: profileError } = await supabaseAdmin
       .from('barbeiros')
-      .select('id, barbearia_id, professional_types(name, commission_percent)') // Incluindo professional_types
+      .select('id, barbearia_id, user_id, professional_types(name, commission_percent)') // Incluindo user_id
       .eq('user_id', user.id)
       .single();
 
@@ -81,7 +81,7 @@ serve(async (req) => {
     let agendamentosConcluidos = 0;
 
     for (const ag of agendamentos) {
-      if (ag.status === 'concluído') {
+      if (ag.status === 'concluido') {
         const preco = ag.servicos?.preco || 0;
         totalGeradoNoMes += preco;
         comissaoDoMes += preco * comissaoPercentual;

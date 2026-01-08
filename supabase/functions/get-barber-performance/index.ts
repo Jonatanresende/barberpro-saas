@@ -42,7 +42,7 @@ serve(async (req) => {
     // 3. FETCH BARBER PROFILE AND OWNERSHIP CHECK
     const { data: barbeiro, error: barberError } = await supabaseAdmin
         .from('barbeiros')
-        .select('nome, professional_types(commission_percent), barbearia_id, user_id') // Adicionado user_id
+        .select('nome, professional_types(commission_percent), barbearia_id, user_id')
         .eq('id', barbeiroId)
         .single();
 
