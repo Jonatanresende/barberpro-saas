@@ -70,3 +70,4 @@ supabase functions deploy update-admin-user
 supabase functions deploy delete-admin-user
 supabase functions deploy keep-alive
 ```
+

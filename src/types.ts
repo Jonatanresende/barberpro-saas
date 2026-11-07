@@ -23,6 +23,7 @@ export interface User {
   estabelecimentoNome?: string;
   profissionalId?: string;
   link_personalizado?: string; // Para donos de estabelecimentos
+  estabelecimentoStatus?: 'ativa' | 'inativa';
   trialStartedAt?: string;
   trialExpiresAt?: string;
   isTrialActive?: boolean;

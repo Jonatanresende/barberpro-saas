@@ -68,3 +68,4 @@ USING (
 -- 4. REALTIME
 -- Permite que clientes e donos recebam eventos de novos agendamentos e atualizações de status
 ALTER PUBLICATION supabase_realtime ADD TABLE public.agendamentos;
+

@@ -342,3 +342,4 @@ CREATE POLICY "disp_owner_all" ON public.profissional_disponibilidade FOR ALL US
 
 -- 5.10 gastos_saas: exclusivo admin
 CREATE POLICY "gastos_admin_all" ON public.gastos_saas FOR ALL USING (public.is_admin());
+

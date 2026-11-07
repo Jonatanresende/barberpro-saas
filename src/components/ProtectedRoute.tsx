@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
+  const { user, logout, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -22,6 +22,30 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Bloqueio quando o estabelecimento está inativo (dono e profissional)
+  const isEstabelecimentoInativo =
+    (user.role === UserRole.ESTABELECIMENTO || user.role === UserRole.PROFISSIONAL) &&
+    user.estabelecimentoStatus === 'inativa';
+
+  if (isEstabelecimentoInativo) {
+    return (
+      <div className="min-h-screen bg-brand-dark flex flex-col items-center justify-center p-4 text-center">
+        <div className="bg-brand-gray/30 p-8 rounded-lg border border-red-500/30 max-w-md w-full">
+          <h2 className="text-2xl font-bold text-red-400 mb-2">Acesso Suspenso</h2>
+          <p className="text-brand-light/80 mb-6">
+            O acesso a este estabelecimento foi temporariamente desativado. Entre em contato com o suporte para mais informações.
+          </p>
+          <button
+            onClick={() => logout()}
+            className="w-full bg-brand-gold text-brand-dark font-semibold py-2 px-4 rounded hover:bg-yellow-400 transition"
+          >
+            Sair da Conta
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Redireciona para a página de configuração se o nome do estabelecimento for temporário

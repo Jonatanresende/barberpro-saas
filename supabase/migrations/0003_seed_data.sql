@@ -68,3 +68,4 @@ ON CONFLICT (nome) DO UPDATE SET
   ativo = EXCLUDED.ativo,
   popular = EXCLUDED.popular,
   limite_profissionais = EXCLUDED.limite_profissionais;
+

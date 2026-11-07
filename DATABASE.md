@@ -234,3 +234,4 @@ RESET ROLE;
 -- 3. Confirmar que a publicação do Realtime inclui agendamentos
 SELECT * FROM pg_publication_tables WHERE pubname = 'supabase_realtime';
 ```
+
