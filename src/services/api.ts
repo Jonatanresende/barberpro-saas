@@ -328,7 +328,7 @@ export const api = {
       id: u.id,
       email: u.email,
       full_name: u.user_metadata?.full_name,
-      role: u.app_metadata?.role || u.user_metadata?.role,
+      role: u.app_metadata?.role,
     }));
   },
 
@@ -341,7 +341,7 @@ export const api = {
       id: data.id,
       email: data.email,
       full_name: data.user_metadata?.full_name,
-      role: data.app_metadata?.role || data.user_metadata?.role,
+      role: data.app_metadata?.role,
     };
   },
 
@@ -354,7 +354,7 @@ export const api = {
       id: data.id,
       email: data.email,
       full_name: data.user_metadata?.full_name,
-      role: data.app_metadata?.role || data.user_metadata?.role,
+      role: data.app_metadata?.role,
     };
   },
 

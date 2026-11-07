@@ -31,7 +31,7 @@ serve(async (req) => {
     const { data: client, error: clientError } = await clientQuery.maybeSingle();
 
     if (clientError) throw clientError;
-    
+
     if (!client) {
       return new Response(JSON.stringify(null), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
