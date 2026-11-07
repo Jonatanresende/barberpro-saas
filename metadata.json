@@ -1,5 +1,5 @@
 {
-  "name": "Barbeiro na Hora",
-  "description": "Um sistema SaaS simples e escalável para gerenciamento de barbearias, construído com React e Supabase. Ele apresenta níveis de acesso distintos para administradores, proprietários de barbearias, barbeiros e clientes. ",
+  "name": "Marcadô",
+  "description": "Sistema SaaS simples e escalável para agendamentos e gestão de estabelecimentos de beleza e estética (barbearias, salões, estética, manicures e sobrancelhas), construído com React e Supabase.",
   "requestFramePermissions": []
 }

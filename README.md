@@ -222,7 +222,7 @@ Todas as operações de backend com privilégios administrativos ou lógica sens
 ## 📁 Estrutura de Pastas
 
 ```text
-barberpro-saas/
+marcado/
 ├── index.html                     # Landing Page de Vendas (HTML/Tailwind)
 ├── app.html                       # Entry point da aplicação SPA React
 ├── src/
@@ -237,6 +237,7 @@ barberpro-saas/
 │   │   ├── Modal.tsx              # Componente base de modal
 │   │   ├── ProtectedRoute.tsx     # Guarda de rotas baseada em papéis (RBAC)
 │   │   └── booking/               # Componentes de Calendário e TimeSlots
+│   ├── config/                    # Vocabulário por nicho e serviços de exemplo
 │   ├── context/                   # Contextos React (Auth, Settings, Notifications)
 │   ├── hooks/                     # Custom hooks utilitários
 │   ├── integrations/supabase/     # Inicialização do cliente Supabase
@@ -244,14 +245,15 @@ barberpro-saas/
 │   │   ├── Login.tsx              # Autenticação de usuários
 │   │   ├── TrialExpired.tsx       # Aviso de expiração de teste gratuito
 │   │   ├── admin/                 # Módulos do Super Administrador
-│   │   ├── barbearia/             # Módulos do Dono da Barbearia
-│   │   ├── barbeiro/              # Módulos do Profissional Barbeiro
+│   │   ├── estabelecimento/       # Módulos do Proprietário do Estabelecimento
+│   │   ├── profissional/          # Módulos do Profissional
 │   │   └── cliente/               # Telas públicas de perfil e agendamento
 │   ├── services/
 │   │   └── api.ts                 # Camada de comunicação com Supabase e Edge Functions
 │   └── utils/                     # Constantes, slugs e helpers
 ├── supabase/
-│   └── functions/                 # Deno Edge Functions
+│   ├── functions/                 # Deno Edge Functions
+│   └── migrations/                # Migrações SQL numeradas
 ├── tailwind.config.js             # Configurações de cores e tema
 └── vite.config.ts                 # Configuração do Vite e aliases de path
 ```
@@ -288,7 +290,7 @@ barberpro-saas/
    ```bash
    npm run dev
    ```
-   Acesse no navegador: `http://localhost:5173`
+   Acesse no navegador: `http://localhost:3000`
 
 5. **Build de Produção:**
    ```bash
@@ -300,11 +302,11 @@ barberpro-saas/
 ## 📜 Regras de Desenvolvimento
 
 - **Estilização:** Tailwind CSS é o padrão obrigatório em todo o projeto.
-- **Camada de Dados:** Todas as consultas e mutações ao Supabase e Edge Functions devem estar encapsuladas em [`src/services/api.ts`](file:///c:/Users/jonat/OneDrive/Desktop/sistema-barber/barberpro-saas/src/services/api.ts).
-- **Responsividade:** Abordagem Mobile-First, garantindo que barbeiros e clientes tenham uma experiência perfeita em dispositivos móveis.
+- **Camada de Dados:** Todas as consultas e mutações ao Supabase e Edge Functions devem estar encapsuladas em [`src/services/api.ts`](src/services/api.ts).
+- **Responsividade:** Abordagem Mobile-First, garantindo que profissionais e clientes tenham uma experiência perfeita em dispositivos móveis.
 
 ---
 
 <div align="center">
-  <sub>Desenvolvido com dedicação para impulsionar a gestão de barbearias. 💈✂️</sub>
+  <sub>Desenvolvido com dedicação para impulsionar a gestão de negócios da beleza. ✨✂️</sub>
 </div>

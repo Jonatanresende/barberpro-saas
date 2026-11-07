@@ -207,19 +207,19 @@
     <script>
         lucide.createIcons();
 
-        const SUPABASE_URL = "https://staimtbbfkfexekkimiw.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YWltdGJiZmtmZXhla2tpbWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MDM3ODcsImV4cCI6MjA3ODM3OTc4N30.Gu6W-UngOWMC8dYOp8qBzKKR5k84Rn3ztYiyGrtE10w";
+        const SUPABASE_URL = "%VITE_SUPABASE_URL%";
+        const SUPABASE_KEY = "%VITE_SUPABASE_ANON_KEY%";
         
         // Usando 'var' para evitar conflito de escopo global com outras bibliotecas/scripts
-        var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        var supabaseClient = (SUPABASE_URL && !SUPABASE_URL.startsWith('%'))
+          ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+          : null;
 
-        const planLinks = {
-            'Básico': 'https://pay.kiwify.com.br/7LfyG5Z',
-            'Profissional': 'https://pay.kiwify.com.br/ot4k2Am'
-        };
+        // TODO: reativar links de checkout quando definir a forma de pagamento
+        const planLinks = {};
 
         async function fetchSettings() {
-            // Usando supabaseClient
+            if (!supabaseClient) return;
             const { data, error } = await supabaseClient.from('system_settings').select('logo_url').eq('id', 1).single();
             if (data && data.logo_url) {
                 document.getElementById('header-logo').src = data.logo_url;
@@ -229,7 +229,10 @@
 
         async function fetchPlans() {
             const container = document.getElementById('pricing-container');
-            // Usando supabaseClient
+            if (!supabaseClient) {
+                if (container) container.innerHTML = '<p class="text-gray-400">Planos disponíveis em breve.</p>';
+                return;
+            }
             const { data, error } = await supabaseClient.from('planos').select('*').eq('ativo', true).order('preco', { ascending: true });
             
             if (error || !data) {
@@ -252,7 +255,7 @@
                             </li>
                         `).join('')}
                     </ul>
-                    <a href="${planLinks[plano.nome] || '#'}" target="_blank" rel="noopener noreferrer" class="mt-auto bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded-lg w-full hover:opacity-90 transition-opacity">Contratar Agora</a>
+                    <a href="/app.html#/login" class="mt-auto bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded-lg w-full hover:opacity-90 transition-opacity">Contratar Agora</a>
                 </div>
             `).join('');
             lucide.createIcons();

@@ -1,4 +1,4 @@
-# Regras e Diretrizes do Projeto (Barbeiro na Hora)
+# Regras e Diretrizes do Projeto (Marcadô)
 
 Este documento define o stack tecnológico e as regras de uso de bibliotecas para garantir a consistência, manutenibilidade e escalabilidade do projeto.
 
