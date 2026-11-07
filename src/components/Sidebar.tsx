@@ -30,26 +30,26 @@ const getNavItems = (role: UserRole, slug?: string) => {
     case UserRole.ADMIN:
       return [
         { to: "/admin/dashboard", icon: <UsersIcon className="w-5 h-5" />, label: "Dashboard" },
-        { to: "/admin/barbershops", icon: <StoreIcon className="w-5 h-5" />, label: "Barbearias" },
+        { to: "/admin/estabelecimentos", icon: <StoreIcon className="w-5 h-5" />, label: "Estabelecimentos" },
         { to: "/admin/plans", icon: <ClipboardListIcon className="w-5 h-5" />, label: "Planos" },
         { to: "/admin/expenses", icon: <DollarSignIcon className="w-5 h-5" />, label: "Gastos" },
         { to: "/admin/settings", icon: <SettingsIcon className="w-5 h-5" />, label: "Configurações" },
       ];
-    case UserRole.BARBEARIA:
+    case UserRole.ESTABELECIMENTO:
       if (!slug) return [];
       return [
         { to: `/${slug}/dashboard`, icon: <ActivityIcon className="w-5 h-5" />, label: "Dashboard" },
         { to: `/${slug}/appointments`, icon: <CalendarIcon className="w-5 h-5" />, label: "Agendamentos" },
-        { to: `/${slug}/barbers`, icon: <ScissorsIcon className="w-5 h-5" />, label: "Barbeiros" },
+        { to: `/${slug}/profissionais`, icon: <ScissorsIcon className="w-5 h-5" />, label: "Profissionais" },
         { to: `/${slug}/services`, icon: <ClipboardListIcon className="w-5 h-5" />, label: "Serviços" },
         { to: `/${slug}/clients`, icon: <UsersIcon className="w-5 h-5" />, label: "Clientes" },
         { to: `/${slug}/profile`, icon: <UserIcon className="w-5 h-5" />, label: "Meu Perfil" },
         { to: `/${slug}/settings`, icon: <SettingsIcon className="w-5 h-5" />, label: "Configurações" },
       ];
-    case UserRole.BARBEIRO:
+    case UserRole.PROFISSIONAL:
       return [
-        { to: "/barbeiro/appointments", icon: <CalendarIcon className="w-5 h-5" />, label: "Meus Agendamentos" },
-        { to: "/barbeiro/availability", icon: <ClockIcon className="w-5 h-5" />, label: "Minha Disponibilidade" },
+        { to: "/profissional/appointments", icon: <CalendarIcon className="w-5 h-5" />, label: "Meus Agendamentos" },
+        { to: "/profissional/availability", icon: <ClockIcon className="w-5 h-5" />, label: "Minha Disponibilidade" },
       ];
     default:
       return [];
@@ -63,7 +63,7 @@ const Sidebar = ({ role, slug, isSidebarOpen }: SidebarProps) => {
   return (
     <aside className={`bg-brand-dark text-white fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-200 ease-in-out z-30 w-64 border-r border-brand-gray flex flex-col`}>
       <div className="flex items-center justify-center border-b border-brand-gray px-4 py-6">
-        <img src={settings?.logo_url || defaultLogo} alt="Logo Barbeiro na Hora" className="w-40 h-auto" />
+        <img src={settings?.logo_url || defaultLogo} alt="Logo Marcadô" className="w-40 h-auto" />
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navItems.map(item => <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />)}

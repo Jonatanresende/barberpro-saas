@@ -170,7 +170,7 @@ const AccountSettings = () => {
                 <PasswordChangeModal onClose={() => setIsPasswordModalOpen(false)} />
             </Modal>
             <Modal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} title={userToEdit ? 'Editar Administrador' : 'Adicionar Administrador'}>
-                <AdminUserModal onClose={() => setIsUserModalOpen(false)} onSave={handleSaveAdminUser} userToEdit={userToEdit} />
+                <AdminUserModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} onSave={handleSaveAdminUser} userToEdit={userToEdit} />
             </Modal>
         </>
     );

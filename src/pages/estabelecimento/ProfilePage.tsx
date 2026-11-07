@@ -1,32 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
-import { Barbearia, Barbeiro, Plano } from '@/types';
+import { Estabelecimento, Profissional, Plano } from '@/types';
 import toast from 'react-hot-toast';
 import { KIWIFY_PLAN_LINKS } from '@/utils/constants';
 
 const ProfilePage = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Partial<Barbearia>>({});
-  const [initialProfile, setInitialProfile] = useState<Partial<Barbearia>>({});
+  const [profile, setProfile] = useState<Partial<Estabelecimento>>({});
+  const [initialProfile, setInitialProfile] = useState<Partial<Estabelecimento>>({});
   const [availablePlans, setAvailablePlans] = useState<Plano[]>([]);
-  const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
+  const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingPlan, setIsSavingPlan] = useState(false);
 
   useEffect(() => {
-    if (user?.barbeariaId) {
+    const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+    if (estId) {
       setLoading(true);
       Promise.all([
-        api.getBarbeariaById(user.barbeariaId),
+        api.getEstabelecimentoById(estId),
         api.getPlanos(),
-        api.getBarbeirosByBarbearia(user.barbeariaId)
-      ]).then(([profileData, plansData, barbersData]) => {
+        api.getProfissionaisByEstabelecimento(estId)
+      ]).then(([profileData, plansData, profData]) => {
         setProfile(profileData);
         setInitialProfile(profileData);
         setAvailablePlans(plansData.filter(p => p.ativo));
-        setBarbeiros(barbersData);
+        setProfissionais(profData);
       }).catch(() => {
         toast.error("Falha ao carregar dados do perfil e planos.");
       }).finally(() => {
@@ -41,7 +42,8 @@ const ProfilePage = () => {
   };
 
   const handleSaveProfile = async () => {
-    if (!user?.barbeariaId || !user.id) return;
+    const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+    if (!estId || !user?.id) return;
 
     const updates = {
       dono_nome: profile.dono_nome,
@@ -52,7 +54,7 @@ const ProfilePage = () => {
 
     setIsSaving(true);
     toast.promise(
-      api.updateBarbearia(user.barbeariaId, user.id, updates),
+      api.updateEstabelecimento(estId, user.id, updates),
       {
         loading: 'Salvando perfil...',
         success: 'Perfil atualizado com sucesso!',
@@ -62,36 +64,35 @@ const ProfilePage = () => {
   };
 
   const handleSavePlan = async () => {
-    if (!user?.barbeariaId || !user.id || !profile.plano) return;
+    const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+    if (!estId || !user?.id || !profile.plano) return;
 
     const targetPlan = availablePlans.find(p => p.nome === profile.plano);
     const currentPlan = availablePlans.find(p => p.nome === initialProfile.plano);
-    const activeBarberCount = barbeiros.filter(b => b.ativo).length;
+    const activeProfCount = profissionais.filter(b => b.ativo).length;
 
     if (!targetPlan || !currentPlan) {
         toast.error("Não foi possível verificar os detalhes do plano.");
         return;
     }
 
-    // 1. Validação de Downgrade (mantida para UX)
     const isProblematicDowngrade = 
-        (targetPlan.limite_barbeiros !== null && activeBarberCount > targetPlan.limite_barbeiros) &&
-        (currentPlan.limite_barbeiros === null || targetPlan.limite_barbeiros < currentPlan.limite_barbeiros);
+        (targetPlan.limite_profissionais !== null && targetPlan.limite_profissionais !== undefined && activeProfCount > targetPlan.limite_profissionais) &&
+        (currentPlan.limite_profissionais === null || currentPlan.limite_profissionais === undefined || targetPlan.limite_profissionais < currentPlan.limite_profissionais);
 
     if (isProblematicDowngrade) {
-        const excessCount = activeBarberCount - targetPlan.limite_barbeiros!;
+        const excessCount = activeProfCount - targetPlan.limite_profissionais!;
         const confirmation = window.confirm(
-            `Atenção! Seu novo plano suporta apenas ${targetPlan.limite_barbeiros} barbeiros, mas você tem ${activeBarberCount} ativos. ` +
-            `Ao confirmar, ${excessCount} barbeiro(s) (os mais antigos) serão removidos permanentemente. Deseja continuar?`
+            `Atenção! Seu novo plano suporta apenas ${targetPlan.limite_profissionais} profissionais, mas você tem ${activeProfCount} ativos. ` +
+            `Ao confirmar, ${excessCount} profissional(is) serão removidos permanentemente. Deseja continuar?`
         );
 
         if (!confirmation) {
-            setProfile(prev => ({ ...prev, plano: initialProfile.plano })); // Reverte a seleção
+            setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
             return;
         }
     }
     
-    // 2. Redirecionamento para Kiwify
     const checkoutLink = KIWIFY_PLAN_LINKS[targetPlan.nome];
 
     if (!checkoutLink) {
@@ -102,17 +103,15 @@ const ProfilePage = () => {
 
     const confirmationMessage = 
         `Você está prestes a mudar para o plano ${targetPlan.nome}. ` +
-        `Você será redirecionado para a Kiwify para finalizar a compra. ` +
-        `IMPORTANTE: Após a compra, lembre-se de cancelar sua assinatura anterior na Kiwify para evitar cobranças duplicadas. Deseja continuar?`;
+        `Você será redirecionado para a plataforma de pagamento. ` +
+        `Após a assinatura, seu painel será atualizado. Deseja continuar?`;
 
     if (window.confirm(confirmationMessage)) {
-        // Se for um downgrade problemático, chamamos a função de atualização do plano no backend
-        // para que a lógica de remoção de barbeiros seja executada ANTES do redirecionamento.
         if (isProblematicDowngrade) {
             setIsSavingPlan(true);
             try {
-                await api.updateBarbershopPlan(user.barbeariaId, profile.plano);
-                toast.success('Barbeiros em excesso removidos. Redirecionando para o checkout...');
+                await api.updateEstabelecimentoPlan(estId, profile.plano);
+                toast.success('Profissionais em excesso removidos. Redirecionando para o checkout...');
             } catch (err: any) {
                 toast.error(`Falha na pré-validação: ${err.message}`);
                 setIsSavingPlan(false);
@@ -123,13 +122,8 @@ const ProfilePage = () => {
             }
         }
         
-        // Redireciona o usuário para o link de checkout
         window.open(checkoutLink, '_blank');
-        
-        // O plano no DB só será atualizado quando o webhook da Kiwify retornar o sucesso da compra.
         toast.success("Redirecionando para o checkout. Após a compra, seu painel será atualizado automaticamente.");
-        
-        // Reverte a seleção visualmente para o plano inicial até que o webhook confirme a mudança.
         setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
     } else {
         setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
@@ -192,9 +186,6 @@ const ProfilePage = () => {
             {isSavingPlan ? 'Validando...' : 'Mudar de Plano'}
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-4">
-            Ao clicar em "Mudar de Plano", você será redirecionado para a Kiwify para concluir a compra da nova assinatura.
-        </p>
       </div>
     </div>
   );

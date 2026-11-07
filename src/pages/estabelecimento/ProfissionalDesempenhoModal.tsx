@@ -2,18 +2,19 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '@/components/Modal';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { Barbeiro } from '@/types';
-import { DollarSignIcon, ScissorsIcon } from '@/components/icons';
+import { Profissional } from '@/types';
 
-interface BarberPerformanceModalProps {
+export interface ProfissionalDesempenhoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  barber: Barbeiro | null;
+  profissional?: Profissional | null;
+  barber?: Profissional | null;
   isProfessionalPlan: boolean;
 }
 
 interface PerformanceData {
-    barberName: string;
+    barberName?: string;
+    profissionalNome?: string;
     commissionRate: number;
     totalGenerated: number;
     totalCommission: number;
@@ -27,15 +28,16 @@ interface PerformanceData {
 
 const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
-const BarberPerformanceModal = ({ isOpen, onClose, barber, isProfessionalPlan }: BarberPerformanceModalProps) => {
+const ProfissionalDesempenhoModal = ({ isOpen, onClose, profissional, barber, isProfessionalPlan }: ProfissionalDesempenhoModalProps) => {
+  const item = profissional || barber;
   const [data, setData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchPerformance = useCallback(async () => {
-    if (!barber || !isProfessionalPlan) return;
+    if (!item || !isProfessionalPlan) return;
     setLoading(true);
     try {
-      const performanceData = await api.getBarberPerformanceData(barber.id);
+      const performanceData = await api.getProfissionalPerformanceData(item.id);
       setData(performanceData);
     } catch (error) {
       toast.error("Falha ao carregar dados de desempenho.");
@@ -43,19 +45,19 @@ const BarberPerformanceModal = ({ isOpen, onClose, barber, isProfessionalPlan }:
     } finally {
       setLoading(false);
     }
-  }, [barber, isProfessionalPlan]);
+  }, [item, isProfessionalPlan]);
 
   useEffect(() => {
-    if (isOpen && barber) {
+    if (isOpen && item) {
       fetchPerformance();
     }
-  }, [isOpen, barber, fetchPerformance]);
+  }, [isOpen, item, fetchPerformance]);
 
   if (!isOpen) return null;
 
   if (!isProfessionalPlan) {
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Desempenho do Barbeiro">
+        <Modal isOpen={isOpen} onClose={onClose} title="Desempenho do Profissional">
             <div className="bg-red-500/10 p-4 rounded-lg border border-red-500/30 text-red-400">
                 <p className="font-semibold">Acesso Negado.</p>
                 <p className="text-sm mt-1">O relatório de desempenho individual é um recurso exclusivo do Plano Profissional.</p>
@@ -65,7 +67,7 @@ const BarberPerformanceModal = ({ isOpen, onClose, barber, isProfessionalPlan }:
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Desempenho de ${barber?.nome || 'Barbeiro'}`}>
+    <Modal isOpen={isOpen} onClose={onClose} title={`Desempenho de ${item?.nome || 'Profissional'}`}>
       {loading ? (
         <p className="text-center text-gray-400 py-8">Carregando dados dos últimos 30 dias...</p>
       ) : data ? (
@@ -119,4 +121,5 @@ const BarberPerformanceModal = ({ isOpen, onClose, barber, isProfessionalPlan }:
   );
 };
 
-export default BarberPerformanceModal;
+export default ProfissionalDesempenhoModal;
+export const BarberPerformanceModal = ProfissionalDesempenhoModal;

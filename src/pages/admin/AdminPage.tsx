@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { Barbearia, Plano, User } from '@/types';
-import { DollarSignIcon, UsersIcon, StoreIcon, ClipboardListIcon } from '@/components/icons';
+import { Estabelecimento, Plano } from '@/types';
+import { DollarSignIcon, StoreIcon } from '@/components/icons';
 import Modal from '@/components/Modal';
-import BarbershopModal from '@/pages/admin/EstabelecimentoModal';
+import EstabelecimentoModal from '@/pages/admin/EstabelecimentoModal';
 import PlanModal from '@/pages/admin/PlanModal';
 import SettingsPage from '@/pages/admin/SettingsPage';
 import ManageExpenses from '@/pages/admin/ManageExpenses';
@@ -57,20 +57,24 @@ const AdminDashboard = () => {
     if (loading) return <p className="text-center text-gray-400">Carregando...</p>;
     if (!stats) return <p className="text-center text-gray-400">Não foi possível carregar os dados.</p>;
 
+    const totalEst = stats.totalEstabelecimentos ?? stats.totalBarbearias ?? 0;
+    const activeEst = stats.activeEstabelecimentos ?? stats.activeBarbearias ?? 0;
+    const latestEst = stats.latestEstabelecimentos ?? stats.latestBarbershops ?? [];
+
     return (
         <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Receita Mensal Estimada" value={formatCurrency(stats.totalRevenue)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Gasto Mensal Total" value={formatCurrency(stats.totalMonthlyExpense)} icon={<DollarSignIcon className="w-6 h-6 text-red-400" />} />
-                <StatCard title="Total de Barbearias" value={stats.totalBarbearias} icon={<StoreIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Barbearias Ativas" value={stats.activeBarbearias} icon={<StoreIcon className="w-6 h-6 text-green-400" />} />
+                <StatCard title="Receita Mensal Estimada" value={formatCurrency(stats.totalRevenue || 0)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Gasto Mensal Total" value={formatCurrency(stats.totalMonthlyExpense || 0)} icon={<DollarSignIcon className="w-6 h-6 text-red-400" />} />
+                <StatCard title="Total de Estabelecimentos" value={totalEst} icon={<StoreIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Estabelecimentos Ativos" value={activeEst} icon={<StoreIcon className="w-6 h-6 text-green-400" />} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                    <h3 className="text-xl font-semibold text-white mb-4">Crescimento de Usuários (Barbearia)</h3>
+                    <h3 className="text-xl font-semibold text-white mb-4">Crescimento de Usuários</h3>
                     <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={stats.userGrowthChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                        <LineChart data={stats.userGrowthChartData || []} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                             <XAxis dataKey="name" stroke="#9ca3af" />
                             <YAxis stroke="#9ca3af" />
@@ -81,9 +85,9 @@ const AdminDashboard = () => {
                     </ResponsiveContainer>
                 </div>
                 <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                    <h3 className="text-xl font-semibold text-white mb-4">Novas Barbearias</h3>
+                    <h3 className="text-xl font-semibold text-white mb-4">Novos Estabelecimentos</h3>
                     <ul className="space-y-3">
-                        {stats.latestBarbershops.map((b: any, index: number) => (
+                        {latestEst.map((b: any, index: number) => (
                             <li key={index} className="bg-brand-gray p-3 rounded-lg">
                                 <p className="font-semibold text-white">{b.nome}</p>
                                 <p className="text-xs text-gray-400">Criado em: {new Date(b.criado_em).toLocaleDateString()}</p>
@@ -98,78 +102,78 @@ const AdminDashboard = () => {
 
 // --- Componentes de Gerenciamento ---
 
-const ManageBarbershops = () => {
-    const [barbearias, setBarbearias] = useState<Barbearia[]>([]);
+const ManageEstabelecimentos = () => {
+    const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [barbeariaToEdit, setBarbeariaToEdit] = useState<Barbearia | null>(null);
+    const [estabelecimentoToEdit, setEstabelecimentoToEdit] = useState<Estabelecimento | null>(null);
 
-    const fetchBarbearias = useCallback(async () => {
+    const fetchEstabelecimentos = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await api.getBarbearias();
-            setBarbearias(data);
+            const data = await api.getEstabelecimentos();
+            setEstabelecimentos(data);
         } catch (error) {
-            toast.error("Falha ao carregar barbearias.");
+            toast.error("Falha ao carregar estabelecimentos.");
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchBarbearias();
-    }, [fetchBarbearias]);
+        fetchEstabelecimentos();
+    }, [fetchEstabelecimentos]);
 
     const handleOpenCreateModal = () => {
-        setBarbeariaToEdit(null);
+        setEstabelecimentoToEdit(null);
         setIsModalOpen(true);
     };
 
-    const handleOpenEditModal = (barbearia: Barbearia) => {
-        setBarbeariaToEdit(barbearia);
+    const handleOpenEditModal = (est: Estabelecimento) => {
+        setEstabelecimentoToEdit(est);
         setIsModalOpen(true);
     };
 
-    const handleSave = async (barbeariaData: any, password?: string, photoFile?: File) => {
+    const handleSave = async (estabelecimentoData: any, password?: string, photoFile?: File) => {
         let promise;
-        if (barbeariaToEdit) {
-            promise = api.updateBarbearia(barbeariaToEdit.id, barbeariaToEdit.dono_id, barbeariaData, photoFile);
+        if (estabelecimentoToEdit) {
+            promise = api.updateEstabelecimento(estabelecimentoToEdit.id, estabelecimentoToEdit.dono_id, estabelecimentoData, photoFile);
         } else {
-            promise = api.createBarbeariaAndOwner(barbeariaData, password!, photoFile);
+            promise = api.createEstabelecimentoAndOwner(estabelecimentoData, password!, photoFile);
         }
 
         toast.promise(promise, {
-            loading: 'Salvando barbearia...',
+            loading: 'Salvando estabelecimento...',
             success: () => {
-                fetchBarbearias();
+                fetchEstabelecimentos();
                 setIsModalOpen(false);
-                return `Barbearia ${barbeariaToEdit ? 'atualizada' : 'adicionada'} com sucesso!`;
+                return `Estabelecimento ${estabelecimentoToEdit ? 'atualizado' : 'adicionado'} com sucesso!`;
             },
             error: (err) => `Falha ao salvar: ${err.message}`,
         });
     };
 
-    const handleToggleStatus = (barbearia: Barbearia) => {
-        const newStatus = barbearia.status === 'ativa' ? 'inativa' : 'ativa';
-        const promise = api.updateBarbearia(barbearia.id, barbearia.dono_id, { status: newStatus });
+    const handleToggleStatus = (est: Estabelecimento) => {
+        const newStatus = est.status === 'ativa' ? 'inativa' : 'ativa';
+        const promise = api.updateEstabelecimento(est.id, est.dono_id, { status: newStatus });
 
         toast.promise(promise, {
             loading: 'Atualizando status...',
             success: () => {
-                fetchBarbearias();
+                fetchEstabelecimentos();
                 return `Status alterado para ${newStatus} com sucesso!`;
             },
             error: (err) => `Falha ao alterar status: ${err.message}`,
         });
     };
 
-    const handleDelete = (barbearia: Barbearia) => {
-        if (window.confirm(`Tem certeza que deseja remover a barbearia "${barbearia.nome}"? Esta ação é irreversível e excluirá a conta do proprietário.`)) {
-            toast.promise(api.deleteBarbearia(barbearia.id, barbearia.dono_id), {
+    const handleDelete = (est: Estabelecimento) => {
+        if (window.confirm(`Tem certeza que deseja remover o estabelecimento "${est.nome}"? Esta ação é irreversível e excluirá a conta do proprietário.`)) {
+            toast.promise(api.deleteEstabelecimento(est.id, est.dono_id), {
                 loading: 'Removendo...',
                 success: () => {
-                    fetchBarbearias();
-                    return 'Barbearia removida com sucesso!';
+                    fetchEstabelecimentos();
+                    return 'Estabelecimento removido com sucesso!';
                 },
                 error: (err) => `Falha ao remover: ${err.message}`,
             });
@@ -180,8 +184,8 @@ const ManageBarbershops = () => {
         <>
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                    <h2 className="text-xl font-semibold text-white">Gerenciar Barbearias</h2>
-                    <button onClick={handleOpenCreateModal} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar Barbearia</button>
+                    <h2 className="text-xl font-semibold text-white">Gerenciar Estabelecimentos</h2>
+                    <button onClick={handleOpenCreateModal} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar Estabelecimento</button>
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <div className="overflow-x-auto">
@@ -197,24 +201,24 @@ const ManageBarbershops = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {barbearias.map(b => (
-                                    <tr key={b.id} className="border-b border-brand-gray hover:bg-brand-gray">
+                                {estabelecimentos.map(est => (
+                                    <tr key={est.id} className="border-b border-brand-gray hover:bg-brand-gray">
                                         <td className="px-6 py-4 align-middle">
-                                            <img src={b.foto_url || 'https://via.placeholder.com/40'} alt={b.nome} className="w-10 h-10 rounded-full object-cover" />
+                                            <img src={est.foto_url || 'https://via.placeholder.com/40'} alt={est.nome} className="w-10 h-10 rounded-full object-cover" />
                                         </td>
-                                        <td className="px-6 py-4 font-medium text-white align-middle">{b.nome}</td>
-                                        <td className="px-6 py-4 align-middle hidden sm:table-cell">{b.dono_email}</td>
-                                        <td className="px-6 py-4 align-middle hidden md:table-cell">{b.plano || 'N/A'}</td>
+                                        <td className="px-6 py-4 font-medium text-white align-middle">{est.nome}</td>
+                                        <td className="px-6 py-4 align-middle hidden sm:table-cell">{est.dono_email}</td>
+                                        <td className="px-6 py-4 align-middle hidden md:table-cell">{est.plano || 'N/A'}</td>
                                         <td className="px-6 py-4 align-middle">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${b.status === 'ativa' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                                {b.status}
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${est.status === 'ativa' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                                {est.status}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 align-middle">
                                             <div className="flex flex-col space-y-1 sm:flex-row sm:space-x-2 sm:space-y-0 text-xs">
-                                                <button onClick={() => handleOpenEditModal(b)} className="text-blue-400 hover:text-blue-300">Editar</button>
-                                                <button onClick={() => handleToggleStatus(b)} className="text-yellow-400 hover:text-yellow-300">{b.status === 'ativa' ? 'Desativar' : 'Ativar'}</button>
-                                                <button onClick={() => handleDelete(b)} className="text-red-400 hover:text-red-300">Excluir</button>
+                                                <button onClick={() => handleOpenEditModal(est)} className="text-blue-400 hover:text-blue-300">Editar</button>
+                                                <button onClick={() => handleToggleStatus(est)} className="text-yellow-400 hover:text-yellow-300">{est.status === 'ativa' ? 'Desativar' : 'Ativar'}</button>
+                                                <button onClick={() => handleDelete(est)} className="text-red-400 hover:text-red-300">Excluir</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -224,12 +228,12 @@ const ManageBarbershops = () => {
                     </div>
                 )}
             </div>
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={barbeariaToEdit ? 'Editar Barbearia' : 'Adicionar Nova Barbearia'}>
-                <BarbershopModal 
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={estabelecimentoToEdit ? 'Editar Estabelecimento' : 'Adicionar Novo Estabelecimento'}>
+                <EstabelecimentoModal 
                     isOpen={isModalOpen} 
                     onClose={() => setIsModalOpen(false)} 
                     onSave={handleSave} 
-                    barbeariaToEdit={barbeariaToEdit} 
+                    estabelecimentoToEdit={estabelecimentoToEdit} 
                 />
             </Modal>
         </>
@@ -309,7 +313,7 @@ const ManagePlans = () => {
                                 <tr>
                                     <th className="px-6 py-3">Nome</th>
                                     <th className="px-6 py-3">Preço</th>
-                                    <th className="px-6 py-3 hidden sm:table-cell">Limite Barbeiros</th>
+                                    <th className="px-6 py-3 hidden sm:table-cell">Limite Profissionais</th>
                                     <th className="px-6 py-3 hidden md:table-cell">Popular</th>
                                     <th className="px-6 py-3">Ativo</th>
                                     <th className="px-6 py-3">Ações</th>
@@ -320,7 +324,7 @@ const ManagePlans = () => {
                                     <tr key={plano.id} className="border-b border-brand-gray hover:bg-brand-gray">
                                         <td className="px-6 py-4 font-medium text-white">{plano.nome}</td>
                                         <td className="px-6 py-4 text-brand-gold">R$ {plano.preco.toFixed(2)}</td>
-                                        <td className="px-6 py-4 hidden sm:table-cell">{plano.limite_barbeiros || 'Ilimitado'}</td>
+                                        <td className="px-6 py-4 hidden sm:table-cell">{plano.limite_profissionais || 'Ilimitado'}</td>
                                         <td className="px-6 py-4 hidden md:table-cell">{plano.popular ? 'Sim' : 'Não'}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${plano.ativo ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
@@ -350,7 +354,6 @@ const ManagePlans = () => {
     );
 };
 
-
 // --- Componente Principal ---
 
 const AdminPage = () => {
@@ -360,7 +363,8 @@ const AdminPage = () => {
     const determineActiveTab = () => {
         const pathEnd = location.pathname.split('/').pop();
         switch (pathEnd) {
-            case 'barbershops': return 'barbershops';
+            case 'estabelecimentos':
+            case 'barbershops': return 'estabelecimentos';
             case 'plans': return 'plans';
             case 'settings': return 'settings';
             case 'expenses': return 'expenses';
@@ -382,7 +386,7 @@ const AdminPage = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard': return <AdminDashboard />;
-            case 'barbershops': return <ManageBarbershops />;
+            case 'estabelecimentos': return <ManageEstabelecimentos />;
             case 'plans': return <ManagePlans />;
             case 'expenses': return <ManageExpenses />;
             case 'settings': return <SettingsPage />;
@@ -392,10 +396,9 @@ const AdminPage = () => {
 
     return (
         <div className="space-y-6">
-            {/* Adicionando 'hidden sm:flex' para ocultar em mobile */}
             <div className="hidden sm:flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
                 <button onClick={() => handleTabChange('dashboard')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
-                <button onClick={() => handleTabChange('barbershops')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'barbershops' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbearias</button>
+                <button onClick={() => handleTabChange('estabelecimentos')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'estabelecimentos' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Estabelecimentos</button>
                 <button onClick={() => handleTabChange('plans')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'plans' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Planos</button>
                 <button onClick={() => handleTabChange('expenses')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'expenses' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Gastos</button>
                 <button onClick={() => handleTabChange('settings')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>

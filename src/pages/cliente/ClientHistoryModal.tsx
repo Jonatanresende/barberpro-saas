@@ -32,19 +32,23 @@ const ClientHistoryModal = ({ isOpen, onClose, clientName, appointments }: Clien
       <h4 className="text-lg font-semibold text-brand-gold mb-2">{title} ({list.length})</h4>
       {list.length > 0 ? (
         <ul className="space-y-3">
-          {list.map(ag => (
-            <li key={ag.id} className="bg-brand-gray p-3 rounded-md text-sm">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-white">{ag.servico_nome}</p>
-                  <p className="text-gray-400">
-                    {new Date(ag.data + 'T00:00:00').toLocaleDateString('pt-BR')} às {ag.hora} com {ag.barbeiro_nome}
-                  </p>
+          {list.map(ag => {
+            // Suporta tanto novo campo quanto alias antigo
+            const profissionalNome = (ag as any).profissional_nome || (ag as any).barbeiro_nome;
+            return (
+              <li key={ag.id} className="bg-brand-gray p-3 rounded-md text-sm">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-white">{ag.servico_nome}</p>
+                    <p className="text-gray-400">
+                      {new Date(ag.data + 'T00:00:00').toLocaleDateString('pt-BR')} às {ag.hora} com {profissionalNome}
+                    </p>
+                  </div>
+                  <span className={`font-semibold ${getStatusClass(ag.status)}`}>{ag.status}</span>
                 </div>
-                <span className={`font-semibold ${getStatusClass(ag.status)}`}>{ag.status}</span>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="text-gray-400 text-sm">Nenhum agendamento encontrado.</p>

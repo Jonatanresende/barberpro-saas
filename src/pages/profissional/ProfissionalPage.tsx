@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { Agendamento, AppointmentStatus, BarbeiroDisponibilidade } from '@/types';
+import { Agendamento, AppointmentStatus, ProfissionalDisponibilidade } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
-import { useNotifications } from '@/hooks/useNotifications'; // Importado
+import { useNotifications } from '@/hooks/useNotifications';
 import { DollarSignIcon, XCircleIcon, ClockIcon, ScissorsIcon } from '@/components/icons';
 import Calendar from '@/components/booking/Calendar';
-import BarberPerformanceModal from '@/pages/estabelecimento/ProfissionalDesempenhoModal'; // Importando o modal
+import BarberPerformanceModal from '@/pages/estabelecimento/ProfissionalDesempenhoModal';
 
 // Componente para o Dashboard de Estatísticas
 const BarberStatsDashboard = () => {
@@ -17,9 +17,9 @@ const BarberStatsDashboard = () => {
     const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
 
     const fetchDashboardData = useCallback(async () => {
-        if (user?.barbeiroId) {
+        if (user?.profissionalId) {
             try {
-                const data = await api.getBarberDashboardData(user.barbeiroId);
+                const data = await api.getProfissionalDashboardData(user.profissionalId);
                 setDashboardData(data);
             } catch (error) {
                 toast.error("Falha ao carregar dados do dashboard.");
@@ -50,12 +50,13 @@ const BarberStatsDashboard = () => {
         return <div className="text-center py-10 text-gray-400">Carregando...</div>;
     }
 
-    // Criando um objeto Barbeiro simulado para o modal de desempenho
-    const selfBarberProfile = user?.barbeiroId ? {
-        id: user.barbeiroId,
-        user_id: user.id, // Adicionado user_id
+    // Criando um objeto Profissional simulado para o modal de desempenho
+    const selfProfissionalProfile = user?.profissionalId ? {
+        id: user.profissionalId,
+        user_id: user.id,
+        estabelecimento_id: user.estabelecimentoId || '',
         nome: user.full_name || user.email,
-        foto_url: '', // Não precisamos da foto aqui
+        foto_url: '',
         especialidade: '',
         ativo: true,
     } : null;
@@ -72,7 +73,7 @@ const BarberStatsDashboard = () => {
                         Comissão: <span className="font-semibold text-brand-gold">{dashboardData?.commissionRate}%</span>
                     </p>
                 </div>
-                {selfBarberProfile && (
+                {selfProfissionalProfile && (
                     <button 
                         onClick={() => setIsPerformanceModalOpen(true)}
                         className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 text-sm"
@@ -92,8 +93,8 @@ const BarberStatsDashboard = () => {
             <BarberPerformanceModal
                 isOpen={isPerformanceModalOpen}
                 onClose={() => setIsPerformanceModalOpen(false)}
-                barber={selfBarberProfile}
-                isProfessionalPlan={true} // O barbeiro só tem acesso ao painel se o plano for profissional (ou equivalente)
+                barber={selfProfissionalProfile}
+                isProfessionalPlan={true}
             />
         </div>
     );
@@ -101,19 +102,18 @@ const BarberStatsDashboard = () => {
 
 // Componente para a Agenda de Agendamentos
 const BarberAppointments = () => {
-// ... (restante do código BarberAppointments permanece inalterado)
     const { user } = useAuth();
-    const { resetAppointmentCount } = useNotifications(); // Usando o hook de notificação
+    const { resetAppointmentCount } = useNotifications();
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
     const [loadingAppointments, setLoadingAppointments] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [activeFilter, setActiveFilter] = useState<'pending' | 'completed' | 'canceled'>('pending');
 
     const fetchAgendamentos = useCallback(async () => {
-        if (user?.barbeiroId) {
+        if (user?.profissionalId) {
             setLoadingAppointments(true);
             try {
-                const data = await api.getAgendamentosByBarbeiro(user.barbeiroId);
+                const data = await api.getAgendamentosByProfissional(user.profissionalId);
                 setAgendamentos(data);
             } catch (error) {
                 toast.error("Falha ao carregar agendamentos.");
@@ -125,7 +125,7 @@ const BarberAppointments = () => {
 
     useEffect(() => {
         fetchAgendamentos();
-        resetAppointmentCount(); // Zera a contagem ao carregar a página
+        resetAppointmentCount();
     }, [fetchAgendamentos, resetAppointmentCount]);
 
     const filteredAppointments = useMemo(() => {
@@ -211,9 +211,8 @@ const BarberAppointments = () => {
 
 // Componente para Gerenciar Disponibilidade
 const BarberAvailability = () => {
-// ... (restante do código BarberAvailability permanece inalterado)
     const { user } = useAuth();
-    const [disponibilidades, setDisponibilidades] = useState<Record<string, BarbeiroDisponibilidade>>({});
+    const [disponibilidades, setDisponibilidades] = useState<Record<string, ProfissionalDisponibilidade>>({});
     const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [horaInicio, setHoraInicio] = useState('');
@@ -221,13 +220,13 @@ const BarberAvailability = () => {
     const [disponivel, setDisponivel] = useState(true);
 
     const fetchDisponibilidade = useCallback(async (date: Date) => {
-        if (!user?.barbeiroId) return;
+        if (!user?.profissionalId) return;
         try {
-            const data = await api.getBarbeiroDisponibilidade(user.barbeiroId, date.getFullYear(), date.getMonth());
+            const data = await api.getProfissionalDisponibilidade(user.profissionalId, date.getFullYear(), date.getMonth());
             const mappedData = data.reduce((acc, item) => {
                 acc[item.data] = item;
                 return acc;
-            }, {} as Record<string, BarbeiroDisponibilidade>);
+            }, {} as Record<string, ProfissionalDisponibilidade>);
             setDisponibilidades(mappedData);
         } catch (error) {
             toast.error("Falha ao carregar disponibilidade.");
@@ -255,17 +254,17 @@ const BarberAvailability = () => {
     }, [selectedDate, disponibilidades]);
 
     const handleSave = async () => {
-        if (!user?.barbeiroId || !selectedDate) return;
+        if (!user?.profissionalId || !selectedDate) return;
         const data = selectedDate.toISOString().split('T')[0];
-        const payload: BarbeiroDisponibilidade = {
-            barbeiro_id: user.barbeiroId,
+        const payload: ProfissionalDisponibilidade = {
+            profissional_id: user.profissionalId,
             data,
             hora_inicio: disponivel ? horaInicio : null,
             hora_fim: disponivel ? horaFim : null,
             disponivel,
         };
         
-        toast.promise(api.setBarbeiroDisponibilidade(payload), {
+        toast.promise(api.setProfissionalDisponibilidade(payload), {
             loading: 'Salvando...',
             success: (savedData) => {
                 setDisponibilidades(prev => ({ ...prev, [data]: savedData }));
@@ -281,7 +280,7 @@ const BarberAvailability = () => {
                 <Calendar 
                     selectedDate={selectedDate}
                     onDateSelect={setSelectedDate}
-                    operatingDays={[0,1,2,3,4,5,6]} // Barbeiro pode configurar qualquer dia
+                    operatingDays={[0,1,2,3,4,5,6]}
                     fullyBookedDays={[]}
                     onMonthChange={setCurrentMonth}
                     currentMonth={currentMonth}
@@ -318,8 +317,8 @@ const BarberAvailability = () => {
     );
 };
 
-// Componente Principal da Página do Barbeiro
-export const BarbeiroPage = () => {
+// Componente Principal da Página do Profissional
+export const ProfissionalPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -335,7 +334,7 @@ export const BarbeiroPage = () => {
     }, [location.pathname]);
 
     const handleTabChange = (tab: string) => {
-        navigate(`/barbeiro/${tab}`);
+        navigate(`/profissional/${tab}`);
     };
 
     const renderContent = () => {
@@ -358,3 +357,8 @@ export const BarbeiroPage = () => {
         </div>
     );
 };
+
+// Alias transitório para compatibilidade
+export const BarbeiroPage = ProfissionalPage;
+
+export default ProfissionalPage;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '@/components/Modal';
-import { Agendamento, Barbearia, AppointmentStatus } from '@/types';
+import { Agendamento, Estabelecimento, AppointmentStatus } from '@/types';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
 
@@ -8,15 +8,19 @@ interface ClientAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   appointment: Agendamento | null;
-  barbearia: Barbearia;
+  estabelecimento: Estabelecimento;
   clientPhone: string;
   onAppointmentUpdate: () => void;
+  // Alias transitório
+  barbearia?: Estabelecimento;
 }
 
-const ClientAppointmentModal = ({ isOpen, onClose, appointment, barbearia, clientPhone, onAppointmentUpdate }: ClientAppointmentModalProps) => {
+const ClientAppointmentModal = ({ isOpen, onClose, appointment, estabelecimento, barbearia, clientPhone, onAppointmentUpdate }: ClientAppointmentModalProps) => {
   const [isCancelling, setIsCancelling] = useState(false);
 
   if (!appointment) return null;
+
+  const local = estabelecimento || barbearia;
 
   const [year, month, day] = appointment.data.split('-').map(Number);
   const [hour, minute] = appointment.hora.split(':').map(Number);
@@ -41,7 +45,7 @@ const ClientAppointmentModal = ({ isOpen, onClose, appointment, barbearia, clien
     try {
       await api.cancelClientAppointment(appointment.id, clientPhone);
       toast.success('Agendamento cancelado com sucesso!');
-      onAppointmentUpdate(); // Notifica o componente pai para fechar e/ou atualizar
+      onAppointmentUpdate();
     } catch (error: any) {
       toast.error(`Falha ao cancelar: ${error.message}`);
     } finally {
@@ -57,6 +61,9 @@ const ClientAppointmentModal = ({ isOpen, onClose, appointment, barbearia, clien
         case AppointmentStatus.PENDENTE: default: return 'bg-yellow-500/20 text-yellow-400';
     }
   };
+
+  // Suporta tanto novo campo quanto alias antigo
+  const profissionalNome = (appointment as any).profissional_nome || (appointment as any).barbeiro_nome;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Seu Próximo Agendamento">
@@ -78,8 +85,8 @@ const ClientAppointmentModal = ({ isOpen, onClose, appointment, barbearia, clien
             <p className="text-lg font-semibold">{formattedTime}</p>
           </div>
           <div>
-            <p className="text-sm uppercase text-gray-400">Barbeiro</p>
-            <p className="text-lg font-semibold">{appointment.barbeiro_nome}</p>
+            <p className="text-sm uppercase text-gray-400">Profissional</p>
+            <p className="text-lg font-semibold">{profissionalNome}</p>
           </div>
           <div>
             <p className="text-sm uppercase text-gray-400">Serviço</p>

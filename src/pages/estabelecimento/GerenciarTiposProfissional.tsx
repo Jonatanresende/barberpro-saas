@@ -1,23 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { ProfessionalType } from '@/types';
+import { TipoProfissional } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import Modal from '@/components/Modal';
-import ProfessionalTypeModal from './TipoProfissionalModal';
+import TipoProfissionalModal from './TipoProfissionalModal';
 
-const ManageProfessionalTypes = () => {
+const GerenciarTiposProfissional = () => {
     const { user } = useAuth();
-    const [types, setTypes] = useState<ProfessionalType[]>([]);
+    const [types, setTypes] = useState<TipoProfissional[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [typeToEdit, setTypeToEdit] = useState<ProfessionalType | null>(null);
+    const [typeToEdit, setTypeToEdit] = useState<TipoProfissional | null>(null);
 
     const fetchTypes = useCallback(async () => {
-        if (user?.barbeariaId) {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (estId) {
             try {
                 setLoading(true);
-                const data = await api.getProfessionalTypes(user.barbeariaId);
+                const data = await api.getTiposProfissional(estId);
                 setTypes(data);
             } catch (error) {
                 toast.error("Falha ao carregar tipos de profissional.");
@@ -29,19 +30,20 @@ const ManageProfessionalTypes = () => {
 
     useEffect(() => { fetchTypes(); }, [fetchTypes]);
 
-    const handleOpenModal = (type: ProfessionalType | null = null) => {
+    const handleOpenModal = (type: TipoProfissional | null = null) => {
         setTypeToEdit(type);
         setIsModalOpen(true);
     };
 
-    const handleSave = async (typeData: { name: string; commission_percent: number }) => {
-        if (!user?.barbeariaId) return;
+    const handleSave = async (typeData: { nome: string; percentual_comissao: number }) => {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (!estId) return;
         
         let promise;
         if (typeToEdit) {
-            promise = api.updateProfessionalType(typeToEdit.id, typeData);
+            promise = api.updateTipoProfissional(typeToEdit.id, typeData);
         } else {
-            promise = api.createProfessionalType(user.barbeariaId, typeData);
+            promise = api.createTipoProfissional(estId, typeData);
         }
 
         await promise;
@@ -49,9 +51,9 @@ const ManageProfessionalTypes = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (type: ProfessionalType) => {
-        if (window.confirm(`Tem certeza que deseja remover o tipo "${type.name}"? Todos os barbeiros associados a este tipo terão sua comissão redefinida para o padrão da barbearia.`)) {
-            toast.promise(api.deleteProfessionalType(type.id), {
+    const handleDelete = (type: TipoProfissional) => {
+        if (window.confirm(`Tem certeza que deseja remover o tipo "${type.nome}"? Todos os profissionais associados a este tipo terão sua comissão redefinida para o padrão do estabelecimento.`)) {
+            toast.promise(api.deleteTipoProfissional(type.id), {
                 loading: 'Removendo...',
                 success: () => {
                     fetchTypes();
@@ -84,8 +86,8 @@ const ManageProfessionalTypes = () => {
                             <tbody>
                                 {types.map(type => (
                                     <tr key={type.id} className="border-b border-brand-gray hover:bg-brand-gray">
-                                        <td className="px-6 py-4 font-medium text-white">{type.name}</td>
-                                        <td className="px-6 py-4 font-semibold text-brand-gold">{type.commission_percent}%</td>
+                                        <td className="px-6 py-4 font-medium text-white">{type.nome}</td>
+                                        <td className="px-6 py-4 font-semibold text-brand-gold">{type.percentual_comissao}%</td>
                                         <td className="px-6 py-4 space-x-2">
                                             <button onClick={() => handleOpenModal(type)} className="text-blue-400 hover:text-blue-300">Editar</button>
                                             <button onClick={() => handleDelete(type)} className="text-red-400 hover:text-red-300">Remover</button>
@@ -98,7 +100,7 @@ const ManageProfessionalTypes = () => {
                 )}
             </div>
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={typeToEdit ? 'Editar Tipo de Profissional' : 'Criar Novo Tipo de Profissional'}>
-                <ProfessionalTypeModal 
+                <TipoProfissionalModal 
                     isOpen={isModalOpen} 
                     onClose={() => setIsModalOpen(false)} 
                     onSave={handleSave} 
@@ -109,4 +111,5 @@ const ManageProfessionalTypes = () => {
     );
 };
 
-export default ManageProfessionalTypes;
+export default GerenciarTiposProfissional;
+export const ManageProfessionalTypes = GerenciarTiposProfissional;

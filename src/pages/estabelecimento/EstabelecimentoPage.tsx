@@ -2,18 +2,18 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano, Cliente, ProfessionalType } from '@/types';
+import { Profissional, Servico, Agendamento, AppointmentStatus, Estabelecimento, Plano, Cliente, TipoProfissional } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
-import { useNotifications } from '@/hooks/useNotifications'; // Importado
-import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon, SettingsIcon } from '@/components/icons';
-import BarberModal from './ProfissionalModal';
+import { useNotifications } from '@/hooks/useNotifications';
+import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon } from '@/components/icons';
+import ProfissionalModal from './ProfissionalModal';
 import ServiceModal from './ServiceModal';
 import ProfilePage from './ProfilePage';
 import ClientEditModal from './ClientEditModal';
 import ClientHistoryModal from './ClientHistoryModal';
-import ManageProfessionalTypes from './GerenciarTiposProfissional';
+import GerenciarTiposProfissional from './GerenciarTiposProfissional';
 import Modal from '@/components/Modal';
-import BarberPerformanceModal from './ProfissionalDesempenhoModal'; // Importando o novo modal
+import ProfissionalDesempenhoModal from './ProfissionalDesempenhoModal';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">
@@ -26,19 +26,20 @@ const StatCard = ({ title, value, icon }: { title: string, value: string | numbe
 );
 
 interface DashboardProps {
-    barbeariaData: Barbearia | null;
-    barbeariaPlan: Plano | null;
+    estabelecimentoData: Estabelecimento | null;
+    estabelecimentoPlan: Plano | null;
 }
 
-const BarbeariaDashboard = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
+const EstabelecimentoDashboard = ({ estabelecimentoData, estabelecimentoPlan }: DashboardProps) => {
     const { user } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (user?.barbeariaId) {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (estId) {
             setLoading(true);
-            api.getBarbeariaDashboardData(user.barbeariaId)
+            api.getEstabelecimentoDashboardData(estId)
                 .then(setStats)
                 .catch(() => toast.error("Falha ao carregar estatísticas."))
                 .finally(() => setLoading(false));
@@ -49,35 +50,37 @@ const BarbeariaDashboard = ({ barbeariaData, barbeariaPlan }: DashboardProps) =>
     if (!stats) return <p className="text-center text-gray-400">Não foi possível carregar os dados.</p>;
 
     const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
-    const hasProfessionalPlan = barbeariaPlan?.nome.toLowerCase() === 'profissional';
+    const hasProfessionalPlan = estabelecimentoPlan?.nome.toLowerCase() === 'profissional';
+    const totalProf = stats.totalProfissionais ?? stats.totalBarbeiros ?? 0;
+    const profList = stats.professionalStatusList ?? stats.barberStatusList ?? [];
 
     return (
         <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <StatCard title="Renda de Hoje" value={formatCurrency(stats.rendaDiaria)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Renda da Semana" value={formatCurrency(stats.rendaSemanal)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Renda do Mês" value={formatCurrency(stats.rendaMensal)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Agendamentos Hoje" value={stats.totalAgendamentosHoje} icon={<CalendarIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Total de Barbeiros" value={stats.totalBarbeiros} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Total de Clientes" value={stats.totalClientes} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Renda de Hoje" value={formatCurrency(stats.rendaDiaria || 0)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Renda da Semana" value={formatCurrency(stats.rendaSemanal || 0)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Renda do Mês" value={formatCurrency(stats.rendaMensal || 0)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Agendamentos Hoje" value={stats.totalAgendamentosHoje || 0} icon={<CalendarIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Total de Profissionais" value={totalProf} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title="Total de Clientes" value={stats.totalClientes || 0} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
             </div>
 
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
                 <h3 className="text-lg font-semibold text-white mb-4">Status dos Barbeiros (Hoje)</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {stats.barberStatusList && stats.barberStatusList.map((barber: any) => (
-                        <div key={barber.id} className="bg-brand-gray p-4 rounded-lg flex items-center space-x-4">
+                    {profList.map((item: any) => (
+                        <div key={item.id} className="bg-brand-gray p-4 rounded-lg flex items-center space-x-4">
                             <img 
-                                src={barber.foto_url || 'https://via.placeholder.com/48'} 
-                                alt={barber.nome} 
+                                src={item.foto_url || 'https://via.placeholder.com/48'} 
+                                alt={item.nome} 
                                 className="w-12 h-12 rounded-full mx-auto mb-4 border-2 border-brand-gold object-cover" 
                             />
                             <div>
-                                <p className="font-semibold text-white">{barber.nome}</p>
+                                <p className="font-semibold text-white">{item.nome}</p>
                                 <div className="flex items-center text-xs mt-1">
-                                    <span className={`w-2 h-2 rounded-full mr-2 ${barber.isAvailableToday ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                    <span className={barber.isAvailableToday ? 'text-green-400' : 'text-red-400'}>
-                                        {barber.isAvailableToday ? 'Disponível' : 'Folga'}
+                                    <span className={`w-2 h-2 rounded-full mr-2 ${item.isAvailableToday ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                    <span className={item.isAvailableToday ? 'text-green-400' : 'text-red-400'}>
+                                        {item.isAvailableToday ? 'Disponível' : 'Folga'}
                                     </span>
                                 </div>
                             </div>
@@ -98,7 +101,7 @@ const BarbeariaDashboard = ({ barbeariaData, barbeariaPlan }: DashboardProps) =>
                         <table className="w-full text-left text-sm text-gray-300">
                             <thead className="bg-brand-gray text-xs uppercase">
                                 <tr>
-                                    <th className="px-6 py-3">Barbeiro</th>
+                                    <th className="px-6 py-3">Profissional</th>
                                     <th className="px-6 py-3">Valor da Comissão</th>
                                 </tr>
                             </thead>
@@ -118,97 +121,100 @@ const BarbeariaDashboard = ({ barbeariaData, barbeariaPlan }: DashboardProps) =>
     );
 };
 
-interface ManageBarbersProps {
-    barbeariaPlan: Plano | null;
+interface ManageProfissionaisProps {
+    estabelecimentoPlan: Plano | null;
 }
 
-const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
+const ManageProfissionais = ({ estabelecimentoPlan }: ManageProfissionaisProps) => {
     const { user } = useAuth();
-    const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
-    const [types, setTypes] = useState<ProfessionalType[]>([]);
+    const [profissionais, setProfissionais] = useState<Profissional[]>([]);
+    const [types, setTypes] = useState<TipoProfissional[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false); // Novo estado
-    const [barberToEdit, setBarberToEdit] = useState<Barbeiro | null>(null);
-    const [barberToViewPerformance, setBarberToViewPerformance] = useState<Barbeiro | null>(null); // Novo estado
+    const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
+    const [profissionalToEdit, setProfissionalToEdit] = useState<Profissional | null>(null);
+    const [profissionalToViewPerformance, setProfissionalToViewPerformance] = useState<Profissional | null>(null);
 
-    const fetchBarbersAndPlan = useCallback(async () => {
-        if (user?.barbeariaId) {
+    const fetchProfissionaisAndPlan = useCallback(async () => {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (estId) {
             try {
                 setLoading(true);
-                const [barbersData] = await Promise.all([
-                    api.getBarbeirosByBarbearia(user.barbeariaId),
+                const [profData] = await Promise.all([
+                    api.getProfissionaisByEstabelecimento(estId),
                 ]);
-                setBarbeiros(barbersData);
+                setProfissionais(profData);
                 
-                if (barbeariaPlan?.nome.toLowerCase() === 'profissional') {
-                    const typesData = await api.getProfessionalTypes(user.barbeariaId);
+                if (estabelecimentoPlan?.nome.toLowerCase() === 'profissional') {
+                    const typesData = await api.getTiposProfissional(estId);
                     setTypes(typesData);
                 } else {
                     setTypes([]);
                 }
             } catch (error) {
-                toast.error("Falha ao carregar dados dos barbeiros e do plano.");
+                toast.error("Falha ao carregar dados dos profissionais e do plano.");
             } finally {
                 setLoading(false);
             }
         }
-    }, [user, barbeariaPlan]);
+    }, [user, estabelecimentoPlan]);
 
     useEffect(() => {
-        fetchBarbersAndPlan();
-    }, [fetchBarbersAndPlan]);
+        fetchProfissionaisAndPlan();
+    }, [fetchProfissionaisAndPlan]);
 
     const hasProfessionalPlan = useMemo(() => 
-        barbeariaPlan?.nome.toLowerCase() === 'profissional', 
-    [barbeariaPlan]);
+        estabelecimentoPlan?.nome.toLowerCase() === 'profissional', 
+    [estabelecimentoPlan]);
 
-    const handleOpenModal = (barber: Barbeiro | null = null) => {
-        if (!barber && barbeariaPlan?.limite_barbeiros && barbeiros.filter(b => b.ativo).length >= barbeariaPlan.limite_barbeiros) {
-            toast.error('Você atingiu o limite de barbeiros do seu plano. Faça um upgrade para adicionar mais.');
+    const handleOpenModal = (prof: Profissional | null = null) => {
+        const maxLimit = estabelecimentoPlan?.limite_profissionais;
+        if (!prof && maxLimit && profissionais.filter(b => b.ativo).length >= maxLimit) {
+            toast.error('Você atingiu o limite de profissionais do seu plano. Faça um upgrade para adicionar mais.');
             return;
         }
-        setBarberToEdit(barber);
+        setProfissionalToEdit(prof);
         setIsModalOpen(true);
     };
 
-    const handleOpenPerformanceModal = (barber: Barbeiro) => {
-        setBarberToViewPerformance(barber);
+    const handleOpenPerformanceModal = (prof: Profissional) => {
+        setProfissionalToViewPerformance(prof);
         setIsPerformanceModalOpen(true);
     };
 
-    const handleSave = async (barberData: any, password?: string, photoFile?: File) => {
-        if (!user?.barbeariaId) return;
+    const handleSave = async (profissionalData: any, password?: string, photoFile?: File) => {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (!estId) return;
         
         let promise;
-        if (barberToEdit) {
-            promise = api.updateBarbeiro(barberToEdit.id, barberToEdit.user_id, barberData, photoFile);
+        if (profissionalToEdit) {
+            promise = api.updateProfissional(profissionalToEdit.id, profissionalToEdit.user_id, profissionalData, photoFile);
         } else {
             if (hasProfessionalPlan) {
-                promise = api.createBarbeiro(barberData, user.barbeariaId, password!, photoFile);
+                promise = api.createProfissional(profissionalData, estId, password!, photoFile);
             } else {
-                promise = api.createBarbeiroWithoutAuth(barberData, user.barbeariaId, photoFile);
+                promise = api.createProfissionalWithoutAuth(profissionalData, estId, photoFile);
             }
         }
 
         toast.promise(promise, {
-            loading: 'Salvando barbeiro...',
+            loading: 'Salvando profissional...',
             success: () => {
-                fetchBarbersAndPlan();
+                fetchProfissionaisAndPlan();
                 setIsModalOpen(false);
-                return `Barbeiro ${barberToEdit ? 'atualizado' : 'adicionado'} com sucesso!`;
+                return `Profissional ${profissionalToEdit ? 'atualizado' : 'adicionado'} com sucesso!`;
             },
             error: (err) => `Falha ao salvar: ${err.message}`,
         });
     };
 
-    const handleDelete = (barbeiro: Barbeiro) => {
-        if (window.confirm("Tem certeza que deseja remover este barbeiro? A conta de acesso dele também será excluída.")) {
-            toast.promise(api.deleteBarbeiro(barbeiro.id, barbeiro.user_id), {
+    const handleDelete = (prof: Profissional) => {
+        if (window.confirm("Tem certeza que deseja remover este profissional? A conta de acesso dele também será excluída.")) {
+            toast.promise(api.deleteProfissional(prof.id, prof.user_id), {
                 loading: 'Removendo...',
                 success: () => {
-                    fetchBarbersAndPlan();
-                    return 'Barbeiro removido com sucesso!';
+                    fetchProfissionaisAndPlan();
+                    return 'Profissional removido com sucesso!';
                 },
                 error: (err) => `Falha ao remover: ${err.message}`,
             });
@@ -233,46 +239,49 @@ const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {barbeiros.map(barbeiro => (
-                            <div key={barbeiro.id} className="bg-brand-gray p-4 rounded-lg text-center relative group">
+                        {profissionais.map(prof => (
+                            <div key={prof.id} className="bg-brand-gray p-4 rounded-lg text-center relative group">
                                 <button 
-                                    onClick={() => handleOpenPerformanceModal(barbeiro)}
+                                    onClick={() => handleOpenPerformanceModal(prof)}
                                     className="block w-24 h-24 rounded-full mx-auto mb-4 border-2 border-brand-gold object-cover overflow-hidden transition-opacity hover:opacity-80"
                                     title="Ver Desempenho"
                                 >
-                                    <img src={barbeiro.foto_url} alt={barbeiro.nome} className="w-full h-full object-cover"/>
+                                    <img src={prof.foto_url} alt={prof.nome} className="w-full h-full object-cover"/>
                                 </button>
-                                <h3 className="font-semibold text-white">{barbeiro.nome}</h3>
-                                <p className="text-sm text-gray-400">{barbeiro.especialidade}</p>
-                                {hasProfessionalPlan && barbeiro.professional_types && (
-                                    <p className="text-xs text-brand-gold mt-1">{barbeiro.professional_types.name} ({barbeiro.professional_types.commission_percent}%)</p>
+                                <h3 className="font-semibold text-white">{prof.nome}</h3>
+                                <p className="text-sm text-gray-400">{prof.especialidade}</p>
+                                {hasProfessionalPlan && (prof.tipos_profissional || (prof as any).professional_types) && (
+                                    <p className="text-xs text-brand-gold mt-1">
+                                        {(prof.tipos_profissional?.nome || (prof as any).professional_types?.name)} (
+                                        {(prof.tipos_profissional?.percentual_comissao || (prof as any).professional_types?.commission_percent)}%)
+                                    </p>
                                 )}
-                                <span className={`mt-2 inline-block px-2 py-1 rounded-full text-xs font-semibold ${barbeiro.ativo ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                {barbeiro.ativo ? 'Ativo' : 'Inativo'}
+                                <span className={`mt-2 inline-block px-2 py-1 rounded-full text-xs font-semibold ${prof.ativo ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                {prof.ativo ? 'Ativo' : 'Inativo'}
                                 </span>
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col space-y-1">
-                                    <button onClick={() => handleOpenModal(barbeiro)} className="text-xs bg-blue-500/50 text-white p-1 rounded">Editar</button>
-                                    <button onClick={() => handleDelete(barbeiro)} className="text-xs bg-red-500/50 text-white p-1 rounded">Excluir</button>
+                                    <button onClick={() => handleOpenModal(prof)} className="text-xs bg-blue-500/50 text-white p-1 rounded">Editar</button>
+                                    <button onClick={() => handleDelete(prof)} className="text-xs bg-red-500/50 text-white p-1 rounded">Excluir</button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={barberToEdit ? 'Editar Barbeiro' : 'Adicionar Barbeiro'}>
-                <BarberModal 
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={profissionalToEdit ? 'Editar Barbeiro' : 'Adicionar Barbeiro'}>
+                <ProfissionalModal 
                     isOpen={isModalOpen} 
                     onClose={() => setIsModalOpen(false)} 
                     onSave={handleSave} 
-                    barberToEdit={barberToEdit} 
-                    hasBarberPanelFeature={hasProfessionalPlan} 
-                    professionalTypes={types} 
+                    profissionalToEdit={profissionalToEdit} 
+                    hasProfessionalPanelFeature={hasProfessionalPlan} 
+                    tiposProfissional={types} 
                 />
             </Modal>
-            <BarberPerformanceModal
+            <ProfissionalDesempenhoModal
                 isOpen={isPerformanceModalOpen}
                 onClose={() => setIsPerformanceModalOpen(false)}
-                barber={barberToViewPerformance}
+                profissional={profissionalToViewPerformance}
                 isProfessionalPlan={hasProfessionalPlan}
             />
         </>
@@ -280,7 +289,6 @@ const ManageBarbers = ({ barbeariaPlan }: ManageBarbersProps) => {
 };
 
 const ManageServices = () => {
-// ... (restante do código ManageServices permanece inalterado)
     const { user } = useAuth();
     const [servicos, setServicos] = useState<Servico[]>([]);
     const [loading, setLoading] = useState(true);
@@ -288,10 +296,11 @@ const ManageServices = () => {
     const [serviceToEdit, setServiceToEdit] = useState<Servico | null>(null);
 
     const fetchServices = useCallback(async () => {
-        if (user?.barbeariaId) {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (estId) {
             try {
                 setLoading(true);
-                const data = await api.getServicosByBarbearia(user.barbeariaId);
+                const data = await api.getServicosByEstabelecimento(estId);
                 setServicos(data);
             } catch (error) {
                 toast.error("Falha ao carregar serviços.");
@@ -311,10 +320,11 @@ const ManageServices = () => {
     };
 
     const handleSave = async (serviceData: any) => {
-        if (!user?.barbeariaId) return;
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (!estId) return;
         const promise = serviceToEdit
             ? api.updateServico(serviceToEdit.id, serviceData)
-            : api.createServico(serviceData, user.barbeariaId);
+            : api.createServico(serviceData, estId);
 
         toast.promise(promise, {
             loading: 'Salvando serviço...',
@@ -371,30 +381,29 @@ const ManageServices = () => {
 };
 
 const ManageAppointments = () => {
-// ... (restante do código ManageAppointments permanece inalterado)
     const { user } = useAuth();
-    const { resetAppointmentCount } = useNotifications(); // Usando o hook de notificação
+    const { resetAppointmentCount } = useNotifications();
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-    const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
+    const [profissionais, setProfissionais] = useState<Profissional[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Filter states
     const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterStatus, setFilterStatus] = useState<'todos' | AppointmentStatus>('todos');
-    const [filterBarber, setFilterBarber] = useState('todos');
+    const [filterProfissional, setFilterProfissional] = useState('todos');
 
     const fetchData = useCallback(async () => {
-        if (user?.barbeariaId) {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (estId) {
             try {
                 setLoading(true);
-                const [appointmentsData, barbersData] = await Promise.all([
-                    api.getAgendamentosByBarbearia(user.barbeariaId),
-                    api.getBarbeirosByBarbearia(user.barbeariaId)
+                const [appointmentsData, profData] = await Promise.all([
+                    api.getAgendamentosByEstabelecimento(estId),
+                    api.getProfissionaisByEstabelecimento(estId)
                 ]);
                 setAgendamentos(appointmentsData);
-                setBarbeiros(barbersData);
+                setProfissionais(profData);
             } catch (error) {
-                toast.error("Falha ao carregar dados de agendamentos e barbeiros.");
+                toast.error("Falha ao carregar dados de agendamentos e profissionais.");
             } finally {
                 setLoading(false);
             }
@@ -403,17 +412,17 @@ const ManageAppointments = () => {
 
     useEffect(() => {
         fetchData();
-        resetAppointmentCount(); // Zera a contagem ao carregar a página
+        resetAppointmentCount();
     }, [fetchData, resetAppointmentCount]);
 
     const filteredAgendamentos = useMemo(() => {
         return agendamentos.filter(ag => {
             const dateMatch = !filterDate || ag.data === filterDate;
             const statusMatch = filterStatus === 'todos' || ag.status === filterStatus;
-            const barberMatch = filterBarber === 'todos' || ag.barbeiro_id === filterBarber;
-            return dateMatch && statusMatch && barberMatch;
+            const profMatch = filterProfissional === 'todos' || ag.profissional_id === filterProfissional || (ag as any).barbeiro_id === filterProfissional;
+            return dateMatch && statusMatch && profMatch;
         });
-    }, [agendamentos, filterDate, filterStatus, filterBarber]);
+    }, [agendamentos, filterDate, filterStatus, filterProfissional]);
 
     const handleStatusUpdate = (id: string, status: AppointmentStatus) => {
         toast.promise(api.updateAgendamento(id, { status }), {
@@ -469,12 +478,12 @@ const ManageAppointments = () => {
                     <label htmlFor="barber-filter" className="sr-only">Barbeiro</label>
                     <select 
                         id="barber-filter"
-                        value={filterBarber}
-                        onChange={e => setFilterBarber(e.target.value)}
+                        value={filterProfissional}
+                        onChange={e => setFilterProfissional(e.target.value)}
                         className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
                     >
                         <option value="todos">Todos os Barbeiros</option>
-                        {barbeiros.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}
+                        {profissionais.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}
                     </select>
                 </div>
                  <button onClick={() => setFilterDate('')} className="text-sm text-gray-400 hover:text-white w-full sm:w-auto">Limpar Data</button>
@@ -498,7 +507,7 @@ const ManageAppointments = () => {
                                 <tr key={ag.id} className="border-b border-brand-gray hover:bg-brand-gray">
                                     <td className="px-6 py-4 font-medium text-white">{ag.cliente_nome}</td>
                                     <td className="px-6 py-4 hidden sm:table-cell">{ag.servico_nome}</td>
-                                    <td className="px-6 py-4 hidden md:table-cell">{ag.barbeiro_nome}</td>
+                                    <td className="px-6 py-4 hidden md:table-cell">{ag.profissional_nome || (ag as any).barbeiro_nome}</td>
                                     <td className="px-6 py-4">{new Date(ag.data + 'T00:00:00').toLocaleDateString('pt-BR')} - {ag.hora}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(ag.status)}`}>
@@ -531,7 +540,6 @@ const ManageAppointments = () => {
 };
 
 const ManageClients = () => {
-// ... (restante do código ManageClients permanece inalterado)
     const { user } = useAuth();
     const [clients, setClients] = useState<Cliente[]>([]);
     const [loading, setLoading] = useState(true);
@@ -541,10 +549,11 @@ const ManageClients = () => {
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
     const fetchClients = useCallback(async () => {
-        if (user?.barbeariaId) {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (estId) {
             try {
                 setLoading(true);
-                const data = await api.getClientsByBarbearia(user.barbeariaId);
+                const data = await api.getClientsByEstabelecimento(estId);
                 setClients(data);
             } catch (error) {
                 toast.error("Falha ao carregar clientes.");
@@ -564,10 +573,11 @@ const ManageClients = () => {
     };
 
     const handleOpenHistoryModal = async (client: Cliente) => {
-        if (!user?.barbeariaId) return;
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (!estId) return;
         setSelectedClient(client);
         try {
-            const appointments = await api.getAppointmentsByClient(client.id, user.barbeariaId);
+            const appointments = await api.getAppointmentsByClient(client.id, estId);
             setClientAppointments(appointments);
             setIsHistoryModalOpen(true);
         } catch (error) {
@@ -625,10 +635,9 @@ const ManageClients = () => {
     );
 };
 
-const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
-// ... (restante do código Settings permanece inalterado)
+const Settings = ({ estabelecimentoData }: { estabelecimentoData: Estabelecimento | null }) => {
     const { user } = useAuth();
-    const [barbearia, setBarbearia] = useState<Partial<Barbearia>>({ operating_days: [] });
+    const [estabelecimento, setEstabelecimento] = useState<Partial<Estabelecimento>>({ operating_days: [] });
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [heroFile, setHeroFile] = useState<File | null>(null);
@@ -645,21 +654,21 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
     ];
 
     useEffect(() => {
-        if (barbeariaData) {
-            setBarbearia(barbeariaData);
-            setHeroPreview(barbeariaData.hero_image_url || null);
-            setLogoPreview(barbeariaData.foto_url || null);
+        if (estabelecimentoData) {
+            setEstabelecimento(estabelecimentoData);
+            setHeroPreview(estabelecimentoData.hero_image_url || null);
+            setLogoPreview(estabelecimentoData.foto_url || null);
             setLoading(false);
         }
-    }, [barbeariaData]);
+    }, [estabelecimentoData]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setBarbearia(prev => ({ ...prev, [name]: value }));
+        setEstabelecimento(prev => ({ ...prev, [name]: value }));
     };
 
     const handleDayToggle = (dayValue: number) => {
-        setBarbearia(prev => {
+        setEstabelecimento(prev => {
             const currentDays = prev.operating_days || [];
             const newDays = currentDays.includes(dayValue)
                 ? currentDays.filter(d => d !== dayValue)
@@ -693,34 +702,35 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
     };
 
     const handleSave = () => {
-        if (!user?.barbeariaId || !user.id) return;
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (!estId || !user?.id) return;
         
-        const updates: Partial<Barbearia> = {
-            nome: barbearia.nome,
-            endereco: barbearia.endereco,
-            link_personalizado: barbearia.link_personalizado,
-            instagram_url: barbearia.instagram_url,
-            whatsapp_url: barbearia.whatsapp_url,
-            hero_title: barbearia.hero_title,
-            hero_subtitle: barbearia.hero_subtitle,
-            services_title: barbearia.services_title,
-            social_title: barbearia.social_title,
-            social_subtitle: barbearia.social_subtitle,
-            operating_days: barbearia.operating_days,
-            start_time: barbearia.start_time,
-            end_time: barbearia.end_time,
-            comissao_padrao: barbearia.comissao_padrao, // Adicionado de volta
+        const updates: Partial<Estabelecimento> = {
+            nome: estabelecimento.nome,
+            endereco: estabelecimento.endereco,
+            link_personalizado: estabelecimento.link_personalizado,
+            instagram_url: estabelecimento.instagram_url,
+            whatsapp_url: estabelecimento.whatsapp_url,
+            hero_title: estabelecimento.hero_title,
+            hero_subtitle: estabelecimento.hero_subtitle,
+            services_title: estabelecimento.services_title,
+            social_title: estabelecimento.social_title,
+            social_subtitle: estabelecimento.social_subtitle,
+            operating_days: estabelecimento.operating_days,
+            start_time: estabelecimento.start_time,
+            end_time: estabelecimento.end_time,
+            comissao_padrao: estabelecimento.comissao_padrao,
         };
 
         setIsSaving(true);
-        toast.promise(api.updateBarbearia(user.barbeariaId, user.id, updates, logoFile || undefined, heroFile || undefined), {
+        toast.promise(api.updateEstabelecimento(estId, user.id, updates, logoFile || undefined, heroFile || undefined), {
             loading: 'Salvando alterações...',
-            success: (updatedBarbearia) => {
+            success: (updatedEst) => {
                 setIsSaving(false);
                 setHeroFile(null);
                 setLogoFile(null);
-                setHeroPreview(updatedBarbearia.hero_image_url || null);
-                setLogoPreview(updatedBarbearia.foto_url || null);
+                setHeroPreview(updatedEst.hero_image_url || null);
+                setLogoPreview(updatedEst.foto_url || null);
                 return 'Configurações salvas com sucesso!';
             },
             error: (err) => {
@@ -731,8 +741,8 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
     };
 
     const handleCopyLink = () => {
-        if (barbearia.link_personalizado) {
-            const fullUrl = `${window.location.origin}/#/${barbearia.link_personalizado}`;
+        if (estabelecimento.link_personalizado) {
+            const fullUrl = `${window.location.origin}/#/${estabelecimento.link_personalizado}`;
             navigator.clipboard.writeText(fullUrl).then(() => {
                 toast.success('Link copiado para a área de transferência!');
             }).catch(() => {
@@ -746,13 +756,13 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
     return (
         <div className="space-y-8">
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray max-w-3xl space-y-4">
-                <h2 className="text-xl font-semibold text-white mb-4">Configurações da Barbearia</h2>
+                <h2 className="text-xl font-semibold text-white mb-4">Configurações do Estabelecimento</h2>
                 <div>
-                    <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-2">Nome da Barbearia</label>
-                    <input type="text" id="nome" name="nome" value={barbearia.nome || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-2">Nome do Estabelecimento</label>
+                    <input type="text" id="nome" name="nome" value={estabelecimento.nome || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Logo da Barbearia</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Logo do Estabelecimento</label>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <div className="w-20 h-20 bg-brand-gray rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-600">
                             {logoPreview ? (
@@ -769,17 +779,17 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                 </div>
                 <div>
                     <label htmlFor="endereco" className="block text-sm font-medium text-gray-300 mb-2">Endereço</label>
-                    <input type="text" id="endereco" name="endereco" value={barbearia.endereco || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <input type="text" id="endereco" name="endereco" value={estabelecimento.endereco || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
                 <div>
                     <label htmlFor="link_personalizado" className="block text-sm font-medium text-gray-300 mb-2">Link Personalizado</label>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center">
-                        <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-t-md sm:rounded-l-md sm:rounded-t-none border border-b-0 sm:border-r-0 border-gray-600">barberpro.app/</span>
-                        <input type="text" id="link_personalizado" name="link_personalizado" value={barbearia.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-b-md sm:rounded-r-md sm:rounded-b-none border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                        <span className="text-gray-400 bg-brand-gray px-3 py-2 rounded-t-md sm:rounded-l-md sm:rounded-t-none border border-b-0 sm:border-r-0 border-gray-600">marcado.app/</span>
+                        <input type="text" id="link_personalizado" name="link_personalizado" value={estabelecimento.link_personalizado || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-b-md sm:rounded-r-md sm:rounded-b-none border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                         <button 
                             type="button" 
                             onClick={handleCopyLink} 
-                            disabled={!barbearia.link_personalizado}
+                            disabled={!estabelecimento.link_personalizado}
                             className="mt-2 sm:mt-0 sm:ml-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-50 w-full sm:w-auto"
                         >
                             Copiar URL
@@ -788,16 +798,16 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                 </div>
                 <div>
                     <label htmlFor="comissao_padrao" className="block text-sm font-medium text-gray-300 mb-2">Comissão Padrão (%)</label>
-                    <input type="number" id="comissao_padrao" name="comissao_padrao" value={barbearia.comissao_padrao || ''} onChange={handleInputChange} min="0" max="100" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
-                    <p className="text-xs text-gray-500 mt-1">Comissão aplicada a barbeiros sem um Tipo de Profissional definido.</p>
+                    <input type="number" id="comissao_padrao" name="comissao_padrao" value={estabelecimento.comissao_padrao || ''} onChange={handleInputChange} min="0" max="100" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <p className="text-xs text-gray-500 mt-1">Comissão aplicada a profissionais sem um Tipo de Profissional definido.</p>
                 </div>
                 <div>
                     <label htmlFor="instagram_url" className="block text-sm font-medium text-gray-300 mb-2">URL do Instagram</label>
-                    <input type="url" id="instagram_url" name="instagram_url" value={barbearia.instagram_url || ''} onChange={handleInputChange} placeholder="https://instagram.com/suabarbearia" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <input type="url" id="instagram_url" name="instagram_url" value={estabelecimento.instagram_url || ''} onChange={handleInputChange} placeholder="https://instagram.com/seuestabelecimento" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
                 <div>
                     <label htmlFor="whatsapp_url" className="block text-sm font-medium text-gray-300 mb-2">Link do WhatsApp</label>
-                    <input type="url" id="whatsapp_url" name="whatsapp_url" value={barbearia.whatsapp_url || ''} onChange={handleInputChange} placeholder="https://wa.me/5511999999999" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <input type="url" id="whatsapp_url" name="whatsapp_url" value={estabelecimento.whatsapp_url || ''} onChange={handleInputChange} placeholder="https://wa.me/5511999999999" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
             </div>
 
@@ -811,7 +821,7 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                                 key={day.value}
                                 onClick={() => handleDayToggle(day.value)}
                                 className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                                    barbearia.operating_days?.includes(day.value)
+                                    estabelecimento.operating_days?.includes(day.value)
                                         ? 'bg-brand-gold text-brand-dark'
                                         : 'bg-brand-gray text-white hover:bg-gray-700'
                                 }`}
@@ -824,11 +834,11 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label htmlFor="start_time" className="block text-sm font-medium text-gray-300 mb-2">Horário de Abertura</label>
-                        <input type="time" id="start_time" name="start_time" value={barbearia.start_time || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                        <input type="time" id="start_time" name="start_time" value={estabelecimento.start_time || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                     </div>
                     <div>
                         <label htmlFor="end_time" className="block text-sm font-medium text-gray-300 mb-2">Horário de Fechamento</label>
-                        <input type="time" id="end_time" name="end_time" value={barbearia.end_time || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                        <input type="time" id="end_time" name="end_time" value={estabelecimento.end_time || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                     </div>
                 </div>
             </div>
@@ -850,23 +860,23 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                 </div>
                 <div>
                     <label htmlFor="hero_title" className="block text-sm font-medium text-gray-300 mb-2">Título Principal</label>
-                    <input type="text" id="hero_title" name="hero_title" value={barbearia.hero_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <input type="text" id="hero_title" name="hero_title" value={estabelecimento.hero_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
                 <div>
                     <label htmlFor="hero_subtitle" className="block text-sm font-medium text-gray-300 mb-2">Frase de Destaque</label>
-                    <input type="text" id="hero_subtitle" name="hero_subtitle" value={barbearia.hero_subtitle || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <input type="text" id="hero_subtitle" name="hero_subtitle" value={estabelecimento.hero_subtitle || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
                 <div>
                     <label htmlFor="services_title" className="block text-sm font-medium text-gray-300 mb-2">Título da Seção de Serviços</label>
-                    <input type="text" id="services_title" name="services_title" value={barbearia.services_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <input type="text" id="services_title" name="services_title" value={estabelecimento.services_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
                 <div>
                     <label htmlFor="social_title" className="block text-sm font-medium text-gray-300 mb-2">Título da Seção Social</label>
-                    <input type="text" id="social_title" name="social_title" value={barbearia.social_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <input type="text" id="social_title" name="social_title" value={estabelecimento.social_title || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
                 <div>
                     <label htmlFor="social_subtitle" className="block text-sm font-medium text-gray-300 mb-2">Subtítulo da Seção Social</label>
-                    <input type="text" id="social_subtitle" name="social_subtitle" value={barbearia.social_subtitle || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+                    <input type="text" id="social_subtitle" name="social_subtitle" value={estabelecimento.social_subtitle || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
                 </div>
             </div>
 
@@ -876,16 +886,15 @@ const Settings = ({ barbeariaData }: { barbeariaData: Barbearia | null }) => {
                 </button>
             </div>
         </div>
-    )
+    );
 };
 
-const SettingsWrapper = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
-// ... (restante do código SettingsWrapper permanece inalterado)
+const SettingsWrapper = ({ estabelecimentoData, estabelecimentoPlan }: DashboardProps) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { slug } = useParams();
     
-    const hasProfessionalPlan = barbeariaPlan?.nome.toLowerCase() === 'profissional';
+    const hasProfessionalPlan = estabelecimentoPlan?.nome.toLowerCase() === 'profissional';
 
     const determineSettingsTab = () => {
         const pathEnd = location.pathname.split('/').pop();
@@ -914,18 +923,16 @@ const SettingsWrapper = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
                         </div>
                     );
                 }
-                return <ManageProfessionalTypes />;
+                return <GerenciarTiposProfissional />;
             case 'general':
-            default: return <Settings barbeariaData={barbeariaData} />;
+            default: return <Settings estabelecimentoData={estabelecimentoData} />;
         }
     };
 
     return (
         <div className="space-y-6">
-            {/* Adicionando 'hidden sm:flex' para ocultar em mobile */}
             <div className="hidden sm:flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
                 <button onClick={() => handleTabChange('general')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeSettingsTab === 'general' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Geral</button>
-                {/* Conditionally render the Types tab based on the fetched plan */}
                 {hasProfessionalPlan && (
                     <button onClick={() => handleTabChange('types')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeSettingsTab === 'types' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Tipos de Profissional</button>
                 )}
@@ -935,26 +942,26 @@ const SettingsWrapper = ({ barbeariaData, barbeariaPlan }: DashboardProps) => {
     );
 };
 
-
-export const BarbeariaPage = () => {
+export const EstabelecimentoPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { slug } = useParams();
     const { user } = useAuth();
 
-    const [barbeariaData, setBarbeariaData] = useState<Barbearia | null>(null);
-    const [barbeariaPlan, setBarbeariaPlan] = useState<Plano | null>(null);
+    const [estabelecimentoData, setEstabelecimentoData] = useState<Estabelecimento | null>(null);
+    const [estabelecimentoPlan, setEstabelecimentoPlan] = useState<Plano | null>(null);
     const [loadingData, setLoadingData] = useState(true);
 
-    const fetchBarbeariaInfo = useCallback(async () => {
-        if (user?.barbeariaId) {
+    const fetchEstabelecimentoInfo = useCallback(async () => {
+        const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
+        if (estId) {
             try {
-                const data = await api.getBarbeariaById(user.barbeariaId);
-                setBarbeariaData(data);
+                const data = await api.getEstabelecimentoById(estId);
+                setEstabelecimentoData(data);
                 const plan = await api.getPlanoByName(data.plano);
-                setBarbeariaPlan(plan);
+                setEstabelecimentoPlan(plan);
             } catch (error) {
-                toast.error("Falha ao carregar dados essenciais da barbearia.");
+                toast.error("Falha ao carregar dados essenciais do estabelecimento.");
             } finally {
                 setLoadingData(false);
             }
@@ -962,22 +969,22 @@ export const BarbeariaPage = () => {
     }, [user]);
 
     useEffect(() => {
-        fetchBarbeariaInfo();
-    }, [fetchBarbeariaInfo]);
+        fetchEstabelecimentoInfo();
+    }, [fetchEstabelecimentoInfo]);
 
     const determineActiveTab = () => {
         const pathParts = location.pathname.split('/');
         const lastPart = pathParts[pathParts.length - 1];
         const secondLastPart = pathParts[pathParts.length - 2];
 
-        const validTabs = ['dashboard', 'appointments', 'barbers', 'services', 'clients', 'settings', 'profile'];
+        const validTabs = ['dashboard', 'appointments', 'profissionais', 'barbers', 'services', 'clients', 'settings', 'profile'];
         
         if (validTabs.includes(lastPart)) {
-            return lastPart;
+            return lastPart === 'barbers' ? 'profissionais' : lastPart;
         }
         
         if (secondLastPart && validTabs.includes(secondLastPart)) {
-            return secondLastPart;
+            return secondLastPart === 'barbers' ? 'profissionais' : secondLastPart;
         }
         
         if (lastPart === slug || lastPart === '') {
@@ -997,29 +1004,29 @@ export const BarbeariaPage = () => {
     };
     
     if (loadingData) {
-        return <p className="text-center py-10 text-gray-400">Carregando dados da barbearia...</p>;
+        return <p className="text-center py-10 text-gray-400">Carregando dados do estabelecimento...</p>;
     }
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'dashboard': return <BarbeariaDashboard barbeariaData={barbeariaData} barbeariaPlan={barbeariaPlan} />;
-            case 'barbers': return <ManageBarbers barbeariaPlan={barbeariaPlan} />;
+            case 'dashboard': return <EstabelecimentoDashboard estabelecimentoData={estabelecimentoData} estabelecimentoPlan={estabelecimentoPlan} />;
+            case 'profissionais':
+            case 'barbers': return <ManageProfissionais estabelecimentoPlan={estabelecimentoPlan} />;
             case 'services': return <ManageServices />;
             case 'appointments': return <ManageAppointments />;
             case 'clients': return <ManageClients />;
-            case 'settings': return <SettingsWrapper barbeariaData={barbeariaData} barbeariaPlan={barbeariaPlan} />;
+            case 'settings': return <SettingsWrapper estabelecimentoData={estabelecimentoData} estabelecimentoPlan={estabelecimentoPlan} />;
             case 'profile': return <ProfilePage />;
-            default: return <BarbeariaDashboard barbeariaData={barbeariaData} barbeariaPlan={barbeariaPlan} />;
+            default: return <EstabelecimentoDashboard estabelecimentoData={estabelecimentoData} estabelecimentoPlan={estabelecimentoPlan} />;
         }
     };
     
     return (
         <div className="space-y-6">
-            {/* Adicionando 'hidden sm:flex' para ocultar em mobile */}
             <div className="hidden sm:flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
                 <button onClick={() => handleTabChange('dashboard')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
                 <button onClick={() => handleTabChange('appointments')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Agendamentos</button>
-                <button onClick={() => handleTabChange('barbers')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'barbers' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Barbeiros</button>
+                <button onClick={() => handleTabChange('profissionais')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'profissionais' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Profissionais</button>
                 <button onClick={() => handleTabChange('services')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'services' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Serviços</button>
                 <button onClick={() => handleTabChange('clients')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'clients' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Clientes</button>
                 <button onClick={() => handleTabChange('settings')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>
@@ -1028,3 +1035,6 @@ export const BarbeariaPage = () => {
         </div>
     );
 };
+
+export const BarbeariaPage = EstabelecimentoPage;
+export default EstabelecimentoPage;

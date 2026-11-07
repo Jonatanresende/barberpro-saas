@@ -1,21 +1,38 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Barbeiro, ProfessionalType } from '@/types';
+import { Profissional, TipoProfissional } from '@/types';
 import Modal from '@/components/Modal';
 import { UsersIcon } from '@/components/icons';
 import toast from 'react-hot-toast';
-import { Link, useParams } from 'react-router-dom'; // Importando Link e useParams
+import { Link, useParams } from 'react-router-dom';
 
-interface BarberModalProps {
+export interface ProfissionalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (barberData: any, password?: string, photoFile?: File) => Promise<void>;
-  barberToEdit: Barbeiro | null;
-  hasBarberPanelFeature: boolean;
-  professionalTypes: ProfessionalType[]; // Novo prop
+  onSave: (profissionalData: any, password?: string, photoFile?: File) => Promise<void>;
+  profissionalToEdit?: Profissional | null;
+  barberToEdit?: Profissional | null;
+  hasBarberPanelFeature?: boolean;
+  hasProfessionalPanelFeature?: boolean;
+  professionalTypes?: TipoProfissional[];
+  tiposProfissional?: TipoProfissional[];
 }
 
-const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeature, professionalTypes }: BarberModalProps) => {
-  const { slug } = useParams<{ slug: string }>(); // Obtendo o slug para o link
+const ProfissionalModal = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  profissionalToEdit, 
+  barberToEdit, 
+  hasBarberPanelFeature, 
+  hasProfessionalPanelFeature, 
+  professionalTypes,
+  tiposProfissional 
+}: ProfissionalModalProps) => {
+  const itemToEdit = profissionalToEdit || barberToEdit;
+  const hasPanelFeature = hasProfessionalPanelFeature ?? hasBarberPanelFeature ?? false;
+  const typesList = tiposProfissional || professionalTypes || [];
+
+  const { slug } = useParams<{ slug: string }>();
   const [nome, setNome] = useState('');
   const [especialidade, setEspecialidade] = useState('');
   const [email, setEmail] = useState('');
@@ -26,32 +43,28 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Campos de comissão/tipo
-  const [professionalTypeId, setProfessionalTypeId] = useState<string | undefined>(undefined);
-  const [commissionManual, setCommissionManual] = useState<number | null>(null); // Usado apenas no Plano Básico
+  const [tipoProfissionalId, setTipoProfissionalId] = useState<string | undefined>(undefined);
+  const [commissionManual, setCommissionManual] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (barberToEdit) {
-      setNome(barberToEdit.nome);
-      setEspecialidade(barberToEdit.especialidade || '');
-      setEmail(barberToEdit.email || '');
-      setTelefone(barberToEdit.telefone || '');
-      setAtivo(barberToEdit.ativo);
-      setPhotoPreview(barberToEdit.foto_url || null);
+    if (itemToEdit) {
+      setNome(itemToEdit.nome);
+      setEspecialidade(itemToEdit.especialidade || '');
+      setEmail(itemToEdit.email || '');
+      setTelefone(itemToEdit.telefone || '');
+      setAtivo(itemToEdit.ativo);
+      setPhotoPreview(itemToEdit.foto_url || null);
       setPassword('');
       setPhotoFile(null);
 
-      if (hasBarberPanelFeature) {
-        // Plano Profissional: Usa Tipo de Profissional
-        setProfessionalTypeId(barberToEdit.professional_type_id);
+      if (hasPanelFeature) {
+        setTipoProfissionalId(itemToEdit.tipo_profissional_id);
       } else {
-        // Plano Básico: Usa comissão manual (se houver um valor salvo no professional_type_id, ele é ignorado aqui)
         setCommissionManual(null); 
       }
     } else {
-      // Reset form for new entry
       setNome('');
       setEspecialidade('');
       setEmail('');
@@ -60,19 +73,18 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
       setAtivo(true);
       setPhotoFile(null);
       setPhotoPreview(null);
-      setProfessionalTypeId(undefined);
+      setTipoProfissionalId(undefined);
       setCommissionManual(null);
     }
-  }, [barberToEdit, isOpen, hasBarberPanelFeature]);
+  }, [itemToEdit, isOpen, hasPanelFeature]);
 
-  // Lógica para exibir a comissão automática (Plano Profissional)
   const automaticCommission = useMemo(() => {
-    if (hasBarberPanelFeature && professionalTypeId) {
-      const selectedType = professionalTypes.find(t => t.id === professionalTypeId);
-      return selectedType?.commission_percent || null;
+    if (hasPanelFeature && tipoProfissionalId) {
+      const selectedType = typesList.find(t => t.id === tipoProfissionalId);
+      return selectedType?.percentual_comissao || null;
     }
     return null;
-  }, [professionalTypeId, professionalTypes, hasBarberPanelFeature]);
+  }, [tipoProfissionalId, typesList, hasPanelFeature]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -89,20 +101,19 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const barberData: any = {
+    const profissionalData: any = {
       nome,
       especialidade,
       telefone,
       ativo,
     };
 
-    if (hasBarberPanelFeature) {
-      // PLANO PROFISSIONAL: Requer tipo, e-mail e senha (se for novo)
-      if (professionalTypes.length === 0) {
-        toast.error("Crie um Tipo de Profissional antes de adicionar um barbeiro.");
+    if (hasPanelFeature) {
+      if (typesList.length === 0) {
+        toast.error("Crie um Tipo de Profissional antes de adicionar um profissional.");
         return;
       }
-      if (!professionalTypeId) {
+      if (!tipoProfissionalId) {
         toast.error("Selecione um Tipo de Profissional.");
         return;
       }
@@ -110,39 +121,37 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
         toast.error("O e-mail de acesso é obrigatório.");
         return;
       }
-      if (!barberToEdit && !password) {
-        toast.error("A senha é obrigatória para criar um novo barbeiro com acesso ao painel.");
+      if (!itemToEdit && !password) {
+        toast.error("A senha é obrigatória para criar um novo profissional com acesso ao painel.");
         return;
       }
       
-      barberData.email = email;
-      barberData.professional_type_id = professionalTypeId;
-      barberData.user_id = barberToEdit?.user_id; // Mantém o user_id se estiver editando
+      profissionalData.email = email;
+      profissionalData.tipo_profissional_id = tipoProfissionalId;
+      profissionalData.user_id = itemToEdit?.user_id;
       
     } else {
-      // PLANO BÁSICO: A comissão manual é apenas para anotação.
       if (commissionManual !== null && (isNaN(commissionManual) || commissionManual < 0 || commissionManual > 100)) {
         toast.error("A comissão deve ser um número entre 0 e 100.");
         return;
       }
       
-      // Garante que não há user_id ou professional_type_id para planos básicos
-      barberData.professional_type_id = null;
-      barberData.user_id = null;
-      barberData.email = null;
+      profissionalData.tipo_profissional_id = null;
+      profissionalData.user_id = null;
+      profissionalData.email = null;
     }
 
     setIsSaving(true);
-    await onSave(barberData, password, photoFile || undefined);
+    await onSave(profissionalData, password, photoFile || undefined);
     setIsSaving(false);
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={barberToEdit ? 'Editar Barbeiro' : 'Adicionar Barbeiro'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={itemToEdit ? 'Editar Profissional' : 'Adicionar Profissional'}>
       <form onSubmit={handleSubmit}>
         <div className="space-y-4 overflow-y-auto pr-4 -mr-4" style={{ maxHeight: '65vh' }}>
             <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Foto do Barbeiro</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Foto do Profissional</label>
             <div className="flex items-center space-x-4">
                 <div className="w-20 h-20 bg-brand-gray rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-600">
                 {photoPreview ? (
@@ -162,29 +171,27 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
             <input type="text" id="nome" value={nome} onChange={e => setNome(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
             </div>
             
-            {/* --- Lógica Condicional de Plano --- */}
-            {hasBarberPanelFeature ? (
-              // PLANO PROFISSIONAL: Tipo de Profissional + Acesso
+            {hasPanelFeature ? (
               <>
                 <div>
-                  <label htmlFor="professional_type_id" className="block text-sm font-medium text-gray-300 mb-1">Tipo de Profissional</label>
-                  {professionalTypes.length > 0 ? (
+                  <label htmlFor="tipo_profissional_id" className="block text-sm font-medium text-gray-300 mb-1">Tipo de Profissional</label>
+                  {typesList.length > 0 ? (
                     <select 
-                      id="professional_type_id" 
-                      value={professionalTypeId || ''} 
-                      onChange={e => setProfessionalTypeId(e.target.value)} 
+                      id="tipo_profissional_id" 
+                      value={tipoProfissionalId || ''} 
+                      onChange={e => setTipoProfissionalId(e.target.value)} 
                       required
                       className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
                     >
                       <option value="" disabled>Selecione um tipo</option>
-                      {professionalTypes.map(type => (
-                          <option key={type.id} value={type.id}>{type.name}</option>
+                      {typesList.map(type => (
+                          <option key={type.id} value={type.id}>{type.nome}</option>
                       ))}
                     </select>
                   ) : (
                     <div className="bg-yellow-500/10 p-3 rounded-md border border-yellow-500/30">
                         <p className="text-sm text-yellow-400">
-                            Você precisa <Link to={`/${slug}/settings/types`} onClick={onClose} className="underline font-semibold">criar um Tipo de Profissional</Link> antes de adicionar um barbeiro com acesso ao painel.
+                            Você precisa <Link to={`/${slug}/settings/types`} onClick={onClose} className="underline font-semibold">criar um Tipo de Profissional</Link> antes de adicionar um profissional com acesso ao painel.
                         </p>
                     </div>
                   )}
@@ -205,38 +212,31 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
 
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">E-mail de Acesso</label>
-                  <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required={hasBarberPanelFeature} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+                  <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required={hasPanelFeature} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
                 </div>
-                {!barberToEdit && (
+                {!itemToEdit && (
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
-                        <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required={hasBarberPanelFeature} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
+                        <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required={hasPanelFeature} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
                     </div>
                 )}
               </>
             ) : (
-              // PLANO BÁSICO: Comissão Manual (para anotação)
-              <>
-                <div className="bg-brand-dark p-4 rounded-lg border border-gray-700">
-                    <p className="text-sm text-yellow-400 mb-2">
-                        <span className="font-bold">Plano Básico:</span> A comissão é definida pelo padrão da barbearia.
-                    </p>
-                    <p className="text-xs text-gray-500">
-                        Para gerenciar comissões individuais e dar acesso ao painel para o barbeiro, faça upgrade para o Plano Profissional.
-                    </p>
-                </div>
-                {/* Removendo o campo de comissão manual, pois ele não é usado no backend e pode confundir */}
-                {/* Removendo campos de E-mail e Senha, pois não há acesso ao painel */}
-              </>
+              <div className="bg-brand-dark p-4 rounded-lg border border-gray-700">
+                  <p className="text-sm text-yellow-400 mb-2">
+                      <span className="font-bold">Plano Básico:</span> A comissão é definida pelo padrão do estabelecimento.
+                  </p>
+                  <p className="text-xs text-gray-500">
+                      Para gerenciar comissões individuais e dar acesso ao painel para o profissional, faça upgrade para o Plano Profissional.
+                  </p>
+              </div>
             )}
             
-            {/* Campo Especialidade (Comum a ambos os planos) */}
             <div>
             <label htmlFor="especialidade" className="block text-sm font-medium text-gray-300 mb-1">Especialidade</label>
             <input type="text" id="especialidade" value={especialidade} onChange={e => setEspecialidade(e.target.value)} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
             </div>
 
-            {/* Telefone e Ativo (Comum a ambos os planos) */}
             <div>
             <label htmlFor="telefone" className="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
             <input type="tel" id="telefone" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(XX) XXXXX-XXXX" className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
@@ -257,4 +257,5 @@ const BarberModal = ({ isOpen, onClose, onSave, barberToEdit, hasBarberPanelFeat
   );
 };
 
-export default BarberModal;
+export default ProfissionalModal;
+export const BarberModal = ProfissionalModal;

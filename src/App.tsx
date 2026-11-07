@@ -6,8 +6,8 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { UserRole } from '@/types';
 import AdminPage from '@/pages/admin/AdminPage';
-import { BarbeariaPage } from '@/pages/estabelecimento/EstabelecimentoPage';
-import { BarbeiroPage } from '@/pages/profissional/ProfissionalPage';
+import { EstabelecimentoPage } from '@/pages/estabelecimento/EstabelecimentoPage';
+import { ProfissionalPage } from '@/pages/profissional/ProfissionalPage';
 import PublicBookingPage from '@/pages/cliente/PublicBookingPage';
 import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
 import PublicProfilePage from '@/pages/cliente/PublicProfilePage';
@@ -26,59 +26,63 @@ const AppRoutes = () => {
         <Route path="/booking-success" element={<BookingSuccessPage />} />
         <Route path="/trial-expired" element={<TrialExpiredPage />} />
 
-        {/* Initial Setup Route for Barbershops */}
+        {/* Rota de configuração inicial para estabelecimentos */}
         <Route path="/initial-setup" element={
-          <ProtectedRoute allowedRoles={[UserRole.BARBEARIA]}>
+          <ProtectedRoute allowedRoles={[UserRole.ESTABELECIMENTO]}>
             <InitialSetupPage />
           </ProtectedRoute>
         } />
 
-        {/* Admin Routes */}
+        {/* Rotas de Admin */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
             <DashboardLayout title="Painel do Administrador" />
           </ProtectedRoute>
         }>
             <Route path="dashboard" element={<AdminPage />} />
-            <Route path="barbershops" element={<AdminPage />} />
+            <Route path="estabelecimentos" element={<AdminPage />} />
+            <Route path="barbershops" element={<Navigate to="/admin/estabelecimentos" replace />} />
             <Route path="plans" element={<AdminPage />} />
-            <Route path="expenses" element={<AdminPage />} /> {/* NOVA ROTA */}
+            <Route path="expenses" element={<AdminPage />} />
             <Route path="settings" element={<AdminPage />} />
             <Route index element={<Navigate to="dashboard" />} />
         </Route>
 
-        {/* Barbeiro Routes */}
-        <Route path="/barbeiro" element={
-            <ProtectedRoute allowedRoles={[UserRole.BARBEIRO]}>
-                <DashboardLayout title="Painel do Barbeiro" />
+        {/* Rotas do Profissional */}
+        <Route path="/profissional" element={
+            <ProtectedRoute allowedRoles={[UserRole.PROFISSIONAL]}>
+                <DashboardLayout title="Painel do Profissional" />
             </ProtectedRoute>
         }>
-            <Route path="dashboard" element={<BarbeiroPage />} />
-            <Route path="appointments" element={<BarbeiroPage />} />
-            <Route path="availability" element={<BarbeiroPage />} />
+            <Route path="dashboard" element={<ProfissionalPage />} />
+            <Route path="appointments" element={<ProfissionalPage />} />
+            <Route path="availability" element={<ProfissionalPage />} />
             <Route index element={<Navigate to="appointments" />} />
         </Route>
+        {/* Rota legado /barbeiro redireciona para /profissional */}
+        <Route path="/barbeiro/*" element={<Navigate to="/profissional" replace />} />
 
-        {/* Dynamic Slug-based Routes (Public and Protected Barbearia) */}
+        {/* Rotas dinâmicas baseadas em Slug (Públicas e Painel do Estabelecimento) */}
         <Route path="/:slug">
           <Route index element={<PublicProfilePage />} />
           <Route path="agendamento" element={<PublicBookingPage />} />
           
-          {/* Protected Barbearia Dashboard Routes */}
+          {/* Rotas protegidas do painel do estabelecimento */}
           <Route element={
-            <ProtectedRoute allowedRoles={[UserRole.BARBEARIA]}>
-              <DashboardLayout title="Painel da Barbearia" />
+            <ProtectedRoute allowedRoles={[UserRole.ESTABELECIMENTO]}>
+              <DashboardLayout title="Painel do Estabelecimento" />
             </ProtectedRoute>
           }>
-            <Route path="dashboard" element={<BarbeariaPage />} />
-            <Route path="barbers" element={<BarbeariaPage />} />
-            <Route path="services" element={<BarbeariaPage />} />
-            <Route path="appointments" element={<BarbeariaPage />} />
-            <Route path="clients" element={<BarbeariaPage />} />
-            <Route path="settings" element={<BarbeariaPage />} />
-            <Route path="settings/types" element={<BarbeariaPage />} /> 
-            <Route path="settings/general" element={<BarbeariaPage />} /> 
-            <Route path="profile" element={<BarbeariaPage />} />
+            <Route path="dashboard" element={<EstabelecimentoPage />} />
+            <Route path="profissionais" element={<EstabelecimentoPage />} />
+            <Route path="barbers" element={<Navigate to="profissionais" replace />} />
+            <Route path="services" element={<EstabelecimentoPage />} />
+            <Route path="appointments" element={<EstabelecimentoPage />} />
+            <Route path="clients" element={<EstabelecimentoPage />} />
+            <Route path="settings" element={<EstabelecimentoPage />} />
+            <Route path="settings/types" element={<EstabelecimentoPage />} /> 
+            <Route path="settings/general" element={<EstabelecimentoPage />} /> 
+            <Route path="profile" element={<EstabelecimentoPage />} />
           </Route>
         </Route>
 

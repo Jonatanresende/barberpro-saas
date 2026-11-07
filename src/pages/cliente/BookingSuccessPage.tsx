@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Agendamento, Barbearia } from '@/types';
+import { Agendamento, Estabelecimento } from '@/types';
 
 type LocationState = {
   agendamento?: Agendamento;
-  barbearia?: Barbearia;
+  estabelecimento?: Estabelecimento;
+  // Alias transitório para compatibilidade com código antigo
+  barbearia?: Estabelecimento;
 };
 
 const BookingSuccessPage = () => {
@@ -13,15 +15,15 @@ const BookingSuccessPage = () => {
   const state = (location.state as LocationState) || {};
 
   const agendamento = state.agendamento;
-  const barbearia = state.barbearia;
+  const estabelecimento = state.estabelecimento || state.barbearia;
 
   useEffect(() => {
-    if (!agendamento || !barbearia) {
+    if (!agendamento || !estabelecimento) {
       navigate('/', { replace: true });
     }
-  }, [agendamento, barbearia, navigate]);
+  }, [agendamento, estabelecimento, navigate]);
 
-  if (!agendamento || !barbearia) return null;
+  if (!agendamento || !estabelecimento) return null;
 
   const bookingDate = new Date(`${agendamento.data}T${agendamento.hora}`);
   const formattedDate = bookingDate.toLocaleDateString('pt-BR', {
@@ -34,7 +36,10 @@ const BookingSuccessPage = () => {
     minute: '2-digit',
   });
 
-  const backToProfilePath = `/${barbearia.link_personalizado || ''}`;
+  // Suporta tanto o novo campo quanto o alias antigo
+  const profissionalNome = (agendamento as any).profissional_nome || (agendamento as any).barbeiro_nome;
+
+  const backToProfilePath = `/${estabelecimento.link_personalizado || ''}`;
 
   return (
     <div className="min-h-screen bg-brand-dark text-white flex items-center justify-center p-4">
@@ -46,8 +51,8 @@ const BookingSuccessPage = () => {
         </div>
         <h1 className="text-3xl font-bold text-brand-gold mb-2">Agendamento Confirmado!</h1>
         <p className="text-gray-300 mb-8">
-          Seu horário com <span className="font-semibold">{agendamento.barbeiro_nome}</span> na{' '}
-          <span className="font-semibold">{barbearia.nome}</span> está reservado.
+          Seu horário com <span className="font-semibold">{profissionalNome}</span> em{' '}
+          <span className="font-semibold">{estabelecimento.nome}</span> está reservado.
         </p>
 
         <div className="bg-brand-dark/60 rounded-xl border border-gray-700 p-6 text-left space-y-4">
@@ -63,12 +68,12 @@ const BookingSuccessPage = () => {
           </div>
           <div>
             <p className="text-sm uppercase text-gray-400">Endereço</p>
-            <p className="text-lg font-semibold">{barbearia.endereco}</p>
+            <p className="text-lg font-semibold">{estabelecimento.endereco}</p>
           </div>
-          {barbearia.telefone && (
+          {estabelecimento.telefone && (
             <div>
               <p className="text-sm uppercase text-gray-400">Contato</p>
-              <p className="text-lg font-semibold">{barbearia.telefone}</p>
+              <p className="text-lg font-semibold">{estabelecimento.telefone}</p>
             </div>
           )}
         </div>
@@ -84,7 +89,7 @@ const BookingSuccessPage = () => {
             to={backToProfilePath}
             className="w-full px-6 py-3 rounded-lg bg-brand-gold text-brand-dark font-bold hover:bg-yellow-400 transition text-center"
           >
-            Ver página da barbearia
+            Ver página do estabelecimento
           </Link>
         </div>
       </div>

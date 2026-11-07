@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
-import { LogoutIcon, MenuIcon, UserIcon, BellIcon, CalendarIcon } from '@/components/icons';
+import { LogoutIcon, MenuIcon, UserIcon, BellIcon } from '@/components/icons';
 import { UserRole } from '@/types';
 
 interface HeaderProps {
@@ -12,13 +12,13 @@ interface HeaderProps {
 
 const Header = ({ title, onMenuClick }: HeaderProps) => {
   const { user, logout } = useAuth();
-  const { newAppointmentCount, resetAppointmentCount } = useNotifications();
+  const { newAppointmentCount } = useNotifications();
   const navigate = useNavigate();
 
   const getDisplayName = () => {
     if (!user) return '';
-    if (user.role === UserRole.BARBEARIA) {
-      return user.barbeariaNome || user.email;
+    if (user.role === UserRole.ESTABELECIMENTO) {
+      return user.estabelecimentoNome || user.email;
     }
     if (user.full_name) {
       return user.full_name.split(' ').slice(0, 2).join(' ');
@@ -30,15 +30,14 @@ const Header = ({ title, onMenuClick }: HeaderProps) => {
 
   const handleNotificationClick = () => {
     let path = '';
-    if (user?.role === UserRole.BARBEARIA && user.link_personalizado) {
+    if (user?.role === UserRole.ESTABELECIMENTO && user.link_personalizado) {
         path = `/${user.link_personalizado}/appointments`;
-    } else if (user?.role === UserRole.BARBEIRO) {
-        path = '/barbeiro/appointments';
+    } else if (user?.role === UserRole.PROFISSIONAL) {
+        path = '/profissional/appointments';
     }
     
     if (path) {
         navigate(path);
-        // O reset será feito na página de agendamentos ao carregar
     }
   };
 
@@ -60,7 +59,7 @@ const Header = ({ title, onMenuClick }: HeaderProps) => {
             <span className="text-sm text-gray-300 hidden sm:block">{displayName}</span>
             
             {/* Botão de Notificação de Agendamentos */}
-            {(user?.role === UserRole.BARBEARIA || user?.role === UserRole.BARBEIRO) && (
+            {(user?.role === UserRole.ESTABELECIMENTO || user?.role === UserRole.PROFISSIONAL) && (
                 <button
                     onClick={handleNotificationClick}
                     className="relative p-2 rounded-full text-gray-300 hover:text-brand-gold transition-colors"
@@ -75,7 +74,7 @@ const Header = ({ title, onMenuClick }: HeaderProps) => {
                 </button>
             )}
 
-            {user?.role === UserRole.BARBEARIA && user.link_personalizado && (
+            {user?.role === UserRole.ESTABELECIMENTO && user.link_personalizado && (
               <Link
                 to={`/${user.link_personalizado}/profile`}
                 className="flex items-center text-sm text-gray-300 hover:text-brand-gold transition-colors hidden lg:flex"

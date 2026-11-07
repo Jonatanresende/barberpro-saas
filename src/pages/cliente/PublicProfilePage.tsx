@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '@/services/api';
-import { Barbearia, Servico, Agendamento } from '@/types';
+import { Estabelecimento, Servico, Agendamento } from '@/types';
 import { ScissorsIcon, CalendarIcon, UsersIcon } from '@/components/icons';
 import ClientAccountModal from '@/pages/cliente/ClientAccountModal';
 import ClientAppointmentModal from '@/pages/cliente/ClientAppointmentModal';
@@ -10,7 +10,7 @@ import ClientHistoryModal from '@/pages/cliente/ClientHistoryModal';
 
 const PublicProfilePage = () => {
     const { slug } = useParams<{ slug: string }>();
-    const [barbearia, setBarbearia] = useState<Barbearia | null>(null);
+    const [estabelecimento, setEstabelecimento] = useState<Estabelecimento | null>(null);
     const [servicos, setServicos] = useState<Servico[]>([]);
     const [loading, setLoading] = useState(true);
     
@@ -29,16 +29,16 @@ const PublicProfilePage = () => {
         if (!slug) return;
         try {
             setLoading(true);
-            const barbeariaData = await api.getBarbeariaBySlug(slug);
-            if (barbeariaData) {
-                setBarbearia(barbeariaData);
-                const servicosData = await api.getServicosByBarbearia(barbeariaData.id);
+            const estabelecimentoData = await api.getEstabelecimentoBySlug(slug);
+            if (estabelecimentoData) {
+                setEstabelecimento(estabelecimentoData);
+                const servicosData = await api.getServicosByEstabelecimento(estabelecimentoData.id);
                 setServicos(servicosData);
             } else {
-                toast.error("Barbearia não encontrada.");
+                toast.error("Estabelecimento não encontrado.");
             }
         } catch (error) {
-            toast.error("Falha ao carregar dados da barbearia.");
+            toast.error("Falha ao carregar dados do estabelecimento.");
         } finally {
             setLoading(false);
         }
@@ -73,9 +73,7 @@ const PublicProfilePage = () => {
     };
 
     const handleAppointmentUpdate = () => {
-        // Após cancelar, reabre o modal de busca para verificar o status ou fechar
         resetAppointmentState();
-        // Reabre o modal de conta para que o cliente possa buscar novamente ou ver o histórico
         setIsAccountModalOpen(true); 
     };
 
@@ -83,8 +81,8 @@ const PublicProfilePage = () => {
         return <div className="flex items-center justify-center h-screen bg-black text-white">Carregando...</div>;
     }
 
-    if (!barbearia) {
-        return <div className="flex items-center justify-center h-screen bg-black text-white">Barbearia não encontrada.</div>;
+    if (!estabelecimento) {
+        return <div className="flex items-center justify-center h-screen bg-black text-white">Estabelecimento não encontrado.</div>;
     }
 
     const defaultHeroImage = 'https://images.unsplash.com/photo-1585749425332-9b175015e5d0?q=80&w=2070&auto=format&fit=crop';
@@ -106,23 +104,23 @@ const PublicProfilePage = () => {
                 <section 
                     className="relative min-h-screen flex items-center justify-center text-center bg-cover bg-center" 
                     style={{ 
-                        backgroundImage: `url(${barbearia.hero_image_url || defaultHeroImage})`,
+                        backgroundImage: `url(${estabelecimento.hero_image_url || defaultHeroImage})`,
                         backgroundSize: 'cover', 
                         backgroundPosition: 'center top', 
                     }}
                 >
                     <div className="absolute inset-0 bg-black/60"></div>
                     <div className="relative z-10 flex flex-col items-center p-4">
-                        {barbearia.foto_url ? (
-                            <img src={barbearia.foto_url} alt={`Logo ${barbearia.nome}`} className="w-40 h-40 rounded-full object-cover border-4 border-brand-gold mb-4" />
+                        {estabelecimento.foto_url ? (
+                            <img src={estabelecimento.foto_url} alt={`Logo ${estabelecimento.nome}`} className="w-40 h-40 rounded-full object-cover border-4 border-brand-gold mb-4" />
                         ) : (
                             <div className="w-40 h-40 rounded-full border-4 border-brand-gold mb-4 bg-brand-gray flex items-center justify-center">
                                 <ScissorsIcon className="w-20 h-20 text-brand-gold" />
                             </div>
                         )}
-                        <h1 className="text-4xl md:text-5xl font-bold">{barbearia.nome}</h1>
-                        <p className="text-brand-gold mt-1">{barbearia.hero_title}</p>
-                        <p className="mt-4 max-w-md">{barbearia.hero_subtitle}</p>
+                        <h1 className="text-4xl md:text-5xl font-bold">{estabelecimento.nome}</h1>
+                        <p className="text-brand-gold mt-1">{estabelecimento.hero_title}</p>
+                        <p className="mt-4 max-w-md">{estabelecimento.hero_subtitle}</p>
                         <Link to={`/${slug}/agendamento`} className="mt-6 bg-brand-gold text-brand-dark font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-colors flex items-center gap-2">
                             <CalendarIcon className="w-5 h-5" />
                             AGENDAR HORÁRIO
@@ -133,7 +131,7 @@ const PublicProfilePage = () => {
                 {/* Services Section */}
                 <section className="py-16 bg-cover bg-center" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/brick-wall.png')" }}>
                     <div className="container mx-auto px-4 text-center">
-                        <h2 className="text-4xl font-bold mb-2">{barbearia.services_title}</h2>
+                        <h2 className="text-4xl font-bold mb-2">{estabelecimento.services_title}</h2>
                         <div className="w-24 h-1 bg-brand-gold mx-auto mb-12"></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
                             {servicos.map(servico => (
@@ -155,16 +153,16 @@ const PublicProfilePage = () => {
                 {/* Social Section */}
                 <section className="py-16 bg-[#f5f5f5] text-black">
                     <div className="container mx-auto px-4 text-center">
-                        <h2 className="text-4xl font-bold">{barbearia.social_title}</h2>
-                        <p className="text-gray-600 mt-2 mb-8">{barbearia.social_subtitle}</p>
+                        <h2 className="text-4xl font-bold">{estabelecimento.social_title}</h2>
+                        <p className="text-gray-600 mt-2 mb-8">{estabelecimento.social_subtitle}</p>
                         <div className="flex justify-center items-center gap-6">
-                            {barbearia.instagram_url && (
-                                <a href={barbearia.instagram_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 transition-opacity hover:opacity-80">
+                            {estabelecimento.instagram_url && (
+                                <a href={estabelecimento.instagram_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 transition-opacity hover:opacity-80">
                                     <img src="/icons/instagram.svg" alt="Instagram" className="w-full h-full object-contain" />
                                 </a>
                             )}
-                            {barbearia.whatsapp_url && (
-                                <a href={barbearia.whatsapp_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 transition-opacity hover:opacity-80">
+                            {estabelecimento.whatsapp_url && (
+                                <a href={estabelecimento.whatsapp_url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 transition-opacity hover:opacity-80">
                                     <img src="/icons/whatsapp.svg" alt="WhatsApp" className="w-full h-full object-contain" />
                                 </a>
                             )}
@@ -187,12 +185,12 @@ const PublicProfilePage = () => {
                 onAppointmentFound={handleAppointmentFound}
                 onHistoryFound={handleHistoryFound}
             />
-            {barbearia && (
+            {estabelecimento && (
                 <ClientAppointmentModal
                     isOpen={isAppointmentModalOpen}
                     onClose={resetAppointmentState}
                     appointment={foundAppointment}
-                    barbearia={barbearia}
+                    estabelecimento={estabelecimento}
                     clientPhone={clientPhone}
                     onAppointmentUpdate={handleAppointmentUpdate}
                 />
