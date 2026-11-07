@@ -100,3 +100,4 @@ Convenção: slugs em inglês, com termos neutros:
 2. **Identificadores internos de código:** Podem manter verbos em inglês (`getEstabelecimentoBySlug`, `createProfissional`, etc.).
 3. **Valores do enum `Nicho`:** `'barbearia'`, `'salao'`, `'estetica'`, `'manicure'`, `'outro'`.
 4. **Artigos e plurais:** Devem seguir rigorosamente o dicionário do nicho configurado via `src/config/vocabulario.ts`.
+
