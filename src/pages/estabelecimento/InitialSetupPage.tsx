@@ -5,14 +5,25 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { api } from '@/services/api';
 import { slugify } from '@/utils/slugify';
+import { Nicho } from '@/types';
+import { SERVICOS_EXEMPLO } from '@/config/servicosExemplo';
 
 const defaultLogo = '/landing/images/logo.png';
+
+const NICHO_OPTIONS: { value: Nicho; label: string }[] = [
+  { value: 'barbearia', label: 'Barbearia' },
+  { value: 'salao',     label: 'Salão de Beleza' },
+  { value: 'estetica',  label: 'Estética' },
+  { value: 'manicure',  label: 'Manicure' },
+  { value: 'outro',     label: 'Outro' },
+];
 
 const InitialSetupPage = () => {
   const { user } = useAuth();
   const { settings } = useSettings();
   const navigate = useNavigate();
   const [establishmentName, setEstablishmentName] = useState('');
+  const [nicho, setNicho] = useState<Nicho>('barbearia');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -32,11 +43,24 @@ const InitialSetupPage = () => {
     const updates = {
       nome: establishmentName.trim(),
       link_personalizado: newSlug,
+      nicho,
     };
 
     try {
       await api.updateEstabelecimento(estId, user.id, updates);
-      toast.success('Configurado com sucesso!');
+
+      // Criar serviços de exemplo para o nicho selecionado
+      const exemplos = SERVICOS_EXEMPLO[nicho] || [];
+      await Promise.allSettled(
+        exemplos.map(s =>
+          api.createServico(
+            { nome: s.nome, duracao: s.duracao, preco: s.preco },
+            estId,
+          )
+        )
+      );
+
+      toast.success('Configurado com sucesso! Serviços de exemplo criados.');
       
       navigate(`/${newSlug}/dashboard`, { replace: true });
       window.location.reload();
@@ -53,11 +77,11 @@ const InitialSetupPage = () => {
       <div className="w-full max-w-lg bg-brand-gray rounded-xl shadow-lg p-8 border border-gray-700 text-center">
         <img src={settings?.logo_url || defaultLogo} alt="Logo" className="w-48 h-auto mx-auto mb-6" />
         <h1 className="text-3xl font-bold text-white mb-2">Bem-vindo!</h1>
-        <p className="text-gray-300 mb-8">Vamos dar um nome oficial para o seu negócio.</p>
+        <p className="text-gray-300 mb-8">Vamos configurar o seu negócio.</p>
         
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="space-y-6 text-left">
           <div>
-            <label htmlFor="establishmentName" className="block text-sm font-medium text-gray-300 mb-2 text-left">
+            <label htmlFor="establishmentName" className="block text-sm font-medium text-gray-300 mb-2">
               Nome do Estabelecimento
             </label>
             <input
@@ -70,6 +94,26 @@ const InitialSetupPage = () => {
               required
             />
           </div>
+
+          <div>
+            <label htmlFor="nicho" className="block text-sm font-medium text-gray-300 mb-2">
+              Tipo de Negócio
+            </label>
+            <select
+              id="nicho"
+              value={nicho}
+              onChange={e => setNicho(e.target.value as Nicho)}
+              className="bg-brand-dark w-full px-4 py-3 rounded-md border border-gray-600 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-white"
+            >
+              {NICHO_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">
+              Serviços de exemplo serão criados automaticamente para você começar.
+            </p>
+          </div>
+
           <button
             type="submit"
             disabled={isSaving}

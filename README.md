@@ -1,6 +1,6 @@
-# 💈 BarberPro SaaS (Barbeiro na Hora)
+# ✨ Marcadô (Sistema de Gestão & Agendamento para o Nicho da Beleza)
 
-> Plataforma SaaS Multi-tenant completa para gestão de barbearias, agendamento online inteligente e controle financeiro automatizado.
+> Plataforma SaaS Multi-tenant completa para gestão de barbearias, salões de beleza, clínicas de estética, manicures e espaços de beleza em geral, com agendamento online inteligente e controle financeiro automatizado.
 
 ---
 
@@ -9,11 +9,10 @@
 - [Sobre o Projeto](#-sobre-o-projeto)
 - [Funcionalidades por Perfil](#-funcionalidades-por-perfil)
   - [👑 Painel do Administrador (Super Admin)](#-painel-do-administrador-super-admin)
-  - [💈 Painel da Barbearia (Tenant / Proprietário)](#-painel-da-barbearia-tenant--proprietário)
-  - [✂️ Painel do Barbeiro (Profissional)](#️-painel-do-barbeiro-profissional)
+  - [🏢 Painel do Estabelecimento (Tenant / Proprietário)](#-painel-do-estabelecimento-tenant--proprietário)
+  - [✂️ Painel do Profissional](#️-painel-do-profissional)
   - [📱 Portal Público & Agendamento do Cliente](#-portal-público--agendamento-do-cliente)
 - [🚀 Landing Page de Vendas & Conversão](#-landing-page-de-vendas--conversão)
-- [💳 Integrações & Pagamentos (Kiwify)](#-integrações--pagamentos-kiwify)
 - [⚡ Supabase Edge Functions](#-supabase-edge-functions)
 - [🛠️ Stack Tecnológico](#️-stack-tecnológico)
 - [📁 Estrutura de Pastas](#-estrutura-de-pastas)
@@ -27,9 +26,9 @@
 
 ## 📖 Sobre o Projeto
 
-O **BarberPro SaaS** foi desenvolvido para modernizar e substituir as agendas manuais de papel e o atendimento desorganizado via WhatsApp em barbearias de qualquer porte. 
+O **Marcadô** foi desenvolvido para modernizar e substituir as agendas manuais de papel e o atendimento desorganizado via WhatsApp em estabelecimentos de beleza e estética de qualquer porte (barbearias, salões de beleza, estúdios de estética, esmalterias/manicures, etc.). 
 
-A aplicação opera em arquitetura **Multi-tenant**, onde cada barbearia possui seu próprio endereço público (`/:slug`), página institucional customizada, equipe de profissionais, serviços e regras de negócio independentes, tudo gerenciado por uma infraestrutura centralizada e escalável baseada em **Supabase** e **React**.
+A aplicação opera em arquitetura **Multi-tenant**, onde cada estabelecimento possui seu próprio endereço público (`/:slug`), vocabulário contextual ao seu nicho, página institucional customizada, equipe de profissionais, serviços e regras de negócio independentes, tudo gerenciado por uma infraestrutura centralizada e escalável baseada em **Supabase** e **React**.
 
 ---
 
@@ -40,17 +39,18 @@ Acesso restrito para a equipe de gestão da plataforma SaaS:
 
 - **Dashboard Executivo:**
   - Métricas de Receita Mensal Estimada e Gastos Mensais Totais.
-  - Indicadores de total de barbearias cadastradas vs. barbearias ativas.
+  - Indicadores de total de estabelecimentos cadastrados vs. ativos.
   - Gráfico analítico de crescimento de novos estabelecimentos (via Recharts).
   - Listagem dos estabelecimentos recentemente adicionados.
-- **Gestão de Barbearias:**
-  - Cadastro manual de novas barbearias e seus respectivos donos.
+- **Gestão de Estabelecimentos:**
+  - Cadastro manual de novos estabelecimentos e seus respectivos donos.
+  - Seleção do nicho de atuação (`barbearia`, `salao`, `estetica`, `manicure`, `outro`).
   - Edição de status (`ativa` / `inativa`), plano contratado, endereço, documento e dados de contato.
   - Upload de logotipos e fotos dos estabelecimentos.
   - Exclusão com limpeza em cascata (Auth e dados).
 - **Gestão de Planos de Assinatura:**
   - Criação e manutenção de planos (ex: Básico, Profissional, Trial).
-  - Definição de preços mensais, limites de barbeiros permitidos, status ativo e destaque de popularidade ("Mais Escolhido").
+  - Definição de preços mensais, limites de profissionais permitidos, status ativo e destaque de popularidade ("Mais Escolhido").
   - Listagem customizada de recursos e benefícios incluídos no plano.
 - **Controle de Gastos da Plataforma (Gastos SaaS):**
   - Registro de despesas operacionais da plataforma (servidores, APIs, domínios, marketing).
@@ -62,37 +62,37 @@ Acesso restrito para a equipe de gestão da plataforma SaaS:
 
 ---
 
-### 💈 Painel da Barbearia (Tenant / Proprietário)
-Ambiente exclusivo da barbearia acessível via `/:slug/dashboard`:
+### 🏢 Painel do Estabelecimento (Tenant / Proprietário)
+Ambiente exclusivo do estabelecimento acessível via `/:slug/dashboard`:
 
 - **Assistente de Onboarding Inicial (`/initial-setup`):**
-  - Configuração rápida na primeira entrada para definição do nome oficial e geração automática do link amigável (`slug`).
+  - Configuração rápida na primeira entrada para definição do nome oficial, seleção do nicho e criação automática de serviços de exemplo pré-configurados.
 - **Controle de Período Trial:**
   - Notificação de tempo de teste e redirecionamento amigável para tela de expiração (`/trial-expired`) com link direto para contratação de planos.
 - **Dashboard Financeiro e Operacional:**
   - Faturamento em tempo real: Renda de Hoje, Renda da Semana e Renda do Mês.
-  - Total de agendamentos do dia, barbeiros ativos e clientes únicos na base.
+  - Total de agendamentos do dia, profissionais ativos e clientes únicos na base.
   - Painel de status rápido dos profissionais no dia (Disponível vs. Folga).
   - Tabela de **Comissões a Pagar no Mês** por profissional.
-- **Gestão de Barbeiros / Profissionais:**
+- **Gestão de Profissionais:**
   - Cadastro de profissionais com ou sem acesso ao sistema (com login independente ou apenas registro interno).
   - Upload de foto do perfil, especialidade, telefone e e-mail.
-  - Vínculo com categorias profissionais.
+  - Vínculo com tipos de profissionais e comissões.
   - Modal de **Desempenho Individual (30 dias)** com faturamento gerado, comissão devida e histórico de serviços.
 - **Tipos de Profissionais & Comissões (Exclusivo Plano Profissional):**
-  - Criação de categorias (ex: Barbeiro Júnior, Pleno, Master).
-  - Definição de percentuais de comissão diferenciados por tipo.
+  - Criação de categorias com percentuais de comissão diferenciados por tipo.
 - **Gestão do Catálogo de Serviços:**
   - Cadastro e edição de serviços: nome, preço, duração (minutos) e imagens.
 - **Gestão Centralizada de Agendamentos:**
   - Listagem completa ordenada por data e horário.
   - Filtro por status: Pendente, Confirmado, Concluído e Cancelado.
+  - Filtro por profissional.
   - Atualização com 1 clique de status do agendamento.
 - **Base de Clientes:**
-  - Cadastro automatizado de clientes conforme agendamentos realizados.
+  - Cadastro automatizado de clientes por estabelecimento conforme agendamentos realizados.
   - Edição de dados (nome e telefone).
   - Visualização de histórico completo de atendimentos por cliente.
-- **Personalização da Página Pública da Barbearia:**
+- **Personalização da Página Pública do Estabelecimento:**
   - Upload de Banner/Hero personalizado (1920x1080).
   - Customização de título principal, slogans, títulos das seções de serviços e redes sociais.
   - Links diretos para WhatsApp e Instagram.
@@ -102,12 +102,12 @@ Ambiente exclusivo da barbearia acessível via `/:slug/dashboard`:
 
 ---
 
-### ✂️ Painel do Barbeiro (Profissional)
-Acesso dedicado para o barbeiro visualizar sua rotina e rendimentos (`/barbeiro`):
+### ✂️ Painel do Profissional
+Acesso dedicado para o profissional visualizar sua rotina e rendimentos (`/profissional`):
 
 - **Dashboard Pessoal:**
   - Resumo de comissão acumulada no mês corrente.
-  - Total financeiro bruto gerado para a barbearia no mês.
+  - Total financeiro bruto gerado para o estabelecimento no mês.
   - Quantidade de serviços concluídos.
   - Modal individual detalhado dos últimos 30 dias.
 - **Meus Agendamentos:**
@@ -124,15 +124,15 @@ Acesso dedicado para o barbeiro visualizar sua rotina e rendimentos (`/barbeiro`
 ### 📱 Portal Público & Agendamento do Cliente
 Experiência mobile-first intuitiva para o cliente final:
 
-- **Página Institucional da Barbearia (`/:slug`):**
+- **Página Institucional do Estabelecimento (`/:slug`):**
   - Apresentação da marca, logo, endereço completo e banner personalizado.
   - Botão de contato direto via WhatsApp.
   - Exibição de catálogo de serviços com preços e durações.
 - **Fluxo de Agendamento Online (`/:slug/agendamento`):**
   1. **Escolha do Serviço:** visualização detalhada com valores e tempo de execução.
-  2. **Escolha do Barbeiro:** lista de profissionais disponíveis na barbearia.
+  2. **Escolha do Profissional:** lista de profissionais disponíveis no estabelecimento (com vocabulário adaptado ao nicho).
   3. **Seleção Inteligente de Data e Horário:**
-     - Bloqueio automático de dias que a barbearia não funciona.
+     - Bloqueio automático de dias que o estabelecimento não funciona.
      - Bloqueio de folgas do profissional selecionado.
      - Cálculo de slots disponíveis evitando sobreposição com outros agendamentos.
   4. **Identificação Rápida:** formulário simples com nome e telefone (sem necessidade de criação de senha).

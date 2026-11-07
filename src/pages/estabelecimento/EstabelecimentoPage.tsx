@@ -14,6 +14,7 @@ import ClientHistoryModal from './ClientHistoryModal';
 import GerenciarTiposProfissional from './GerenciarTiposProfissional';
 import Modal from '@/components/Modal';
 import ProfissionalDesempenhoModal from './ProfissionalDesempenhoModal';
+import { useVocabulario } from '@/hooks/useVocabulario';
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">
@@ -32,6 +33,7 @@ interface DashboardProps {
 
 const EstabelecimentoDashboard = ({ estabelecimentoData, estabelecimentoPlan }: DashboardProps) => {
     const { user } = useAuth();
+    const vocab = useVocabulario(estabelecimentoData?.nicho);
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -61,12 +63,12 @@ const EstabelecimentoDashboard = ({ estabelecimentoData, estabelecimentoPlan }: 
                 <StatCard title="Renda da Semana" value={formatCurrency(stats.rendaSemanal || 0)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
                 <StatCard title="Renda do Mês" value={formatCurrency(stats.rendaMensal || 0)} icon={<DollarSignIcon className="w-6 h-6 text-brand-gold" />} />
                 <StatCard title="Agendamentos Hoje" value={stats.totalAgendamentosHoje || 0} icon={<CalendarIcon className="w-6 h-6 text-brand-gold" />} />
-                <StatCard title="Total de Profissionais" value={totalProf} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
+                <StatCard title={`Total de ${vocab.profissional.plural}`} value={totalProf} icon={<ScissorsIcon className="w-6 h-6 text-brand-gold" />} />
                 <StatCard title="Total de Clientes" value={stats.totalClientes || 0} icon={<UsersIcon className="w-6 h-6 text-brand-gold" />} />
             </div>
 
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
-                <h3 className="text-lg font-semibold text-white mb-4">Status dos Barbeiros (Hoje)</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Status dos {vocab.profissional.plural} (Hoje)</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {profList.map((item: any) => (
                         <div key={item.id} className="bg-brand-gray p-4 rounded-lg flex items-center space-x-4">
@@ -94,14 +96,14 @@ const EstabelecimentoDashboard = ({ estabelecimentoData, estabelecimentoPlan }: 
                 {!hasProfessionalPlan ? (
                     <div className="bg-yellow-500/10 p-4 rounded-md border border-yellow-500/30 text-yellow-400">
                         <p className="font-semibold">Recurso Exclusivo do Plano Profissional.</p>
-                        <p className="text-sm mt-1">Faça upgrade para gerenciar comissões individuais e ter relatórios detalhados por barbeiro.</p>
+                        <p className="text-sm mt-1">Faça upgrade para gerenciar comissões individuais e ter relatórios detalhados por {vocab.profissional.singular.toLowerCase()}.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-gray-300">
                             <thead className="bg-brand-gray text-xs uppercase">
                                 <tr>
-                                    <th className="px-6 py-3">Profissional</th>
+                                    <th className="px-6 py-3">{vocab.profissional.singular}</th>
                                     <th className="px-6 py-3">Valor da Comissão</th>
                                 </tr>
                             </thead>
@@ -123,10 +125,12 @@ const EstabelecimentoDashboard = ({ estabelecimentoData, estabelecimentoPlan }: 
 
 interface ManageProfissionaisProps {
     estabelecimentoPlan: Plano | null;
+    nicho?: string;
 }
 
-const ManageProfissionais = ({ estabelecimentoPlan }: ManageProfissionaisProps) => {
+const ManageProfissionais = ({ estabelecimentoPlan, nicho }: ManageProfissionaisProps) => {
     const { user } = useAuth();
+    const vocab = useVocabulario(nicho);
     const [profissionais, setProfissionais] = useState<Profissional[]>([]);
     const [types, setTypes] = useState<TipoProfissional[]>([]);
     const [loading, setLoading] = useState(true);
@@ -170,7 +174,7 @@ const ManageProfissionais = ({ estabelecimentoPlan }: ManageProfissionaisProps) 
     const handleOpenModal = (prof: Profissional | null = null) => {
         const maxLimit = estabelecimentoPlan?.limite_profissionais;
         if (!prof && maxLimit && profissionais.filter(b => b.ativo).length >= maxLimit) {
-            toast.error('Você atingiu o limite de profissionais do seu plano. Faça um upgrade para adicionar mais.');
+            toast.error(`Você atingiu o limite de ${vocab.profissional.plural.toLowerCase()} do seu plano. Faça um upgrade para adicionar mais.`);
             return;
         }
         setProfissionalToEdit(prof);
@@ -198,23 +202,23 @@ const ManageProfissionais = ({ estabelecimentoPlan }: ManageProfissionaisProps) 
         }
 
         toast.promise(promise, {
-            loading: 'Salvando profissional...',
+            loading: `Salvando ${vocab.profissional.singular.toLowerCase()}...`,
             success: () => {
                 fetchProfissionaisAndPlan();
                 setIsModalOpen(false);
-                return `Profissional ${profissionalToEdit ? 'atualizado' : 'adicionado'} com sucesso!`;
+                return `${vocab.profissional.singular} ${profissionalToEdit ? 'atualizado' : 'adicionado'} com sucesso!`;
             },
             error: (err) => `Falha ao salvar: ${err.message}`,
         });
     };
 
     const handleDelete = (prof: Profissional) => {
-        if (window.confirm("Tem certeza que deseja remover este profissional? A conta de acesso dele também será excluída.")) {
+        if (window.confirm(`Tem certeza que deseja remover este ${vocab.profissional.singular.toLowerCase()}? A conta de acesso dele também será excluída.`)) {
             toast.promise(api.deleteProfissional(prof.id, prof.user_id), {
                 loading: 'Removendo...',
                 success: () => {
                     fetchProfissionaisAndPlan();
-                    return 'Profissional removido com sucesso!';
+                    return `${vocab.profissional.singular} removido com sucesso!`;
                 },
                 error: (err) => `Falha ao remover: ${err.message}`,
             });
@@ -226,16 +230,16 @@ const ManageProfissionais = ({ estabelecimentoPlan }: ManageProfissionaisProps) 
             <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold text-white">Gerenciar Barbeiros</h2>
+                        <h2 className="text-xl font-semibold text-white">Gerenciar {vocab.profissional.plural}</h2>
                         {!loading && (
                             hasProfessionalPlan ? (
-                                <p className="text-xs text-green-400 mt-1">Seu plano permite criar acessos individuais para barbeiros.</p>
+                                <p className="text-xs text-green-400 mt-1">Seu plano permite criar acessos individuais para {vocab.profissional.plural.toLowerCase()}.</p>
                             ) : (
-                                <p className="text-xs text-yellow-400 mt-1">Seu plano não inclui acesso individual para barbeiros.</p>
+                                <p className="text-xs text-yellow-400 mt-1">Seu plano não inclui acesso individual para {vocab.profissional.plural.toLowerCase()}.</p>
                             )
                         )}
                     </div>
-                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar Barbeiro</button>
+                    <button onClick={() => handleOpenModal()} className="bg-brand-gold text-brand-dark font-bold py-2 px-4 rounded-lg hover:opacity-90 w-full sm:w-auto">Adicionar {vocab.profissional.singular}</button>
                 </div>
                 {loading ? <p className="text-center text-gray-400">Carregando...</p> : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -268,7 +272,7 @@ const ManageProfissionais = ({ estabelecimentoPlan }: ManageProfissionaisProps) 
                     </div>
                 )}
             </div>
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={profissionalToEdit ? 'Editar Barbeiro' : 'Adicionar Barbeiro'}>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={profissionalToEdit ? `Editar ${vocab.profissional.singular}` : `Adicionar ${vocab.profissional.singular}`}>
                 <ProfissionalModal 
                     isOpen={isModalOpen} 
                     onClose={() => setIsModalOpen(false)} 
@@ -380,8 +384,13 @@ const ManageServices = () => {
     );
 };
 
-const ManageAppointments = () => {
+interface ManageAppointmentsProps {
+    nicho?: string;
+}
+
+const ManageAppointments = ({ nicho }: ManageAppointmentsProps = {}) => {
     const { user } = useAuth();
+    const vocab = useVocabulario(nicho);
     const { resetAppointmentCount } = useNotifications();
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
     const [profissionais, setProfissionais] = useState<Profissional[]>([]);
@@ -475,14 +484,14 @@ const ManageAppointments = () => {
                     </select>
                 </div>
                 <div className="w-full sm:w-auto">
-                    <label htmlFor="barber-filter" className="sr-only">Barbeiro</label>
+                    <label htmlFor="profissional-filter" className="sr-only">{vocab.profissional.singular}</label>
                     <select 
-                        id="barber-filter"
+                        id="profissional-filter"
                         value={filterProfissional}
                         onChange={e => setFilterProfissional(e.target.value)}
                         className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
                     >
-                        <option value="todos">Todos os Barbeiros</option>
+                        <option value="todos">Todos os {vocab.profissional.plural}</option>
                         {profissionais.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}
                     </select>
                 </div>
@@ -496,7 +505,7 @@ const ManageAppointments = () => {
                             <tr>
                                 <th className="px-6 py-3">Cliente</th>
                                 <th className="px-6 py-3 hidden sm:table-cell">Serviço</th>
-                                <th className="px-6 py-3 hidden md:table-cell">Barbeiro</th>
+                                <th className="px-6 py-3 hidden md:table-cell">{vocab.profissional.singular}</th>
                                 <th className="px-6 py-3">Data & Hora</th>
                                 <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3">Ações</th>
@@ -1003,6 +1012,8 @@ export const EstabelecimentoPage = () => {
         navigate(`/${slug}/${tab}`);
     };
     
+    const vocab = useVocabulario(estabelecimentoData?.nicho);
+
     if (loadingData) {
         return <p className="text-center py-10 text-gray-400">Carregando dados do estabelecimento...</p>;
     }
@@ -1011,9 +1022,9 @@ export const EstabelecimentoPage = () => {
         switch (activeTab) {
             case 'dashboard': return <EstabelecimentoDashboard estabelecimentoData={estabelecimentoData} estabelecimentoPlan={estabelecimentoPlan} />;
             case 'profissionais':
-            case 'barbers': return <ManageProfissionais estabelecimentoPlan={estabelecimentoPlan} />;
+            case 'barbers': return <ManageProfissionais estabelecimentoPlan={estabelecimentoPlan} nicho={estabelecimentoData?.nicho} />;
             case 'services': return <ManageServices />;
-            case 'appointments': return <ManageAppointments />;
+            case 'appointments': return <ManageAppointments nicho={estabelecimentoData?.nicho} />;
             case 'clients': return <ManageClients />;
             case 'settings': return <SettingsWrapper estabelecimentoData={estabelecimentoData} estabelecimentoPlan={estabelecimentoPlan} />;
             case 'profile': return <ProfilePage />;
@@ -1026,7 +1037,7 @@ export const EstabelecimentoPage = () => {
             <div className="hidden sm:flex flex-col sm:flex-row border-b border-brand-gray sm:flex-wrap gap-2 overflow-x-auto pb-2">
                 <button onClick={() => handleTabChange('dashboard')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'dashboard' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Dashboard</button>
                 <button onClick={() => handleTabChange('appointments')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'appointments' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Agendamentos</button>
-                <button onClick={() => handleTabChange('profissionais')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'profissionais' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Profissionais</button>
+                <button onClick={() => handleTabChange('profissionais')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'profissionais' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>{vocab.profissional.plural}</button>
                 <button onClick={() => handleTabChange('services')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'services' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Serviços</button>
                 <button onClick={() => handleTabChange('clients')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'clients' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Clientes</button>
                 <button onClick={() => handleTabChange('settings')} className={`flex-shrink-0 px-4 py-2 text-sm font-medium ${activeTab === 'settings' ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-gray-400'}`}>Configurações</button>

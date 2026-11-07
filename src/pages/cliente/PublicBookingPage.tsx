@@ -5,6 +5,7 @@ import { api } from '@/services/api';
 import { Estabelecimento, Profissional, Servico, AppointmentStatus, ProfissionalDisponibilidade } from '@/types';
 import Calendar from '@/components/booking/Calendar';
 import TimeSlots from '@/components/booking/TimeSlots';
+import { useVocabulario } from '@/hooks/useVocabulario';
 
 const PublicBookingPage = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -12,6 +13,7 @@ const PublicBookingPage = () => {
 
     // Data state
     const [estabelecimento, setEstabelecimento] = useState<Estabelecimento | null>(null);
+    const vocab = useVocabulario(estabelecimento?.nicho);
     const [profissionais, setProfissionais] = useState<Profissional[]>([]);
     const [servicos, setServicos] = useState<Servico[]>([]);
     // any[] para suportar tanto profissional_id quanto o alias legado barbeiro_id
@@ -159,7 +161,7 @@ const PublicBookingPage = () => {
                     return;
                 }
                 if (!selectedProfissional) {
-                    toast.error("Por favor, escolha um profissional.");
+                    toast.error(`Por favor, escolha ${vocab.profissional.artigo === 'a' ? 'uma' : 'um'} ${vocab.profissional.singular.toLowerCase()}.`);
                     return;
                 }
                 if (!selectedDate) {
@@ -250,7 +252,7 @@ const PublicBookingPage = () => {
                             </div>
                         </section>
                         <section>
-                            <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha o Profissional</h3>
+                            <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha {vocab.profissional.artigo === 'a' ? 'a' : 'o'} {vocab.profissional.singular}</h3>
                             <div className="flex space-x-4 overflow-x-auto pb-2">
                                 {profissionais.map(profissional => {
                                     const availabilityRecord = selectedDate ? getProfissionalAvailabilityForDate(profissional.id, selectedDate) : null;
@@ -307,7 +309,7 @@ const PublicBookingPage = () => {
                         <h3 className="text-xl font-bold text-brand-gold mb-4 text-center">Confirme seu Agendamento</h3>
                         <p><strong className="text-gray-400">Nome:</strong> {clienteNome}</p>
                         <p><strong className="text-gray-400">Serviço:</strong> {selectedServico?.nome}</p>
-                        <p><strong className="text-gray-400">Profissional:</strong> {selectedProfissional?.nome}</p>
+                        <p><strong className="text-gray-400">{vocab.profissional.singular}:</strong> {selectedProfissional?.nome}</p>
                         <p><strong className="text-gray-400">Data:</strong> {selectedDate?.toLocaleDateString('pt-BR')} às {selectedTime}</p>
                         <p><strong className="text-gray-400">Local:</strong> {estabelecimento.endereco}</p>
                     </div>
@@ -319,7 +321,7 @@ const PublicBookingPage = () => {
     const getStepTitle = () => {
         switch (step) {
             case 1: return "1. Seus Dados";
-            case 2: return "2. Serviço e Profissional";
+            case 2: return `2. Serviço e ${vocab.profissional.singular}`;
             case 3: return "3. Data e Horário";
             case 4: return "4. Confirmação";
             default: return "Agendamento";

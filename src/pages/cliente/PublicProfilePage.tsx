@@ -7,13 +7,15 @@ import { ScissorsIcon, CalendarIcon, UsersIcon } from '@/components/icons';
 import ClientAccountModal from '@/pages/cliente/ClientAccountModal';
 import ClientAppointmentModal from '@/pages/cliente/ClientAppointmentModal';
 import ClientHistoryModal from '@/pages/cliente/ClientHistoryModal';
+import { useVocabulario } from '@/hooks/useVocabulario';
 
 const PublicProfilePage = () => {
     const { slug } = useParams<{ slug: string }>();
     const [estabelecimento, setEstabelecimento] = useState<Estabelecimento | null>(null);
+    const vocab = useVocabulario(estabelecimento?.nicho);
     const [servicos, setServicos] = useState<Servico[]>([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Modal States
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
@@ -74,7 +76,7 @@ const PublicProfilePage = () => {
 
     const handleAppointmentUpdate = () => {
         resetAppointmentState();
-        setIsAccountModalOpen(true); 
+        setIsAccountModalOpen(true);
     };
 
     if (loading) {
@@ -101,12 +103,12 @@ const PublicProfilePage = () => {
                 </header>
 
                 {/* Hero Section */}
-                <section 
-                    className="relative min-h-screen flex items-center justify-center text-center bg-cover bg-center" 
-                    style={{ 
+                <section
+                    className="relative min-h-screen flex items-center justify-center text-center bg-cover bg-center"
+                    style={{
                         backgroundImage: `url(${estabelecimento.hero_image_url || defaultHeroImage})`,
-                        backgroundSize: 'cover', 
-                        backgroundPosition: 'center top', 
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center top',
                     }}
                 >
                     <div className="absolute inset-0 bg-black/60"></div>
@@ -123,7 +125,7 @@ const PublicProfilePage = () => {
                         <p className="mt-4 max-w-md">{estabelecimento.hero_subtitle}</p>
                         <Link to={`/${slug}/agendamento`} className="mt-6 bg-brand-gold text-brand-dark font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-colors flex items-center gap-2">
                             <CalendarIcon className="w-5 h-5" />
-                            AGENDAR HORÁRIO
+                            {vocab.tituloAgendamento.toUpperCase()}
                         </Link>
                     </div>
                 </section>
@@ -145,7 +147,7 @@ const PublicProfilePage = () => {
                             ))}
                         </div>
                         <Link to={`/${slug}/agendamento`} className="mt-12 inline-block bg-brand-gold text-brand-dark font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-colors">
-                            Agende seu horário →
+                            {vocab.tituloAgendamento} →
                         </Link>
                     </div>
                 </section>
@@ -177,11 +179,11 @@ const PublicProfilePage = () => {
                     </div>
                 </footer>
             </div>
-            
+
             {/* Modals */}
-            <ClientAccountModal 
-                isOpen={isAccountModalOpen} 
-                onClose={() => setIsAccountModalOpen(false)} 
+            <ClientAccountModal
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
                 onAppointmentFound={handleAppointmentFound}
                 onHistoryFound={handleHistoryFound}
             />

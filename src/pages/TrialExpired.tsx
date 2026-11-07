@@ -25,7 +25,7 @@ const TrialExpiredPage = () => {
           {trialEndedAt
             ? `Seu acesso gratuito terminou em ${trialEndedAt}.`
             : 'Seu acesso gratuito terminou.'}{' '}
-          Para continuar usando o BarberPro, assine um plano completo.
+          Para continuar usando o Marcadô, assine um plano completo.
         </p>
         <div className="space-y-3">
           <Link
@@ -43,8 +43,8 @@ const TrialExpiredPage = () => {
         </div>
         <p className="text-sm text-gray-400">
           Precisa de ajuda? Fale conosco em{' '}
-          <a href="mailto:contato@barberpro.app" className="text-brand-gold underline">
-            contato@barberpro.app
+          <a href="mailto:contato@marcado.app" className="text-brand-gold underline">
+            contato@marcado.app
           </a>
         </p>
       </div>

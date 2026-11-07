@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
-import { Estabelecimento, Profissional, Plano } from '@/types';
+import { Estabelecimento, Profissional, Plano, Nicho } from '@/types';
 import toast from 'react-hot-toast';
 import { KIWIFY_PLAN_LINKS } from '@/utils/constants';
 
@@ -50,6 +50,7 @@ const ProfilePage = () => {
       dono_email: profile.dono_email,
       telefone: profile.telefone,
       documento: profile.documento,
+      nicho: profile.nicho,
     };
 
     setIsSaving(true);
@@ -152,6 +153,16 @@ const ProfilePage = () => {
           <div>
             <label htmlFor="documento" className="block text-sm font-medium text-gray-300 mb-2">CPF/Documento</label>
             <input type="text" id="documento" name="documento" value={profile.documento || ''} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold"/>
+          </div>
+          <div>
+            <label htmlFor="nicho" className="block text-sm font-medium text-gray-300 mb-2">Nicho do Negócio</label>
+            <select id="nicho" name="nicho" value={profile.nicho || 'outro'} onChange={handleInputChange} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white">
+              <option value="barbearia">Barbearia</option>
+              <option value="salao">Salão de Beleza</option>
+              <option value="estetica">Estética</option>
+              <option value="manicure">Manicure</option>
+              <option value="outro">Outro</option>
+            </select>
           </div>
         </div>
         <div className="mt-6 pt-4 border-t border-brand-gray">
