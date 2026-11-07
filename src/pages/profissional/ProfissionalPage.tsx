@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications'; // Importado
 import { DollarSignIcon, XCircleIcon, ClockIcon, ScissorsIcon } from '@/components/icons';
 import Calendar from '@/components/booking/Calendar';
-import BarberPerformanceModal from '@/pages/barbearia/BarberPerformanceModal'; // Importando o modal
+import BarberPerformanceModal from '@/pages/estabelecimento/ProfissionalDesempenhoModal'; // Importando o modal
 
 // Componente para o Dashboard de Estatísticas
 const BarberStatsDashboard = () => {

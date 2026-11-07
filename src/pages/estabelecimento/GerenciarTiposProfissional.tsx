@@ -4,7 +4,7 @@ import { api } from '@/services/api';
 import { ProfessionalType } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import Modal from '@/components/Modal';
-import ProfessionalTypeModal from './ProfessionalTypeModal';
+import ProfessionalTypeModal from './TipoProfissionalModal';
 
 const ManageProfessionalTypes = () => {
     const { user } = useAuth();

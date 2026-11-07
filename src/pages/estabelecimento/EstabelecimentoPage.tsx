@@ -6,14 +6,14 @@ import { Barbeiro, Servico, Agendamento, AppointmentStatus, Barbearia, Plano, Cl
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications'; // Importado
 import { CalendarIcon, ScissorsIcon, UsersIcon, DollarSignIcon, SettingsIcon } from '@/components/icons';
-import BarberModal from '@/pages/barbearia/BarberModal';
-import ServiceModal from '@/pages/barbearia/ServiceModal';
+import BarberModal from './ProfissionalModal';
+import ServiceModal from './ServiceModal';
 import ProfilePage from './ProfilePage';
 import ClientEditModal from './ClientEditModal';
 import ClientHistoryModal from './ClientHistoryModal';
-import ManageProfessionalTypes from './ManageProfessionalTypes';
+import ManageProfessionalTypes from './GerenciarTiposProfissional';
 import Modal from '@/components/Modal';
-import BarberPerformanceModal from './BarberPerformanceModal'; // Importando o novo modal
+import BarberPerformanceModal from './ProfissionalDesempenhoModal'; // Importando o novo modal
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
   <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray flex items-center shadow-lg">

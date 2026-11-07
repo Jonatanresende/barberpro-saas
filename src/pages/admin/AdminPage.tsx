@@ -5,7 +5,7 @@ import { api } from '@/services/api';
 import { Barbearia, Plano, User } from '@/types';
 import { DollarSignIcon, UsersIcon, StoreIcon, ClipboardListIcon } from '@/components/icons';
 import Modal from '@/components/Modal';
-import BarbershopModal from '@/pages/admin/BarbershopModal';
+import BarbershopModal from '@/pages/admin/EstabelecimentoModal';
 import PlanModal from '@/pages/admin/PlanModal';
 import SettingsPage from '@/pages/admin/SettingsPage';
 import ManageExpenses from '@/pages/admin/ManageExpenses';

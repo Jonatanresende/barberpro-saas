@@ -6,14 +6,14 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { UserRole } from '@/types';
 import AdminPage from '@/pages/admin/AdminPage';
-import { BarbeariaPage } from '@/pages/barbearia/BarbeariaPage';
-import { BarbeiroPage } from '@/pages/barbeiro/BarbeiroPage';
+import { BarbeariaPage } from '@/pages/estabelecimento/EstabelecimentoPage';
+import { BarbeiroPage } from '@/pages/profissional/ProfissionalPage';
 import PublicBookingPage from '@/pages/cliente/PublicBookingPage';
 import BookingSuccessPage from './pages/cliente/BookingSuccessPage';
 import PublicProfilePage from '@/pages/cliente/PublicProfilePage';
 import ToastProvider from '@/components/ToastProvider';
 import TrialExpiredPage from '@/pages/TrialExpired';
-import InitialSetupPage from '@/pages/barbearia/InitialSetupPage';
+import InitialSetupPage from '@/pages/estabelecimento/InitialSetupPage';
 
 const AppRoutes = () => {
   return (
