@@ -1,7 +1,7 @@
 export enum UserRole {
   ADMIN = 'admin',
-  BARBEARIA = 'barbearia',
-  BARBEIRO = 'barbeiro',
+  ESTABELECIMENTO = 'estabelecimento',
+  PROFISSIONAL = 'profissional',
   CLIENTE = 'cliente',
 }
 
@@ -12,15 +12,17 @@ export enum AppointmentStatus {
   CANCELADO = 'cancelado',
 }
 
+export type Nicho = 'barbearia' | 'salao' | 'estetica' | 'manicure' | 'outro';
+
 export interface User {
   id: string;
   email: string;
   role: UserRole;
   full_name?: string;
-  barbeariaId?: string;
-  barbeariaNome?: string;
-  barbeiroId?: string;
-  link_personalizado?: string; // For barbershop owners
+  estabelecimentoId?: string;
+  estabelecimentoNome?: string;
+  profissionalId?: string;
+  link_personalizado?: string; // Para donos de estabelecimentos
   trialStartedAt?: string;
   trialExpiresAt?: string;
   isTrialActive?: boolean;
@@ -33,16 +35,17 @@ export interface Plano {
   features: string[];
   ativo: boolean;
   popular: boolean;
-  limite_barbeiros?: number;
+  limite_profissionais?: number;
 }
 
-export interface Barbearia {
+export interface Estabelecimento {
   id: string;
   nome: string;
   dono_id: string;
   dono_nome?: string;
   dono_email: string;
-  plano: string; // Changed from enum to string to support dynamic plans
+  nicho: Nicho;
+  plano: string;
   link_personalizado: string;
   endereco: string;
   documento?: string;
@@ -66,41 +69,43 @@ export interface Barbearia {
   trial_expires_at?: string;
 }
 
-export interface ProfessionalType {
+export interface TipoProfissional {
   id: string;
-  barbershop_id: string;
-  name: string;
-  commission_percent: number;
+  estabelecimento_id: string;
+  nome: string;
+  percentual_comissao: number;
   created_at: string;
 }
 
-export interface Barbeiro {
+export interface Profissional {
   id: string;
   user_id?: string;
-  barbearia_id: string;
+  estabelecimento_id: string;
   nome: string;
   email?: string;
   telefone?: string;
   especialidade: string;
   foto_url: string;
   ativo: boolean;
-  professional_type_id?: string; // Novo campo
-  professional_types?: ProfessionalType; // Para join
+  tipo_profissional_id?: string;
+  tipos_profissional?: TipoProfissional; // Para join
 }
 
 export interface Servico {
   id: string;
-  barbearia_id: string;
+  estabelecimento_id: string;
   nome: string;
   preco: number;
-  duracao: number; // in minutes
+  duracao: number; // em minutos
   imagem_url?: string;
 }
 
 export interface Cliente {
   id: string;
+  estabelecimento_id?: string;
   nome: string;
   telefone: string;
+  criado_em?: string;
 }
 
 export interface Agendamento {
@@ -109,27 +114,29 @@ export interface Agendamento {
   cliente_nome?: string;
   cliente_email?: string;
   cliente_telefone?: string;
-  barbeiro_id: string;
-  barbeiro_nome?: string;
+  profissional_id: string;
+  profissional_nome?: string;
   servico_id: string;
   servico_nome?: string;
-  barbearia_id: string;
+  estabelecimento_id: string;
   data: string;
   hora: string;
   status: AppointmentStatus;
-  servicos?: { // Adicionado para buscar o preço
+  preco_cobrado?: number;
+  duracao_minutos?: number;
+  servicos?: { // Preço do serviço
     preco: number;
   };
-  barbeiros?: { // Adicionado para buscar a comissão do barbeiro
-    professional_types: {
-      commission_percent: number;
+  profissionais?: { // Comissão do profissional
+    tipos_profissional: {
+      percentual_comissao: number;
     } | null;
-  }
+  };
 }
 
-export interface BarbeiroDisponibilidade {
+export interface ProfissionalDisponibilidade {
   id?: string;
-  barbeiro_id: string;
+  profissional_id: string;
   data: string; // YYYY-MM-DD
   hora_inicio: string | null; // HH:MM
   hora_fim: string | null; // HH:MM
@@ -144,3 +151,9 @@ export interface GastoSaas {
   user_id: string;
   created_at: string;
 }
+
+// Aliases transitórios para facilitar as fases 4 e 5
+export type Barbearia = Estabelecimento;
+export type Barbeiro = Profissional;
+export type BarbeiroDisponibilidade = ProfissionalDisponibilidade;
+export type ProfessionalType = TipoProfissional;
