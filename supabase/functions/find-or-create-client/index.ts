@@ -12,7 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const { nome, telefone } = await req.json();
+    const body = await req.json();
+    const { nome, telefone } = body;
+    const estabelecimento_id = body.estabelecimento_id || body.barbearia_id;
+
     if (!nome || !telefone) {
       throw new Error('Nome e telefone são obrigatórios.');
     }
@@ -22,14 +25,13 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Tenta encontrar um cliente com o mesmo telefone
-    let { data: existingClient, error: findError } = await supabaseAdmin
-      .from('clientes')
-      .select('*')
-      .eq('telefone', telefone)
-      .single();
+    let query = supabaseAdmin.from('clientes').select('*').eq('telefone', telefone);
+    if (estabelecimento_id) {
+      query = query.eq('estabelecimento_id', estabelecimento_id);
+    }
+    const { data: existingClient, error: findError } = await query.maybeSingle();
 
-    if (findError && findError.code !== 'PGRST116') { // PGRST116 = no rows found
+    if (findError) {
       throw findError;
     }
 
@@ -40,10 +42,14 @@ serve(async (req) => {
       });
     }
 
-    // Se não encontrar, cria um novo cliente
+    const insertPayload: any = { nome, telefone };
+    if (estabelecimento_id) {
+      insertPayload.estabelecimento_id = estabelecimento_id;
+    }
+
     const { data: newClient, error: createError } = await supabaseAdmin
       .from('clientes')
-      .insert({ nome, telefone })
+      .insert(insertPayload)
       .select()
       .single();
 
@@ -53,10 +59,10 @@ serve(async (req) => {
 
     return new Response(JSON.stringify(newClient), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 201, // 201 Created
+      status: 201,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

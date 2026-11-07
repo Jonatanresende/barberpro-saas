@@ -12,7 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const { telefone } = await req.json();
+    const body = await req.json();
+    const { telefone } = body;
+    const estId = body.estabelecimento_id || body.barbearia_id;
+
     if (!telefone) throw new Error('Telefone é obrigatório.');
 
     const supabaseAdmin = createClient(
@@ -20,17 +23,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Encontra o cliente pelo telefone
-    const { data: client, error: clientError } = await supabaseAdmin
-      .from('clientes')
-      .select('id, nome')
-      .eq('telefone', telefone)
-      .single();
+    // 1. Encontra o cliente pelo telefone (e estabelecimento se fornecido)
+    let clientQuery = supabaseAdmin.from('clientes').select('id, nome').eq('telefone', telefone);
+    if (estId) {
+      clientQuery = clientQuery.eq('estabelecimento_id', estId);
+    }
+    const { data: client, error: clientError } = await clientQuery.maybeSingle();
 
-    if (clientError && clientError.code !== 'PGRST116') throw clientError;
+    if (clientError) throw clientError;
     
     if (!client) {
-      // Cliente não existe, retorna null
       return new Response(JSON.stringify(null), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -38,21 +40,27 @@ serve(async (req) => {
     }
 
     // 2. Busca todos os agendamentos do cliente
-    const { data: appointments, error: appointmentsError } = await supabaseAdmin
+    let appQuery = supabaseAdmin
       .from('agendamentos')
       .select('*')
-      .eq('cliente_id', client.id)
+      .eq('cliente_id', client.id);
+
+    if (estId) {
+      appQuery = appQuery.eq('estabelecimento_id', estId);
+    }
+
+    const { data: appointments, error: appointmentsError } = await appQuery
       .order('data', { ascending: false })
       .order('hora', { ascending: false });
 
     if (appointmentsError) throw appointmentsError;
 
-    return new Response(JSON.stringify({ clientName: client.nome, appointments }), {
+    return new Response(JSON.stringify({ clientName: client.nome, appointments: appointments || [] }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao buscar histórico do cliente:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

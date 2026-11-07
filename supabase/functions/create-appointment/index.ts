@@ -13,10 +13,18 @@ serve(async (req) => {
 
   try {
     const { agendamentoData } = await req.json();
-    const { cliente_nome, cliente_telefone } = agendamentoData;
+    const { cliente_nome, cliente_telefone } = agendamentoData || {};
 
     if (!cliente_nome || !cliente_telefone) {
       throw new Error('Nome e telefone do cliente são obrigatórios.');
+    }
+
+    const estId = agendamentoData.estabelecimento_id || agendamentoData.barbearia_id;
+    const profId = agendamentoData.profissional_id || agendamentoData.barbeiro_id;
+    const servicoId = agendamentoData.servico_id;
+
+    if (!estId) {
+      throw new Error('O ID do estabelecimento é obrigatório.');
     }
 
     const supabaseAdmin = createClient(
@@ -24,19 +32,55 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // --- ETAPA 1: Encontrar ou Criar o Cliente ---
+    // Validação: profissional e serviço devem pertencer ao mesmo estabelecimento
+    if (profId) {
+      const { data: profCheck } = await supabaseAdmin
+        .from('profissionais')
+        .select('id, estabelecimento_id')
+        .eq('id', profId)
+        .maybeSingle();
+
+      if (profCheck && profCheck.estabelecimento_id !== estId) {
+        return new Response(JSON.stringify({ error: 'O profissional selecionado não pertence a este estabelecimento.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    if (servicoId) {
+      const { data: servCheck } = await supabaseAdmin
+        .from('servicos')
+        .select('id, estabelecimento_id, preco, duracao')
+        .eq('id', servicoId)
+        .maybeSingle();
+
+      if (servCheck && servCheck.estabelecimento_id !== estId) {
+        return new Response(JSON.stringify({ error: 'O serviço selecionado não pertence a este estabelecimento.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // --- ETAPA 1: Encontrar ou Criar o Cliente por estabelecimento ---
     let { data: client, error: findError } = await supabaseAdmin
       .from('clientes')
       .select('id')
+      .eq('estabelecimento_id', estId)
       .eq('telefone', cliente_telefone)
-      .single();
+      .maybeSingle();
 
-    if (findError && findError.code !== 'PGRST116') throw findError;
+    if (findError) throw findError;
 
     if (!client) {
       const { data: newClient, error: createError } = await supabaseAdmin
         .from('clientes')
-        .insert({ nome: cliente_nome, telefone: cliente_telefone })
+        .insert({
+          estabelecimento_id: estId,
+          nome: cliente_nome,
+          telefone: cliente_telefone,
+        })
         .select('id')
         .single();
       if (createError) throw createError;
@@ -44,23 +88,36 @@ serve(async (req) => {
     }
 
     // --- ETAPA 2: Criar o Agendamento ---
+    const profNome = agendamentoData.profissional_nome || agendamentoData.barbeiro_nome;
+
     const finalAgendamentoData = {
       ...agendamentoData,
       cliente_id: client.id,
+      estabelecimento_id: estId,
+      barbearia_id: estId,
+      profissional_id: profId,
+      barbeiro_id: profId,
+      profissional_nome: profNome,
+      barbeiro_nome: profNome,
     };
 
-    // Selecionamos explicitamente todos os campos necessários para o frontend
     const { data: newAppointment, error: appointmentError } = await supabaseAdmin
       .from('agendamentos')
       .insert(finalAgendamentoData)
-      .select('id, barbeiro_nome, servico_nome, data, hora, barbearia_id')
+      .select('*')
       .single();
 
     if (appointmentError) {
+      // 23P01 = exclusion_violation (conflito de horário)
+      if (appointmentError.code === '23P01') {
+        return new Response(JSON.stringify({ error: 'Este horário acabou de ser ocupado. Por favor, escolha outro horário.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 409,
+        });
+      }
       throw appointmentError;
     }
 
-    // O frontend espera o objeto completo, incluindo data e hora
     if (!newAppointment.data || !newAppointment.hora) {
         throw new Error("Falha interna: Agendamento criado, mas data/hora ausentes no retorno.");
     }
@@ -70,7 +127,7 @@ serve(async (req) => {
       status: 201,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao criar agendamento:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -40,7 +40,9 @@ serve(async (req) => {
     }
 
     // 2. LOGIC
-    const { barbeariaData, password, photoUrl } = await req.json()
+    const body = await req.json()
+    const estabelecimentoData = body.estabelecimentoData || body.barbeariaData
+    const { password, photoUrl } = body
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -48,13 +50,13 @@ serve(async (req) => {
     )
 
     const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: barbeariaData.dono_email,
+      email: estabelecimentoData.dono_email,
       password: password,
       app_metadata: {
-        role: 'barbearia',
+        role: 'estabelecimento',
       },
       user_metadata: {
-        full_name: barbeariaData.dono_nome,
+        full_name: estabelecimentoData.dono_nome,
       },
     })
 
@@ -86,12 +88,12 @@ serve(async (req) => {
     }
     
     const user = updateData.user;
-    const slug = generateSlug(barbeariaData.nome);
+    const slug = generateSlug(estabelecimentoData.nome);
 
-    const { data: barbearia, error: dbError } = await supabaseAdmin
-      .from('barbearias')
+    const { data: estabelecimento, error: dbError } = await supabaseAdmin
+      .from('estabelecimentos')
       .insert([{ 
-        ...barbeariaData, 
+        ...estabelecimentoData, 
         dono_id: user.id,
         foto_url: photoUrl,
         link_personalizado: slug,
@@ -102,17 +104,17 @@ serve(async (req) => {
     if (dbError) {
       console.error('Erro de banco de dados:', dbError)
       await supabaseAdmin.auth.admin.deleteUser(user.id)
-      return new Response(JSON.stringify({ error: `Falha ao criar barbearia no banco de dados: ${dbError.message}` }), {
+      return new Response(JSON.stringify({ error: `Falha ao criar estabelecimento no banco de dados: ${dbError.message}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       })
     }
 
-    return new Response(JSON.stringify(barbearia), {
+    return new Response(JSON.stringify(estabelecimento), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro inesperado:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

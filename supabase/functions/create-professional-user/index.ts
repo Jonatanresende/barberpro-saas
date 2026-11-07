@@ -23,15 +23,20 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (user.app_metadata?.role !== 'barbearia') {
+    const userRole = user.app_metadata?.role;
+    if (userRole !== 'estabelecimento' && userRole !== 'barbearia') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
     // 2. LOGIC
-    const { barberData, password, photoUrl } = await req.json()
+    const body = await req.json()
+    const profissionalData = body.profissionalData || body.barberData
+    const { password, photoUrl } = body
 
-    if (!barberData.email || !password || !barberData.barbearia_id) {
-        throw new Error('Dados essenciais (e-mail, senha, ID da barbearia) estão faltando.');
+    const estId = profissionalData?.estabelecimento_id || profissionalData?.barbearia_id;
+
+    if (!profissionalData?.email || !password || !estId) {
+        throw new Error('Dados essenciais (e-mail, senha, ID do estabelecimento) estão faltando.');
     }
 
     const supabaseAdmin = createClient(
@@ -40,60 +45,62 @@ serve(async (req) => {
     )
 
     // 3. OWNERSHIP CHECK
-    const { data: ownerBarbearia, error: ownerError } = await supabaseAdmin
-      .from('barbearias')
+    const { data: ownerEstabelecimento, error: ownerError } = await supabaseAdmin
+      .from('estabelecimentos')
       .select('id, plano')
       .eq('dono_id', user.id)
       .single();
 
-    if (ownerError || !ownerBarbearia) {
-        return new Response(JSON.stringify({ error: 'Barbearia do proprietário não encontrada.' }), { status: 403, headers: corsHeaders });
+    if (ownerError || !ownerEstabelecimento) {
+        return new Response(JSON.stringify({ error: 'Estabelecimento do proprietário não encontrado.' }), { status: 403, headers: corsHeaders });
     }
-    if (ownerBarbearia.id !== barberData.barbearia_id) {
-        return new Response(JSON.stringify({ error: 'Você não tem permissão para adicionar barbeiros a esta barbearia.' }), { status: 403, headers: corsHeaders });
+    if (ownerEstabelecimento.id !== estId) {
+        return new Response(JSON.stringify({ error: 'Você não tem permissão para adicionar profissionais a este estabelecimento.' }), { status: 403, headers: corsHeaders });
     }
 
-    // --- VALIDAÇÃO DO LIMITE DE BARBEIROS ---
+    // --- VALIDAÇÃO DO LIMITE DE PROFISSIONAIS ---
     const { data: plano, error: planoError } = await supabaseAdmin
       .from('planos')
-      .select('limite_barbeiros')
-      .eq('nome', ownerBarbearia.plano)
+      .select('limite_profissionais')
+      .eq('nome', ownerEstabelecimento.plano)
       .single();
 
-    if (planoError) throw new Error(`Plano "${ownerBarbearia.plano}" não encontrado: ${planoError.message}`);
+    if (planoError) throw new Error(`Plano "${ownerEstabelecimento.plano}" não encontrado: ${planoError.message}`);
 
-    if (plano.limite_barbeiros) {
+    const limit = plano?.limite_profissionais;
+
+    if (limit !== null && limit !== undefined) {
       const { count, error: countError } = await supabaseAdmin
-        .from('barbeiros')
+        .from('profissionais')
         .select('*', { count: 'exact', head: true })
-        .eq('barbearia_id', barberData.barbearia_id)
+        .eq('estabelecimento_id', estId)
         .eq('ativo', true);
 
-      if (countError) throw new Error(`Erro ao contar barbeiros: ${countError.message}`);
+      if (countError) throw new Error(`Erro ao contar profissionais: ${countError.message}`);
 
-      if (count !== null && count >= plano.limite_barbeiros) {
-        return new Response(JSON.stringify({ error: 'Você atingiu o limite de barbeiros do seu plano. Faça um upgrade para adicionar mais.' }), {
+      if (count !== null && count >= limit) {
+        return new Response(JSON.stringify({ error: 'Você atingiu o limite de profissionais do seu plano. Faça um upgrade para adicionar mais.' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403, // Forbidden
+          status: 403,
         });
       }
     }
     // --- FIM DA VALIDAÇÃO ---
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: barberData.email,
+      email: profissionalData.email,
       password: password,
       email_confirm: true,
       app_metadata: {
-        role: 'barbeiro',
+        role: 'profissional',
       },
       user_metadata: {
-        full_name: barberData.nome,
+        full_name: profissionalData.nome,
       },
     })
 
     if (authError) {
-      console.error('Erro na criação do usuário do barbeiro:', authError.message)
+      console.error('Erro na criação do usuário do profissional:', authError.message)
       const errorMessage = authError.message.includes('unique constraint')
         ? 'Este e-mail já está em uso.'
         : `Falha ao criar usuário: ${authError.message}`;
@@ -102,23 +109,28 @@ serve(async (req) => {
         status: 400,
       })
     }
-    if (!authData.user) throw new Error('Criação do usuário do barbeiro falhou silenciosamente.');
+    if (!authData.user) throw new Error('Criação do usuário do profissional falhou silenciosamente.');
     const userId = authData.user.id;
 
+    // Normalização dos campos para o insert no banco
+    const dbPayload = {
+      ...profissionalData,
+      estabelecimento_id: estId,
+      user_id: userId,
+      foto_url: photoUrl,
+    };
+    delete dbPayload.barbearia_id;
+
     const { data: dbData, error: dbError } = await supabaseAdmin
-      .from('barbeiros')
-      .insert([{ 
-        ...barberData, 
-        user_id: userId,
-        foto_url: photoUrl,
-      }])
+      .from('profissionais')
+      .insert([dbPayload])
       .select()
       .single();
       
     if (dbError) {
-      console.error('Erro de banco de dados ao criar barbeiro:', dbError)
+      console.error('Erro de banco de dados ao criar profissional:', dbError)
       await supabaseAdmin.auth.admin.deleteUser(userId)
-      return new Response(JSON.stringify({ error: `Falha ao criar barbeiro no banco de dados: ${dbError.message}` }), {
+      return new Response(JSON.stringify({ error: `Falha ao criar profissional no banco de dados: ${dbError.message}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       })
@@ -128,7 +140,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro inesperado:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

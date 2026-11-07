@@ -59,20 +59,20 @@ serve(async (req) => {
     }
 
     const userId = existingUser.id;
-    let newBarbershopStatus: 'ativa' | 'inativa';
+    let newStatus: 'ativa' | 'inativa';
     let logMessage: string;
 
     switch (status) {
         case 'canceled':
         case 'delayed':
         case 'refunded':
-            newBarbershopStatus = 'inativa';
-            logMessage = `Plano do usuário ${email} foi ${status}. Status da barbearia definido para INATIVA.`;
+            newStatus = 'inativa';
+            logMessage = `Plano do usuário ${email} foi ${status}. Status do estabelecimento definido para INATIVA.`;
             break;
         case 'paid':
         case 'approved':
-            newBarbershopStatus = 'ativa';
-            logMessage = `Pagamento do usuário ${email} foi ${status}. Status da barbearia definido para ATIVA.`;
+            newStatus = 'ativa';
+            logMessage = `Pagamento do usuário ${email} foi ${status}. Status do estabelecimento definido para ATIVA.`;
             break;
         default:
             logMessage = `Status Kiwify desconhecido: ${status}. Nenhuma ação tomada.`;
@@ -82,21 +82,21 @@ serve(async (req) => {
             });
     }
 
-    // 2. Atualizar o status da barbearia
-    const { data: updatedBarbearia, error: updateError } = await supabaseAdmin
-        .from('barbearias')
-        .update({ status: newBarbershopStatus })
+    // 2. Atualizar o status do estabelecimento
+    const { data: updatedEstabelecimento, error: updateError } = await supabaseAdmin
+        .from('estabelecimentos')
+        .update({ status: newStatus })
         .eq('dono_id', userId)
         .select()
         .single();
 
     if (updateError) {
-        throw new Error(`Falha ao atualizar status da barbearia: ${updateError.message}`);
+        throw new Error(`Falha ao atualizar status do estabelecimento: ${updateError.message}`);
     }
 
     console.log(`SUCCESS: ${logMessage}`);
 
-    return new Response(JSON.stringify({ success: true, barbearia: updatedBarbearia }), {
+    return new Response(JSON.stringify({ success: true, estabelecimento: updatedEstabelecimento, barbearia: updatedEstabelecimento }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

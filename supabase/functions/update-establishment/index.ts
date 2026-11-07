@@ -25,10 +25,12 @@ serve(async (req) => {
     }
 
     // 2. LOGIC
-    const { barbeariaId, ownerId, updates } = await req.json()
+    const body = await req.json()
+    const estabelecimentoId = body.estabelecimentoId || body.barbeariaId
+    const { ownerId, updates } = body
 
-    if (!barbeariaId || !ownerId || !updates) {
-      throw new Error('Parâmetros obrigatórios ausentes: barbeariaId, ownerId ou updates.');
+    if (!estabelecimentoId || !ownerId || !updates) {
+      throw new Error('Parâmetros obrigatórios ausentes: estabelecimentoId, ownerId ou updates.');
     }
 
     const supabaseAdmin = createClient(
@@ -39,17 +41,17 @@ serve(async (req) => {
     // 3. OWNERSHIP CHECK
     const userRole = user.app_metadata?.role;
     if (userRole !== 'admin') {
-      if (userRole !== 'barbearia' || user.id !== ownerId) {
+      if (userRole !== 'estabelecimento' || user.id !== ownerId) {
         return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
       }
-      const { data: ownerBarbearia, error: ownerError } = await supabaseAdmin
-        .from('barbearias')
+      const { data: ownerEstabelecimento, error: ownerError } = await supabaseAdmin
+        .from('estabelecimentos')
         .select('id')
-        .eq('id', barbeariaId)
+        .eq('id', estabelecimentoId)
         .eq('dono_id', user.id)
         .single();
-      if (ownerError || !ownerBarbearia) {
-        return new Response(JSON.stringify({ error: 'Você não tem permissão para editar esta barbearia.' }), { status: 403, headers: corsHeaders });
+      if (ownerError || !ownerEstabelecimento) {
+        return new Response(JSON.stringify({ error: 'Você não tem permissão para editar este estabelecimento.' }), { status: 403, headers: corsHeaders });
       }
     }
 
@@ -57,7 +59,7 @@ serve(async (req) => {
     const { dono_email, ...rawDbUpdates } = updates;
     let dbUpdates: Record<string, any> = { ...rawDbUpdates };
 
-    // Se não for admin, o dono só pode alterar nome, endereço, textos, horários e imagens
+    // Se não for admin, o dono só pode alterar campos permitidos
     // plano, status, trial_* e dono_id ficam só para admin e webhook
     if (userRole !== 'admin') {
       const allowedOwnerFields = [
@@ -67,6 +69,7 @@ serve(async (req) => {
         'telefone',
         'link_personalizado',
         'dono_nome',
+        'nicho',
         'foto_url',
         'instagram_url',
         'whatsapp_url',
@@ -103,7 +106,6 @@ serve(async (req) => {
       dbUpdates.dono_email = dono_email;
     }
 
-    // Adicionando a atualização do full_name do dono no Auth, se dono_nome estiver presente
     if (dbUpdates.dono_nome) {
         const { error: authNameError } = await supabaseAdmin.auth.admin.updateUserById(
             ownerId,
@@ -111,27 +113,26 @@ serve(async (req) => {
         );
         if (authNameError) {
             console.error('Erro ao atualizar nome do usuário no Auth:', authNameError);
-            // Não lançamos erro fatal, apenas logamos, pois o foco é o registro da barbearia.
         }
     }
 
     const { data, error: dbError } = await supabaseAdmin
-      .from('barbearias')
+      .from('estabelecimentos')
       .update(dbUpdates)
-      .eq('id', barbeariaId)
+      .eq('id', estabelecimentoId)
       .select()
       .single();
       
     if (dbError) {
-      console.error('Erro ao atualizar barbearia:', dbError);
-      throw new Error(`Falha ao atualizar detalhes da barbearia: ${dbError.message}`);
+      console.error('Erro ao atualizar estabelecimento:', dbError);
+      throw new Error(`Falha ao atualizar detalhes do estabelecimento: ${dbError.message}`);
     }
 
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro inesperado:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

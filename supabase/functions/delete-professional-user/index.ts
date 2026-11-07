@@ -23,15 +23,18 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (user.app_metadata?.role !== 'barbearia') {
+    const role = user.app_metadata?.role;
+    if (role !== 'estabelecimento' && role !== 'barbearia') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
     // 2. LOGIC
-    const { barberId, userId } = await req.json()
+    const body = await req.json()
+    const profissionalId = body.profissionalId || body.barberId
+    const { userId } = body
 
-    if (!barberId) {
-      throw new Error('O ID do barbeiro é obrigatório.');
+    if (!profissionalId) {
+      throw new Error('O ID do profissional é obrigatório.');
     }
 
     const supabaseAdmin = createClient(
@@ -40,36 +43,36 @@ serve(async (req) => {
     )
 
     // 3. OWNERSHIP CHECK
-    const { data: ownerBarbearia } = await supabaseAdmin
-      .from('barbearias')
+    const { data: ownerEstabelecimento } = await supabaseAdmin
+      .from('estabelecimentos')
       .select('id')
       .eq('dono_id', user.id)
       .single();
     
-    const { data: barberRecord } = await supabaseAdmin
-      .from('barbeiros')
-      .select('barbearia_id')
-      .eq('id', barberId)
+    const { data: profRecord } = await supabaseAdmin
+      .from('profissionais')
+      .select('estabelecimento_id')
+      .eq('id', profissionalId)
       .single();
 
-    if (!barberRecord || barberRecord.barbearia_id !== ownerBarbearia?.id) {
-      return new Response(JSON.stringify({ error: 'Você não tem permissão para excluir este barbeiro.' }), { status: 403, headers: corsHeaders });
+    if (!profRecord || profRecord.estabelecimento_id !== ownerEstabelecimento?.id) {
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para excluir este profissional.' }), { status: 403, headers: corsHeaders });
     }
 
     // 4. EXECUTION
     const { error: dbError } = await supabaseAdmin
-      .from('barbeiros')
+      .from('profissionais')
       .delete()
-      .eq('id', barberId);
+      .eq('id', profissionalId);
 
     if (dbError) {
-      throw new Error(`Falha ao excluir barbeiro: ${dbError.message}`);
+      throw new Error(`Falha ao excluir profissional: ${dbError.message}`);
     }
 
     if (userId) {
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
         if (authError) {
-          console.error(`Registro do barbeiro excluído, mas falha ao excluir a conta do usuário: ${authError.message}`);
+          console.error(`Registro do profissional excluído, mas falha ao excluir a conta do usuário: ${authError.message}`);
         }
     }
 
@@ -77,7 +80,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro inesperado:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

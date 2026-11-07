@@ -33,7 +33,6 @@ const aggregateByMonth = (items: any[], dateField: string, valueField?: string, 
     }));
 };
 
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -65,51 +64,52 @@ serve(async (req) => {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
 
     const [
-      { data: barbearias, error: barbeariasError },
+      { data: estabelecimentos, error: estError },
       { data: planos, error: planosError },
       { data: gastos, error: gastosError }
     ] = await Promise.all([
-      supabaseAdmin.from('barbearias').select('nome, plano, status, criado_em'),
+      supabaseAdmin.from('estabelecimentos').select('nome, plano, status, criado_em'),
       supabaseAdmin.from('planos').select('nome, preco'),
       supabaseAdmin.from('gastos_saas').select('valor').gte('data', startOfMonth)
     ]);
 
-    if (barbeariasError) throw barbeariasError;
+    if (estError) throw estError;
     if (planosError) throw planosError;
     if (gastosError) throw gastosError;
 
-    const totalBarbearias = barbearias.length;
-    const activeBarbearias = barbearias.filter(b => b.status === 'ativa').length;
+    const totalEstabelecimentos = (estabelecimentos || []).length;
+    const activeEstabelecimentos = (estabelecimentos || []).filter((b: any) => b.status === 'ativa').length;
 
-    const planPricesMap = planos.reduce((acc, plan) => {
+    const planPricesMap = (planos || []).reduce((acc: any, plan: any) => {
       acc[plan.nome] = plan.preco;
       return acc;
     }, {} as { [key: string]: number });
 
-    const totalRevenue = barbearias.reduce((sum, b) => sum + (planPricesMap[b.plano] || 0), 0);
-    
-    const totalMonthlyExpense = gastos.reduce((sum, g) => sum + (g.valor || 0), 0);
+    const totalRevenue = (estabelecimentos || []).reduce((sum: number, b: any) => sum + (planPricesMap[b.plano] || 0), 0);
+    const totalMonthlyExpense = (gastos || []).reduce((sum: number, g: any) => sum + (g.valor || 0), 0);
 
-    const latestBarbershops = barbearias
-      .sort((a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime())
+    const latestEstabelecimentos = (estabelecimentos || [])
+      .sort((a: any, b: any) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime())
       .slice(0, 5)
-      .map(b => ({ nome: b.nome, criado_em: b.criado_em }));
+      .map((b: any) => ({ nome: b.nome, criado_em: b.criado_em }));
 
-    // Para o gráfico de crescimento, ainda precisamos dos usuários, então buscamos separadamente
-    const { data: { users: barbershopUsers }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 10000 });
+    const { data: { users: authUsers }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 10000 });
     if (usersError) throw usersError;
-    const filteredBarbershopUsers = barbershopUsers.filter(u => u.app_metadata?.role === 'barbearia');
+    const filteredUsers = (authUsers || []).filter((u: any) => u.app_metadata?.role === 'estabelecimento' || u.app_metadata?.role === 'barbearia');
 
-
-    const userGrowthChartData = aggregateByMonth(filteredBarbershopUsers, 'created_at').map(d => ({ name: d.name, Usuários: d.value }));
-    const monthlyRevenueChartData = aggregateByMonth(barbearias, 'criado_em', 'plano', planPricesMap).map(d => ({ name: d.name, Receita: d.value }));
+    const userGrowthChartData = aggregateByMonth(filteredUsers, 'created_at').map(d => ({ name: d.name, Usuários: d.value }));
+    const monthlyRevenueChartData = aggregateByMonth(estabelecimentos || [], 'criado_em', 'plano', planPricesMap).map(d => ({ name: d.name, Receita: d.value }));
 
     const response = {
       totalRevenue,
       totalMonthlyExpense,
-      totalBarbearias,
-      activeBarbearias,
-      latestBarbershops,
+      totalEstabelecimentos,
+      activeEstabelecimentos,
+      latestEstabelecimentos,
+      // Aliases para compatibilidade
+      totalBarbearias: totalEstabelecimentos,
+      activeBarbearias: activeEstabelecimentos,
+      latestBarbershops: latestEstabelecimentos,
       userGrowthChartData,
       monthlyRevenueChartData,
     };
@@ -118,7 +118,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao buscar dados do dashboard:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

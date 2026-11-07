@@ -28,10 +28,12 @@ serve(async (req) => {
     }
 
     // 2. LOGIC
-    const { barbeariaId, ownerId } = await req.json()
+    const body = await req.json()
+    const estabelecimentoId = body.estabelecimentoId || body.barbeariaId
+    const { ownerId } = body
 
-    if (!barbeariaId || !ownerId) {
-      throw new Error('Parâmetros obrigatórios ausentes: barbeariaId ou ownerId.');
+    if (!estabelecimentoId || !ownerId) {
+      throw new Error('Parâmetros obrigatórios ausentes: estabelecimentoId ou ownerId.');
     }
 
     const supabaseAdmin = createClient(
@@ -40,26 +42,26 @@ serve(async (req) => {
     )
 
     const { error: dbError } = await supabaseAdmin
-      .from('barbearias')
+      .from('estabelecimentos')
       .delete()
-      .eq('id', barbeariaId);
+      .eq('id', estabelecimentoId);
 
     if (dbError) {
-      console.error('Erro ao excluir barbearia do BD:', dbError);
-      throw new Error(`Falha ao excluir barbearia: ${dbError.message}`);
+      console.error('Erro ao excluir estabelecimento do BD:', dbError);
+      throw new Error(`Falha ao excluir estabelecimento: ${dbError.message}`);
     }
 
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(ownerId);
 
     if (authError) {
-      throw new Error(`Registro da barbearia excluído, mas falha ao excluir a conta do proprietário: ${authError.message}`);
+      throw new Error(`Registro do estabelecimento excluído, mas falha ao excluir a conta do proprietário: ${authError.message}`);
     }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro inesperado:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const getTodayISOInFortaleza = () => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Fortaleza',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(new Date());
+};
+
 const getStartOfWeek = (date: Date) => {
   const d = new Date(date);
   const day = d.getDay();
@@ -32,14 +42,16 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (user.app_metadata?.role !== 'barbearia') {
+    const role = user.app_metadata?.role;
+    if (role !== 'estabelecimento' && role !== 'barbearia' && role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
     // 2. LOGIC
-    const { barbeariaId } = await req.json();
-    if (!barbeariaId) {
-      throw new Error('O ID da barbearia é obrigatório.');
+    const body = await req.json();
+    const estabelecimentoId = body.estabelecimentoId || body.barbeariaId;
+    if (!estabelecimentoId) {
+      throw new Error('O ID do estabelecimento é obrigatório.');
     }
 
     const supabaseAdmin = createClient(
@@ -47,41 +59,43 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 3. OWNERSHIP CHECK
-    const { data: ownerBarbearia, error: ownerError } = await supabaseAdmin
-      .from('barbearias')
-      .select('id')
-      .eq('dono_id', user.id)
-      .single();
+    // 3. OWNERSHIP CHECK (admin tem acesso direto)
+    if (role !== 'admin') {
+      const { data: ownerEstabelecimento, error: ownerError } = await supabaseAdmin
+        .from('estabelecimentos')
+        .select('id')
+        .eq('dono_id', user.id)
+        .single();
 
-    if (ownerError || !ownerBarbearia || ownerBarbearia.id !== barbeariaId) {
-      return new Response(JSON.stringify({ error: 'Você não tem permissão para ver este dashboard.' }), { status: 403, headers: corsHeaders });
+      if (ownerError || !ownerEstabelecimento || ownerEstabelecimento.id !== estabelecimentoId) {
+        return new Response(JSON.stringify({ error: 'Você não tem permissão para ver este dashboard.' }), { status: 403, headers: corsHeaders });
+      }
     }
     
     // 4. EXECUTION
-    const todayISO = new Date().toISOString().split('T')[0];
+    const todayISO = getTodayISOInFortaleza();
 
     const [
-      { data: barbeariaData, error: barbeariaError },
+      { data: estData, error: estError },
       { data: servicos, error: servicosError },
       { data: agendamentos, error: agendamentosError },
-      { data: barbeiros, error: barbeirosError },
+      { data: profissionais, error: profsError },
       { data: disponibilidadesHoje, error: dispError }
     ] = await Promise.all([
-      supabaseAdmin.from('barbearias').select('comissao_padrao').eq('id', barbeariaId).single(),
-      supabaseAdmin.from('servicos').select('id, preco').eq('barbearia_id', barbeariaId),
-      supabaseAdmin.from('agendamentos').select('servico_id, data, status, cliente_id, barbeiro_id').eq('barbearia_id', barbeariaId),
-      supabaseAdmin.from('barbeiros').select('id, nome, foto_url').eq('barbearia_id', barbeariaId),
-      supabaseAdmin.from('barbeiro_disponibilidade').select('barbeiro_id, disponivel').eq('data', todayISO)
+      supabaseAdmin.from('estabelecimentos').select('comissao_padrao').eq('id', estabelecimentoId).single(),
+      supabaseAdmin.from('servicos').select('id, preco').eq('estabelecimento_id', estabelecimentoId),
+      supabaseAdmin.from('agendamentos').select('servico_id, data, status, cliente_id, profissional_id').eq('estabelecimento_id', estabelecimentoId),
+      supabaseAdmin.from('profissionais').select('id, nome, foto_url').eq('estabelecimento_id', estabelecimentoId),
+      supabaseAdmin.from('profissional_disponibilidade').select('profissional_id, disponivel').eq('data', todayISO)
     ]);
 
-    if (barbeariaError) throw barbeariaError;
+    if (estError) throw estError;
     if (servicosError) throw servicosError;
     if (agendamentosError) throw agendamentosError;
-    if (barbeirosError) throw barbeirosError;
+    if (profsError) throw profsError;
     if (dispError) throw dispError;
 
-    const servicePriceMap = new Map(servicos.map(s => [s.id, s.preco]));
+    const servicePriceMap = new Map((servicos || []).map((s: any) => [s.id, s.preco]));
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -94,37 +108,37 @@ serve(async (req) => {
     let rendaSemanal = 0;
     let rendaMensal = 0;
     
-    const comissaoPercentual = (barbeariaData.comissao_padrao || 0) / 100;
-    const comissoesPorBarbeiro: { [key: string]: { nome: string, valor: number } } = {};
-    barbeiros.forEach(b => {
-        comissoesPorBarbeiro[b.id] = { nome: b.nome, valor: 0 };
+    const comissaoPercentual = (estData?.comissao_padrao || 0) / 100;
+    const comissoesPorProfissional: { [key: string]: { nome: string, valor: number } } = {};
+    (profissionais || []).forEach((p: any) => {
+        comissoesPorProfissional[p.id] = { nome: p.nome, valor: 0 };
     });
 
-    for (const ag of agendamentos) {
+    for (const ag of (agendamentos || [])) {
       const appointmentDate = new Date(`${ag.data}T00:00:00`);
       const price = servicePriceMap.get(ag.servico_id) || 0;
 
       if (ag.status === 'concluido') {
-        if (appointmentDate.getTime() === today.getTime()) rendaDiaria += price;
+        if (ag.data === todayISO) rendaDiaria += price;
         if (appointmentDate >= startOfWeek) rendaSemanal += price;
         if (appointmentDate >= startOfMonth) {
             rendaMensal += price;
-            if (comissoesPorBarbeiro[ag.barbeiro_id]) {
-                comissoesPorBarbeiro[ag.barbeiro_id].valor += price * comissaoPercentual;
+            if (ag.profissional_id && comissoesPorProfissional[ag.profissional_id]) {
+                comissoesPorProfissional[ag.profissional_id].valor += price * comissaoPercentual;
             }
         }
       }
     }
 
-    const totalAgendamentosHoje = agendamentos.filter(a => a.data === todayISO).length;
-    const uniqueClients = new Set(agendamentos.map(a => a.cliente_id));
+    const totalAgendamentosHoje = (agendamentos || []).filter((a: any) => a.data === todayISO).length;
+    const uniqueClients = new Set((agendamentos || []).map((a: any) => a.cliente_id));
 
-    const availabilityMap = new Map(disponibilidadesHoje.map(d => [d.barbeiro_id, d.disponivel]));
-    const barberStatusList = barbeiros.map(barbeiro => ({
-        id: barbeiro.id,
-        nome: barbeiro.nome,
-        foto_url: barbeiro.foto_url,
-        isAvailableToday: availabilityMap.has(barbeiro.id) ? availabilityMap.get(barbeiro.id) : true,
+    const availabilityMap = new Map((disponibilidadesHoje || []).map((d: any) => [d.profissional_id, d.disponivel]));
+    const professionalStatusList = (profissionais || []).map((prof: any) => ({
+        id: prof.id,
+        nome: prof.nome,
+        foto_url: prof.foto_url,
+        isAvailableToday: availabilityMap.has(prof.id) ? availabilityMap.get(prof.id) : true,
     }));
 
     const response = {
@@ -132,10 +146,12 @@ serve(async (req) => {
       rendaSemanal,
       rendaMensal,
       totalAgendamentosHoje,
-      totalBarbeiros: barbeiros.length,
+      totalProfissionais: (profissionais || []).length,
+      totalBarbeiros: (profissionais || []).length,
       totalClientes: uniqueClients.size,
-      comissoes: Object.values(comissoesPorBarbeiro),
-      barberStatusList,
+      comissoes: Object.values(comissoesPorProfissional),
+      professionalStatusList,
+      barberStatusList: professionalStatusList,
     };
 
     return new Response(JSON.stringify(response), {
@@ -143,8 +159,8 @@ serve(async (req) => {
       status: 200,
     });
 
-  } catch (error) {
-    console.error('Erro ao buscar dados do dashboard da barbearia:', error);
+  } catch (error: any) {
+    console.error('Erro ao buscar dados do dashboard do estabelecimento:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

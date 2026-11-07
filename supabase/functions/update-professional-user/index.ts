@@ -23,15 +23,18 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (user.app_metadata?.role !== 'barbearia') {
+    const role = user.app_metadata?.role;
+    if (role !== 'estabelecimento' && role !== 'barbearia') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
     // 2. LOGIC
-    const { barberId, userId, updates } = await req.json()
+    const body = await req.json()
+    const profissionalId = body.profissionalId || body.barberId
+    const { userId, updates } = body
 
-    if (!barberId || !updates) {
-      throw new Error('Parâmetros obrigatórios ausentes: barberId ou updates.');
+    if (!profissionalId || !updates) {
+      throw new Error('Parâmetros obrigatórios ausentes: profissionalId ou updates.');
     }
 
     const supabaseAdmin = createClient(
@@ -40,20 +43,20 @@ serve(async (req) => {
     )
 
     // 3. OWNERSHIP CHECK
-    const { data: ownerBarbearia } = await supabaseAdmin
-      .from('barbearias')
+    const { data: ownerEstabelecimento } = await supabaseAdmin
+      .from('estabelecimentos')
       .select('id')
       .eq('dono_id', user.id)
       .single();
     
-    const { data: barberRecord } = await supabaseAdmin
-      .from('barbeiros')
-      .select('barbearia_id')
-      .eq('id', barberId)
+    const { data: profRecord } = await supabaseAdmin
+      .from('profissionais')
+      .select('estabelecimento_id')
+      .eq('id', profissionalId)
       .single();
 
-    if (!barberRecord || barberRecord.barbearia_id !== ownerBarbearia?.id) {
-      return new Response(JSON.stringify({ error: 'Você não tem permissão para editar este barbeiro.' }), { status: 403, headers: corsHeaders });
+    if (!profRecord || profRecord.estabelecimento_id !== ownerEstabelecimento?.id) {
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para editar este profissional.' }), { status: 403, headers: corsHeaders });
     }
 
     // 4. EXECUTION
@@ -79,22 +82,22 @@ serve(async (req) => {
     }
 
     const { data, error: dbError } = await supabaseAdmin
-      .from('barbeiros')
+      .from('profissionais')
       .update(updates)
-      .eq('id', barberId)
+      .eq('id', profissionalId)
       .select()
       .single();
       
     if (dbError) {
-      console.error('Erro ao atualizar barbeiro:', dbError);
-      throw new Error(`Falha ao atualizar detalhes do barbeiro: ${dbError.message}`);
+      console.error('Erro ao atualizar profissional:', dbError);
+      throw new Error(`Falha ao atualizar detalhes do profissional: ${dbError.message}`);
     }
 
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro inesperado:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

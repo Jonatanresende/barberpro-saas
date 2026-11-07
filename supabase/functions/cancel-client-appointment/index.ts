@@ -12,7 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const { appointmentId, telefone } = await req.json();
+    const body = await req.json();
+    const { appointmentId, telefone } = body;
+    const estId = body.estabelecimento_id || body.barbearia_id;
+
     if (!appointmentId || !telefone) {
       throw new Error('ID do agendamento e telefone são obrigatórios.');
     }
@@ -22,26 +25,29 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Encontra o cliente pelo telefone para obter o ID
-    const { data: client, error: clientError } = await supabaseAdmin
-      .from('clientes')
-      .select('id')
-      .eq('telefone', telefone)
-      .single();
+    // 1. Encontra o cliente pelo telefone (e estabelecimento se fornecido)
+    let clientQuery = supabaseAdmin.from('clientes').select('id').eq('telefone', telefone);
+    if (estId) {
+      clientQuery = clientQuery.eq('estabelecimento_id', estId);
+    }
+    const { data: client, error: clientError } = await clientQuery.maybeSingle();
 
     if (clientError || !client) {
       throw new Error('Cliente não encontrado.');
     }
 
-    // 2. Atualiza o agendamento para 'cancelado', mas APENAS se o cliente_id corresponder.
-    // Esta é a camada de segurança crucial.
-    const { data, error } = await supabaseAdmin
+    // 2. Atualiza o agendamento para 'cancelado' garantindo que pertence ao cliente
+    let updateQuery = supabaseAdmin
       .from('agendamentos')
       .update({ status: 'cancelado' })
       .eq('id', appointmentId)
-      .eq('cliente_id', client.id) // Garante que o cliente só pode cancelar o seu.
-      .select()
-      .single();
+      .eq('cliente_id', client.id);
+
+    if (estId) {
+      updateQuery = updateQuery.eq('estabelecimento_id', estId);
+    }
+
+    const { data, error } = await updateQuery.select().single();
 
     if (error || !data) {
       throw new Error('Não foi possível cancelar o agendamento. Verifique se os dados estão corretos.');
@@ -52,7 +58,7 @@ serve(async (req) => {
       status: 200,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

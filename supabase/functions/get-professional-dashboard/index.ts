@@ -6,15 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const getStartOfWeek = (date: Date) => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -32,14 +23,16 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (user.app_metadata?.role !== 'barbeiro') {
+    const role = user.app_metadata?.role;
+    if (role !== 'profissional' && role !== 'barbeiro' && role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
     // 2. LOGIC
-    const { barbeiroId } = await req.json();
-    if (!barbeiroId) {
-      throw new Error('O ID do barbeiro é obrigatório.');
+    const body = await req.json();
+    const profissionalId = body.profissionalId || body.barbeiroId;
+    if (!profissionalId) {
+      throw new Error('O ID do profissional é obrigatório.');
     }
 
     const supabaseAdmin = createClient(
@@ -47,26 +40,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 3. OWNERSHIP CHECK & FETCH BARBER INFO
-    const { data: barberProfile, error: profileError } = await supabaseAdmin
-      .from('barbeiros')
-      .select('id, barbearia_id, user_id, professional_types(name, commission_percent)') // Incluindo user_id
+    // 3. OWNERSHIP CHECK & FETCH PROFISSIONAL INFO
+    const { data: profProfile, error: profileError } = await supabaseAdmin
+      .from('profissionais')
+      .select('id, estabelecimento_id, user_id, tipos_profissional(nome, percentual_comissao)')
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !barberProfile || barberProfile.id !== barbeiroId) {
+    if (profileError || !profProfile || profProfile.id !== profissionalId) {
       return new Response(JSON.stringify({ error: 'Você não tem permissão para ver este dashboard.' }), { status: 403, headers: corsHeaders });
     }
     
-    const barbeiro = barberProfile;
+    const profissional = profProfile;
 
-    // 4. FETCH BARBERSHOP INFO (for default commission if type is missing)
-    const { data: barbearia, error: barbeariaError } = await supabaseAdmin
-      .from('barbearias')
+    // 4. FETCH ESTABELECIMENTO INFO (for default commission if type is missing)
+    const { data: estabelecimento, error: estError } = await supabaseAdmin
+      .from('estabelecimentos')
       .select('comissao_padrao')
-      .eq('id', barbeiro.barbearia_id)
+      .eq('id', profissional.estabelecimento_id)
       .single();
-    if (barbeariaError) throw barbeariaError;
+    if (estError) throw estError;
 
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
@@ -76,22 +69,22 @@ serve(async (req) => {
     const { data: agendamentos, error: agendamentosError } = await supabaseAdmin
       .from('agendamentos')
       .select('status, servicos(preco)')
-      .eq('barbeiro_id', barbeiroId)
+      .eq('profissional_id', profissionalId)
       .gte('data', startOfMonth)
       .lte('data', endOfMonth);
     if (agendamentosError) throw agendamentosError;
 
-    // Determine the commission rate: use professional type commission if available, otherwise use barbershop default.
-    const commissionRate = barbeiro.professional_types?.commission_percent ?? barbearia.comissao_padrao;
+    const tipoProf = (profissional.tipos_profissional as any);
+    const commissionRate = tipoProf?.percentual_comissao ?? estabelecimento?.comissao_padrao;
     const comissaoPercentual = (commissionRate || 0) / 100;
     
     let comissaoDoMes = 0;
     let totalGeradoNoMes = 0;
     let agendamentosConcluidos = 0;
 
-    for (const ag of agendamentos) {
+    for (const ag of (agendamentos || [])) {
       if (ag.status === 'concluido') {
-        const preco = ag.servicos?.preco || 0;
+        const preco = (ag.servicos as any)?.preco || 0;
         totalGeradoNoMes += preco;
         comissaoDoMes += preco * comissaoPercentual;
         agendamentosConcluidos++;
@@ -102,8 +95,8 @@ serve(async (req) => {
       comissaoDoMes,
       totalGeradoNoMes,
       agendamentosConcluidos,
-      totalAgendamentosMes: agendamentos.length,
-      professionalTypeName: barbeiro.professional_types?.name,
+      totalAgendamentosMes: (agendamentos || []).length,
+      professionalTypeName: tipoProf?.nome,
       commissionRate: commissionRate,
     };
 
@@ -112,8 +105,8 @@ serve(async (req) => {
       status: 200,
     });
 
-  } catch (error) {
-    console.error('Erro ao buscar dados do dashboard do barbeiro:', error);
+  } catch (error: any) {
+    console.error('Erro ao buscar dados do dashboard do profissional:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

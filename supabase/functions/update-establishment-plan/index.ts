@@ -28,9 +28,12 @@ serve(async (req) => {
     }
 
     // 2. LOGIC
-    const { barbeariaId, newPlanName } = await req.json();
-    if (!barbeariaId || !newPlanName) {
-      throw new Error('ID da barbearia e nome do novo plano são obrigatórios.');
+    const body = await req.json();
+    const estabelecimentoId = body.estabelecimentoId || body.barbeariaId;
+    const { newPlanName } = body;
+
+    if (!estabelecimentoId || !newPlanName) {
+      throw new Error('ID do estabelecimento e nome do novo plano são obrigatórios.');
     }
 
     const supabaseAdmin = createClient(
@@ -40,45 +43,45 @@ serve(async (req) => {
 
     const { data: targetPlan, error: planError } = await supabaseAdmin
       .from('planos')
-      .select('limite_barbeiros')
+      .select('limite_profissionais')
       .eq('nome', newPlanName)
       .single();
 
     if (planError) throw new Error(`Plano "${newPlanName}" não encontrado.`);
 
-    const newLimit = targetPlan.limite_barbeiros;
+    const newLimit = targetPlan?.limite_profissionais;
 
-    const { count: activeBarberCount, error: countError } = await supabaseAdmin
-      .from('barbeiros')
+    const { count: activeProfCount, error: countError } = await supabaseAdmin
+      .from('profissionais')
       .select('*', { count: 'exact', head: true })
-      .eq('barbearia_id', barbeariaId)
+      .eq('estabelecimento_id', estabelecimentoId)
       .eq('ativo', true);
 
-    if (countError) throw new Error('Erro ao contar barbeiros ativos.');
+    if (countError) throw new Error('Erro ao contar profissionais ativos.');
 
-    if (newLimit !== null && activeBarberCount > newLimit) {
-      const excessCount = activeBarberCount - newLimit;
+    if (newLimit !== null && newLimit !== undefined && activeProfCount !== null && activeProfCount > newLimit) {
+      const excessCount = activeProfCount - newLimit;
       
-      const { data: barbersToRemove, error: fetchError } = await supabaseAdmin
-        .from('barbeiros')
+      const { data: profsToRemove, error: fetchError } = await supabaseAdmin
+        .from('profissionais')
         .select('id, user_id')
-        .eq('barbearia_id', barbeariaId)
+        .eq('estabelecimento_id', estabelecimentoId)
         .eq('ativo', true)
         .order('criado_em', { ascending: true })
         .limit(excessCount);
 
-      if (fetchError) throw new Error('Erro ao buscar barbeiros para remover.');
+      if (fetchError) throw new Error('Erro ao buscar profissionais para remover.');
 
-      if (barbersToRemove && barbersToRemove.length > 0) {
-        const barberIdsToRemove = barbersToRemove.map(b => b.id);
-        const userIdsToRemove = barbersToRemove.map(b => b.user_id).filter(Boolean);
+      if (profsToRemove && profsToRemove.length > 0) {
+        const profIdsToRemove = profsToRemove.map(p => p.id);
+        const userIdsToRemove = profsToRemove.map(p => p.user_id).filter(Boolean);
 
-        const { error: deleteBarbersError } = await supabaseAdmin
-          .from('barbeiros')
+        const { error: deleteProfsError } = await supabaseAdmin
+          .from('profissionais')
           .delete()
-          .in('id', barberIdsToRemove);
+          .in('id', profIdsToRemove);
         
-        if (deleteBarbersError) throw new Error('Erro ao remover registros de barbeiros.');
+        if (deleteProfsError) throw new Error('Erro ao remover registros de profissionais.');
 
         for (const userId of userIdsToRemove) {
           const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
@@ -89,21 +92,21 @@ serve(async (req) => {
       }
     }
 
-    const { data: updatedBarbearia, error: updateError } = await supabaseAdmin
-      .from('barbearias')
+    const { data: updatedEstabelecimento, error: updateError } = await supabaseAdmin
+      .from('estabelecimentos')
       .update({ plano: newPlanName })
-      .eq('id', barbeariaId)
+      .eq('id', estabelecimentoId)
       .select()
       .single();
 
-    if (updateError) throw new Error('Erro ao atualizar o plano da barbearia.');
+    if (updateError) throw new Error('Erro ao atualizar o plano do estabelecimento.');
 
-    return new Response(JSON.stringify(updatedBarbearia), {
+    return new Response(JSON.stringify(updatedEstabelecimento), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

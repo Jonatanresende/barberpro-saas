@@ -6,13 +6,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const getTodayISOInFortaleza = () => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Fortaleza',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(new Date());
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { telefone } = await req.json();
+    const body = await req.json();
+    const { telefone } = body;
+    const estId = body.estabelecimento_id || body.barbearia_id;
+
     if (!telefone) throw new Error('Telefone é obrigatório.');
 
     const supabaseAdmin = createClient(
@@ -20,17 +33,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Encontra o cliente pelo telefone
-    const { data: client, error: clientError } = await supabaseAdmin
-      .from('clientes')
-      .select('id')
-      .eq('telefone', telefone)
-      .single();
+    // 1. Encontra o cliente pelo telefone (e estabelecimento se fornecido)
+    let clientQuery = supabaseAdmin.from('clientes').select('id').eq('telefone', telefone);
+    if (estId) {
+      clientQuery = clientQuery.eq('estabelecimento_id', estId);
+    }
+    const { data: client, error: clientError } = await clientQuery.maybeSingle();
 
-    if (clientError && clientError.code !== 'PGRST116') throw clientError;
+    if (clientError) throw clientError;
     
     if (!client) {
-      // Cliente não existe, retorna null
       return new Response(JSON.stringify(null), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -38,34 +50,32 @@ serve(async (req) => {
     }
 
     // 2. Busca o próximo agendamento (não cancelado)
-    const today = new Date().toISOString().split('T')[0];
-    const { data: appointment, error: appointmentError } = await supabaseAdmin
+    const today = getTodayISOInFortaleza();
+    let appQuery = supabaseAdmin
       .from('agendamentos')
       .select('*')
       .eq('cliente_id', client.id)
       .gte('data', today)
-      .not('status', 'eq', 'cancelado')
+      .not('status', 'eq', 'cancelado');
+
+    if (estId) {
+      appQuery = appQuery.eq('estabelecimento_id', estId);
+    }
+
+    const { data: appointment, error: appointmentError } = await appQuery
       .order('data', { ascending: true })
       .order('hora', { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (appointmentError && appointmentError.code !== 'PGRST116') throw appointmentError;
+    if (appointmentError) throw appointmentError;
 
-    // Se não encontrar agendamento futuro, retorna null
-    if (!appointment) {
-       return new Response(JSON.stringify(null), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-    }
-
-    return new Response(JSON.stringify(appointment), {
+    return new Response(JSON.stringify(appointment || null), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao buscar agendamento do cliente:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -23,15 +23,18 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    // Permite acesso para Barbearia (proprietário) e Barbeiro (para ver o próprio desempenho)
-    if (user.app_metadata?.role !== 'barbearia' && user.app_metadata?.role !== 'barbeiro') {
+    const role = user.app_metadata?.role;
+    const isOwner = role === 'estabelecimento' || role === 'barbearia';
+    const isProf = role === 'profissional' || role === 'barbeiro';
+    if (!isOwner && !isProf && role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
     // 2. LOGIC
-    const { barbeiroId } = await req.json();
-    if (!barbeiroId) {
-      throw new Error('O ID do barbeiro é obrigatório.');
+    const body = await req.json();
+    const profissionalId = body.profissionalId || body.barberId;
+    if (!profissionalId) {
+      throw new Error('O ID do profissional é obrigatório.');
     }
 
     const supabaseAdmin = createClient(
@@ -39,23 +42,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 3. FETCH BARBER PROFILE AND OWNERSHIP CHECK
-    const { data: barbeiro, error: barberError } = await supabaseAdmin
-      .from('barbeiros')
-      .select('nome, professional_types(commission_percent), barbearia_id, user_id')
-      .eq('id', barbeiroId)
+    // 3. FETCH PROFISSIONAL PROFILE AND OWNERSHIP CHECK
+    const { data: profRecord, error: profError } = await supabaseAdmin
+      .from('profissionais')
+      .select('nome, tipos_profissional(percentual_comissao), estabelecimento_id, user_id')
+      .eq('id', profissionalId)
       .single();
 
-    if (barberError) throw new Error(`Barbeiro não encontrado: ${barberError.message}`);
-    if (!barbeiro) throw new Error('Barbeiro não encontrado.');
+    if (profError || !profRecord) throw new Error(`Profissional não encontrado: ${profError?.message || ''}`);
 
-    // Ownership check for Barbeiro role (self-check)
-    if (user.app_metadata?.role === 'barbeiro' && barbeiro.user_id && user.id !== barbeiro.user_id) {
-      return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste barbeiro.' }), { status: 403, headers: corsHeaders });
+    if (isProf && profRecord.user_id && user.id !== profRecord.user_id) {
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste profissional.' }), { status: 403, headers: corsHeaders });
     }
-    // Ownership check for Barbearia role is handled by RLS, but we ensure barbearia_id exists.
-    if (!barbeiro.barbearia_id) throw new Error('Barbearia ID ausente no perfil do barbeiro.');
-
+    if (!profRecord.estabelecimento_id) throw new Error('ID do estabelecimento ausente no perfil do profissional.');
 
     // 4. DATE RANGE (Last 30 days)
     const today = new Date();
@@ -66,35 +65,36 @@ serve(async (req) => {
 
     // 5. FETCH DEPENDENT DATA
     const [
-      { data: barbearia, error: barbeariaError },
+      { data: estabelecimento, error: estError },
       { data: agendamentos, error: agendamentosError }
     ] = await Promise.all([
       supabaseAdmin
-        .from('barbearias')
+        .from('estabelecimentos')
         .select('comissao_padrao')
-        .eq('id', barbeiro.barbearia_id)
+        .eq('id', profRecord.estabelecimento_id)
         .single(),
       supabaseAdmin
         .from('agendamentos')
         .select('data, servico_nome, servicos(preco)')
-        .eq('barbeiro_id', barbeiroId)
+        .eq('profissional_id', profissionalId)
         .eq('status', 'concluido')
         .gte('data', startDate)
         .lte('data', endDate)
         .order('data', { ascending: false })
     ]);
 
-    if (barbeariaError) throw barbeariaError;
+    if (estError) throw estError;
     if (agendamentosError) throw agendamentosError;
 
     // 6. CALCULATE PERFORMANCE
-    const commissionRate = barbeiro.professional_types?.commission_percent ?? barbearia.comissao_padrao;
+    const tipoProf = (profRecord.tipos_profissional as any);
+    const commissionRate = tipoProf?.percentual_comissao ?? estabelecimento?.comissao_padrao;
     const comissaoPercentual = (commissionRate || 0) / 100;
 
     let totalGerado = 0;
     let totalComissao = 0;
 
-    const servicesList = agendamentos.map(ag => {
+    const servicesList = (agendamentos || []).map((ag: any) => {
       const preco = ag.servicos?.preco || 0;
       const comissao = preco * comissaoPercentual;
       totalGerado += preco;
@@ -109,7 +109,8 @@ serve(async (req) => {
     });
 
     const response = {
-      barberName: barbeiro.nome,
+      professionalName: profRecord.nome,
+      barberName: profRecord.nome,
       commissionRate: commissionRate,
       totalGenerated: totalGerado,
       totalCommission: totalComissao,
@@ -121,8 +122,8 @@ serve(async (req) => {
       status: 200,
     });
 
-  } catch (error) {
-    console.error('Erro ao buscar desempenho do barbeiro:', error);
+  } catch (error: any) {
+    console.error('Erro ao buscar desempenho do profissional:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
