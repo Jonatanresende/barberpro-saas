@@ -11,9 +11,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-  }, []); // Logout não depende de nada, é estável.
+  }, []);
 
-  const fetchUserAndBarbearia = useCallback(async (session: Session | null) => {
+  const fetchUserAndEstablishment = useCallback(async (session: Session | null) => {
     if (!session) {
       setUser(null);
       setLoading(false);
@@ -45,43 +45,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let trialStartedAt: string | undefined = metadata.trial_started_at;
     let trialExpiresAt: string | undefined = metadata.trial_expires_at;
 
-    if (baseUser.role === UserRole.BARBEARIA) {
-      const { data: barbearia, error } = await supabase
-        .from('barbearias')
+    if (baseUser.role === UserRole.ESTABELECIMENTO) {
+      const { data: estabelecimento, error } = await supabase
+        .from('estabelecimentos')
         .select('id, nome, link_personalizado, trial_started_at, trial_expires_at')
         .eq('dono_id', effectiveUser.id)
         .single();
 
       if (error) {
-        console.error("Could not find barbershop for owner:", error);
-        // Não faz logout aqui, apenas define o usuário base se a barbearia não for encontrada
-        // logout(); 
-        // return;
+        console.error("Could not find establishment for owner:", error);
       }
 
-      if (barbearia) {
-        baseUser.barbeariaId = barbearia.id;
-        baseUser.barbeariaNome = barbearia.nome;
-        baseUser.link_personalizado = barbearia.link_personalizado;
-        trialStartedAt = trialStartedAt || barbearia.trial_started_at || undefined;
-        trialExpiresAt = trialExpiresAt || barbearia.trial_expires_at || undefined;
+      if (estabelecimento) {
+        baseUser.estabelecimentoId = estabelecimento.id;
+        baseUser.estabelecimentoNome = estabelecimento.nome;
+        baseUser.link_personalizado = estabelecimento.link_personalizado;
+        trialStartedAt = trialStartedAt || estabelecimento.trial_started_at || undefined;
+        trialExpiresAt = trialExpiresAt || estabelecimento.trial_expires_at || undefined;
       }
-    } else if (baseUser.role === UserRole.BARBEIRO) {
-      const { data: barbeiro, error } = await supabase
-        .from('barbeiros')
+    } else if (baseUser.role === UserRole.PROFISSIONAL) {
+      const { data: profissional, error } = await supabase
+        .from('profissionais')
         .select('id')
         .eq('user_id', effectiveUser.id)
         .single();
 
       if (error) {
-        console.error("Could not find barber profile for user:", error);
-        // Não faz logout aqui, apenas define o usuário base se o barbeiro não for encontrado
-        // logout();
-        // return;
+        console.error("Could not find professional profile for user:", error);
       }
 
-      if (barbeiro) {
-        baseUser.barbeiroId = barbeiro.id;
+      if (profissional) {
+        baseUser.profissionalId = profissional.id;
       }
     }
 
@@ -95,28 +89,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setUser(baseUser);
     setLoading(false);
-  }, []); // Removendo 'logout' das dependências, pois ele é estável.
+  }, []);
 
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      await fetchUserAndBarbearia(session);
+      await fetchUserAndEstablishment(session);
     };
 
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Adicionando um pequeno delay para evitar race conditions ou re-renderizações excessivas
-      // quando múltiplos eventos de auth disparam em sequência.
       setTimeout(() => {
-        fetchUserAndBarbearia(session);
+        fetchUserAndEstablishment(session);
       }, 100);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchUserAndBarbearia]);
+  }, [fetchUserAndEstablishment]);
 
   return (
     <AuthContext.Provider value={{ user, logout, loading }}>

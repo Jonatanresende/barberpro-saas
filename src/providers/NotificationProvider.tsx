@@ -56,23 +56,20 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Se o canal já existe e o filtro é o mesmo, não faz nada.
-    // Como o filtro depende do user.id, se o user for o mesmo, o canal deve ser o mesmo.
     if (channelRef.current) {
-        // Remove o canal anterior para garantir que não haja duplicação de escutas
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
 
     let filter: string | undefined;
     let channelName: string;
 
-    if (user.role === UserRole.BARBEARIA && user.barbeariaId) {
-      filter = `barbearia_id=eq.${user.barbeariaId}`;
-      channelName = `appointments:barbearia_id=eq.${user.barbeariaId}`;
-    } else if (user.role === UserRole.BARBEIRO && user.barbeiroId) {
-      filter = `barbeiro_id=eq.${user.barbeiroId}`;
-      channelName = `appointments:barbeiro_id=eq.${user.barbeiroId}`;
+    if (user.role === UserRole.ESTABELECIMENTO && user.estabelecimentoId) {
+      filter = `estabelecimento_id=eq.${user.estabelecimentoId}`;
+      channelName = `appointments:estabelecimento_id=eq.${user.estabelecimentoId}`;
+    } else if (user.role === UserRole.PROFISSIONAL && user.profissionalId) {
+      filter = `profissional_id=eq.${user.profissionalId}`;
+      channelName = `appointments:profissional_id=eq.${user.profissionalId}`;
     } else {
       return;
     }
@@ -90,7 +87,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       (payload) => {
         const newAppointment = payload.new as any;
         
-        // Incrementa a contagem e mostra um toast
         incrementAppointmentCount();
         toast(`Novo Agendamento: ${newAppointment.cliente_nome} para ${newAppointment.servico_nome}!`, {
             icon: '🔔',
@@ -102,14 +98,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     channelRef.current = newChannel;
 
-    // Função de limpeza: remove o canal quando o componente é desmontado ou as dependências mudam
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [user?.id, authLoading, incrementAppointmentCount]); // Dependência alterada para user?.id
+  }, [user?.id, user?.role, user?.estabelecimentoId, user?.profissionalId, authLoading, incrementAppointmentCount]);
 
   const contextValue: NotificationContextType = {
     newAppointmentCount,

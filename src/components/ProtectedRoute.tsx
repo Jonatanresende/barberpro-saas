@@ -24,8 +24,11 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Redireciona para a página de configuração se o nome da barbearia for temporário
-  const isTemporaryName = user.role === UserRole.BARBEARIA && user.barbeariaNome?.startsWith('Barbearia de ');
+  // Redireciona para a página de configuração se o nome do estabelecimento for temporário
+  const isTemporaryName = user.role === UserRole.ESTABELECIMENTO && (
+    user.estabelecimentoNome?.startsWith('Estabelecimento de ') ||
+    user.estabelecimentoNome?.startsWith('Barbearia de ')
+  );
   if (isTemporaryName && location.pathname !== '/initial-setup') {
     return <Navigate to="/initial-setup" replace />;
   }
@@ -36,7 +39,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   }
 
   const trialExpired =
-    user.role === UserRole.BARBEARIA &&
+    user.role === UserRole.ESTABELECIMENTO &&
     user.trialExpiresAt &&
     new Date(user.trialExpiresAt) < new Date();
 
@@ -45,7 +48,6 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   }
 
   if (!allowedRoles.includes(user.role)) {
-    // Redirect to a relevant dashboard or an unauthorized page
     return <Navigate to="/login" replace />;
   }
 
