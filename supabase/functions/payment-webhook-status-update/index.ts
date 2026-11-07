@@ -19,10 +19,10 @@ serve(async (req) => {
     const body = JSON.parse(requestBodyText);
 
     // O token deve ser o mesmo configurado na Kiwify para este webhook
-    const expectedToken = 'mnhxo6jrjll'; 
+    const expectedToken = Deno.env.get('KIWIFY_WEBHOOK_TOKEN'); 
     const authHeader = req.headers.get('Authorization');
     
-    if (authHeader !== `Bearer ${expectedToken}`) {
+    if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
       return new Response(JSON.stringify({ error: 'Token de autenticação inválido.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,

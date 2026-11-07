@@ -51,7 +51,7 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (user.user_metadata?.role !== 'admin') {
+    if (user.app_metadata?.role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
@@ -98,7 +98,7 @@ serve(async (req) => {
     // Para o gráfico de crescimento, ainda precisamos dos usuários, então buscamos separadamente
     const { data: { users: barbershopUsers }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 10000 });
     if (usersError) throw usersError;
-    const filteredBarbershopUsers = barbershopUsers.filter(u => u.user_metadata?.role === 'barbearia');
+    const filteredBarbershopUsers = barbershopUsers.filter(u => u.app_metadata?.role === 'barbearia');
 
 
     const userGrowthChartData = aggregateByMonth(filteredBarbershopUsers, 'created_at').map(d => ({ name: d.name, Usuários: d.value }));

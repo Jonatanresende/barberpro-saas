@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const baseUser: User = {
       id: effectiveUser.id,
       email: effectiveUser.email!,
-      role: metadata.role as UserRole,
+      role: (effectiveUser.app_metadata?.role || metadata.role) as UserRole,
       full_name: metadata.full_name,
     };
 

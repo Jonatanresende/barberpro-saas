@@ -23,7 +23,7 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (user.user_metadata?.role !== 'admin') {
+    if (user.app_metadata?.role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
@@ -39,7 +39,7 @@ serve(async (req) => {
       throw new Error(error.message);
     }
 
-    const adminUsers = users.filter(user => user.user_metadata?.role === 'admin');
+    const adminUsers = users.filter(user => user.app_metadata?.role === 'admin');
 
     return new Response(JSON.stringify(adminUsers), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

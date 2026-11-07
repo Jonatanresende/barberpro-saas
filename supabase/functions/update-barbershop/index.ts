@@ -37,7 +37,7 @@ serve(async (req) => {
     )
 
     // 3. OWNERSHIP CHECK
-    const userRole = user.user_metadata?.role;
+    const userRole = user.app_metadata?.role;
     if (userRole !== 'admin') {
       if (userRole !== 'barbearia' || user.id !== ownerId) {
         return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
@@ -54,7 +54,42 @@ serve(async (req) => {
     }
 
     // 4. EXECUTION
-    const { dono_email, ...dbUpdates } = updates;
+    const { dono_email, ...rawDbUpdates } = updates;
+    let dbUpdates: Record<string, any> = { ...rawDbUpdates };
+
+    // Se não for admin, o dono só pode alterar nome, endereço, textos, horários e imagens
+    // plano, status, trial_* e dono_id ficam só para admin e webhook
+    if (userRole !== 'admin') {
+      const allowedOwnerFields = [
+        'nome',
+        'endereco',
+        'documento',
+        'telefone',
+        'link_personalizado',
+        'dono_nome',
+        'foto_url',
+        'instagram_url',
+        'whatsapp_url',
+        'hero_image_url',
+        'hero_title',
+        'hero_subtitle',
+        'services_title',
+        'social_title',
+        'social_subtitle',
+        'operating_days',
+        'start_time',
+        'end_time',
+        'comissao_padrao',
+      ];
+
+      const filteredUpdates: Record<string, any> = {};
+      for (const field of allowedOwnerFields) {
+        if (field in dbUpdates) {
+          filteredUpdates[field] = dbUpdates[field];
+        }
+      }
+      dbUpdates = filteredUpdates;
+    }
 
     if (dono_email) {
       const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(

@@ -32,7 +32,7 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (user.user_metadata?.role !== 'barbearia') {
+    if (user.app_metadata?.role !== 'barbearia') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
@@ -104,7 +104,7 @@ serve(async (req) => {
       const appointmentDate = new Date(`${ag.data}T00:00:00`);
       const price = servicePriceMap.get(ag.servico_id) || 0;
 
-      if (ag.status === 'concluído') {
+      if (ag.status === 'concluido') {
         if (appointmentDate.getTime() === today.getTime()) rendaDiaria += price;
         if (appointmentDate >= startOfWeek) rendaSemanal += price;
         if (appointmentDate >= startOfMonth) {

@@ -30,10 +30,10 @@ serve(async (req) => {
     console.log("--- FIM DO PAYLOAD DO WEBHOOK ---");
     const body = JSON.parse(requestBodyText);
 
-    const expectedToken = 'mnhxo6jrjll';
+    const expectedToken = Deno.env.get('KIWIFY_WEBHOOK_TOKEN');
     const authHeader = req.headers.get('Authorization');
     
-    if (authHeader !== `Bearer ${expectedToken}`) {
+    if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
       return new Response(JSON.stringify({ error: 'Token de autenticação inválido.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -132,8 +132,10 @@ serve(async (req) => {
         email: email,
         password: documento, // Senha temporária
         email_confirm: true,
-        user_metadata: {
+        app_metadata: {
           role: 'barbearia',
+        },
+        user_metadata: {
           full_name: nomeCompleto,
           phone: telefone,
         },

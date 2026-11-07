@@ -35,7 +35,7 @@ serve(async (req) => {
     if (userError || !authUser) {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
-    if (authUser.user_metadata?.role !== 'admin') {
+    if (authUser.app_metadata?.role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
@@ -50,8 +50,10 @@ serve(async (req) => {
     const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: barbeariaData.dono_email,
       password: password,
-      user_metadata: {
+      app_metadata: {
         role: 'barbearia',
+      },
+      user_metadata: {
         full_name: barbeariaData.dono_nome,
       },
     })

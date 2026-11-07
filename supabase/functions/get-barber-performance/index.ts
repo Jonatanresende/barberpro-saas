@@ -24,7 +24,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Acesso não autorizado.' }), { status: 401, headers: corsHeaders });
     }
     // Permite acesso para Barbearia (proprietário) e Barbeiro (para ver o próprio desempenho)
-    if (user.user_metadata?.role !== 'barbearia' && user.user_metadata?.role !== 'barbeiro') {
+    if (user.app_metadata?.role !== 'barbearia' && user.app_metadata?.role !== 'barbeiro') {
       return new Response(JSON.stringify({ error: 'Acesso proibido.' }), { status: 403, headers: corsHeaders });
     }
 
@@ -41,17 +41,17 @@ serve(async (req) => {
 
     // 3. FETCH BARBER PROFILE AND OWNERSHIP CHECK
     const { data: barbeiro, error: barberError } = await supabaseAdmin
-        .from('barbeiros')
-        .select('nome, professional_types(commission_percent), barbearia_id, user_id')
-        .eq('id', barbeiroId)
-        .single();
+      .from('barbeiros')
+      .select('nome, professional_types(commission_percent), barbearia_id, user_id')
+      .eq('id', barbeiroId)
+      .single();
 
     if (barberError) throw new Error(`Barbeiro não encontrado: ${barberError.message}`);
     if (!barbeiro) throw new Error('Barbeiro não encontrado.');
 
     // Ownership check for Barbeiro role (self-check)
-    if (user.user_metadata?.role === 'barbeiro' && barbeiro.user_id && user.id !== barbeiro.user_id) {
-        return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste barbeiro.' }), { status: 403, headers: corsHeaders });
+    if (user.app_metadata?.role === 'barbeiro' && barbeiro.user_id && user.id !== barbeiro.user_id) {
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste barbeiro.' }), { status: 403, headers: corsHeaders });
     }
     // Ownership check for Barbearia role is handled by RLS, but we ensure barbearia_id exists.
     if (!barbeiro.barbearia_id) throw new Error('Barbearia ID ausente no perfil do barbeiro.');
@@ -66,22 +66,22 @@ serve(async (req) => {
 
     // 5. FETCH DEPENDENT DATA
     const [
-        { data: barbearia, error: barbeariaError },
-        { data: agendamentos, error: agendamentosError }
+      { data: barbearia, error: barbeariaError },
+      { data: agendamentos, error: agendamentosError }
     ] = await Promise.all([
-        supabaseAdmin
-            .from('barbearias')
-            .select('comissao_padrao')
-            .eq('id', barbeiro.barbearia_id)
-            .single(),
-        supabaseAdmin
-            .from('agendamentos')
-            .select('data, servico_nome, servicos(preco)')
-            .eq('barbeiro_id', barbeiroId)
-            .eq('status', 'concluido')
-            .gte('data', startDate)
-            .lte('data', endDate)
-            .order('data', { ascending: false })
+      supabaseAdmin
+        .from('barbearias')
+        .select('comissao_padrao')
+        .eq('id', barbeiro.barbearia_id)
+        .single(),
+      supabaseAdmin
+        .from('agendamentos')
+        .select('data, servico_nome, servicos(preco)')
+        .eq('barbeiro_id', barbeiroId)
+        .eq('status', 'concluido')
+        .gte('data', startDate)
+        .lte('data', endDate)
+        .order('data', { ascending: false })
     ]);
 
     if (barbeariaError) throw barbeariaError;
@@ -90,30 +90,30 @@ serve(async (req) => {
     // 6. CALCULATE PERFORMANCE
     const commissionRate = barbeiro.professional_types?.commission_percent ?? barbearia.comissao_padrao;
     const comissaoPercentual = (commissionRate || 0) / 100;
-    
+
     let totalGerado = 0;
     let totalComissao = 0;
 
     const servicesList = agendamentos.map(ag => {
-        const preco = ag.servicos?.preco || 0;
-        const comissao = preco * comissaoPercentual;
-        totalGerado += preco;
-        totalComissao += comissao;
+      const preco = ag.servicos?.preco || 0;
+      const comissao = preco * comissaoPercentual;
+      totalGerado += preco;
+      totalComissao += comissao;
 
-        return {
-            data: ag.data,
-            servico: ag.servico_nome,
-            valor: preco,
-            comissao: comissao,
-        };
+      return {
+        data: ag.data,
+        servico: ag.servico_nome,
+        valor: preco,
+        comissao: comissao,
+      };
     });
 
     const response = {
-        barberName: barbeiro.nome,
-        commissionRate: commissionRate,
-        totalGenerated: totalGerado,
-        totalCommission: totalComissao,
-        services: servicesList,
+      barberName: barbeiro.nome,
+      commissionRate: commissionRate,
+      totalGenerated: totalGerado,
+      totalCommission: totalComissao,
+      services: servicesList,
     };
 
     return new Response(JSON.stringify(response), {
