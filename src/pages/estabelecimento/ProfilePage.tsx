@@ -172,6 +172,8 @@ const ProfilePage = () => {
         </div>
       </div>
 
+      {/* TODO: reativar troca de plano quando definir a forma de pagamento (Kiwify desativada) */}
+      {/*
       <div className="bg-brand-dark p-6 rounded-lg border border-brand-gray max-w-2xl mx-auto">
         <h2 className="text-xl font-semibold text-white mb-6">Gerenciar Plano</h2>
         <div className="space-y-4">
@@ -198,6 +200,7 @@ const ProfilePage = () => {
           </button>
         </div>
       </div>
+      */}
     </div>
   );
 };

@@ -43,7 +43,7 @@ const ClientAppointmentModal = ({ isOpen, onClose, appointment, estabelecimento,
 
     setIsCancelling(true);
     try {
-      await api.cancelClientAppointment(appointment.id, clientPhone);
+      await api.cancelClientAppointment(appointment.id, clientPhone, local.id);
       toast.success('Agendamento cancelado com sucesso!');
       onAppointmentUpdate();
     } catch (error: any) {

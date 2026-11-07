@@ -6,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const normalizarTelefone = (t: string) => {
+  const d = (t || '').replace(/\D/g, '');
+  return d.length === 10 || d.length === 11 ? '55' + d : d;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -26,6 +31,8 @@ serve(async (req) => {
     if (!estId) {
       throw new Error('O ID do estabelecimento é obrigatório.');
     }
+
+    const telNormalizado = normalizarTelefone(cliente_telefone);
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -68,7 +75,7 @@ serve(async (req) => {
       .from('clientes')
       .select('id')
       .eq('estabelecimento_id', estId)
-      .eq('telefone', cliente_telefone)
+      .eq('telefone', telNormalizado)
       .maybeSingle();
 
     if (findError) throw findError;
@@ -79,7 +86,7 @@ serve(async (req) => {
         .insert({
           estabelecimento_id: estId,
           nome: cliente_nome,
-          telefone: cliente_telefone,
+          telefone: telNormalizado,
         })
         .select('id')
         .single();
@@ -87,18 +94,22 @@ serve(async (req) => {
       client = newClient;
     }
 
-    // --- ETAPA 2: Criar o Agendamento ---
+    // --- ETAPA 2: Criar o Agendamento (apenas colunas da tabela) ---
     const profNome = agendamentoData.profissional_nome || agendamentoData.barbeiro_nome;
 
     const finalAgendamentoData = {
-      ...agendamentoData,
-      cliente_id: client.id,
       estabelecimento_id: estId,
-      barbearia_id: estId,
+      cliente_id: client.id,
+      cliente_nome,
+      cliente_email: agendamentoData.cliente_email || null,
+      cliente_telefone: telNormalizado,
       profissional_id: profId,
-      barbeiro_id: profId,
-      profissional_nome: profNome,
-      barbeiro_nome: profNome,
+      profissional_nome: profNome || null,
+      servico_id: servicoId,
+      servico_nome: agendamentoData.servico_nome,
+      data: agendamentoData.data,
+      hora: agendamentoData.hora,
+      status: 'pendente', // nunca confiar no status vindo do navegador
     };
 
     const { data: newAppointment, error: appointmentError } = await supabaseAdmin

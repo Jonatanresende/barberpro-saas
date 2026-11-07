@@ -46,7 +46,7 @@ const Calendar = ({ selectedDate, onDateSelect, operatingDays, fullyBookedDays, 
   }
 
   const changeMonth = (amount: number) => {
-    onMonthChange(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
+    onMonthChange(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 1));
   };
 
   return (

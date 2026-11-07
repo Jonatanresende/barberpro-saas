@@ -6,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const normalizarTelefone = (t: string) => {
+  const d = (t || '').replace(/\D/g, '');
+  return d.length === 10 || d.length === 11 ? '55' + d : d;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -16,7 +21,10 @@ serve(async (req) => {
     const { telefone } = body;
     const estId = body.estabelecimento_id || body.barbearia_id;
 
+    if (!estId) throw new Error('estabelecimento_id é obrigatório.');
     if (!telefone) throw new Error('Telefone é obrigatório.');
+
+    const telNormalizado = normalizarTelefone(telefone);
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -24,7 +32,7 @@ serve(async (req) => {
     );
 
     // 1. Encontra o cliente pelo telefone (e estabelecimento se fornecido)
-    let clientQuery = supabaseAdmin.from('clientes').select('id, nome').eq('telefone', telefone);
+    let clientQuery = supabaseAdmin.from('clientes').select('id, nome').eq('telefone', telNormalizado);
     if (estId) {
       clientQuery = clientQuery.eq('estabelecimento_id', estId);
     }

@@ -1,6 +1,7 @@
 -- ==============================================================================
--- 0001_initial_schema.sql
--- Marcadô SaaS - Schema do Banco de Dados
+-- 0001_schema_completo.sql
+-- Marcadô SaaS - Schema Completo e Consolidado
+-- Nichos: Barbearias, Salões de Beleza, Estética, Manicures e Cuidados Pessoais
 -- ==============================================================================
 
 -- 1. EXTENSÕES NECESSÁRIAS
@@ -8,22 +9,21 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "btree_gist";
 
 -- ==============================================================================
--- 2. TABELAS PRINCIPAIS
+-- 2. TABELAS DO SISTEMA
 -- ==============================================================================
 
--- 2.1 Configurações Globais do Sistema (Linha única)
+-- 2.1 Configurações Globais do SaaS
 CREATE TABLE IF NOT EXISTS public.system_settings (
-  id INT PRIMARY KEY DEFAULT 1,
+  id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   system_name TEXT NOT NULL DEFAULT 'Marcadô',
-  support_email TEXT DEFAULT 'suporte@marcado.app',
-  contact_email TEXT DEFAULT 'contato@marcado.app',
+  support_email TEXT,
+  contact_email TEXT,
   tos_link TEXT,
   logo_url TEXT,
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  CONSTRAINT single_row_settings CHECK (id = 1)
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2.2 Planos de Assinatura do SaaS
+-- 2.2 Planos de Assinatura
 CREATE TABLE IF NOT EXISTS public.planos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nome TEXT NOT NULL UNIQUE,
@@ -35,39 +35,39 @@ CREATE TABLE IF NOT EXISTS public.planos (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2.3 Estabelecimentos (Multi-tenant principal)
+-- 2.3 Estabelecimentos
 CREATE TABLE IF NOT EXISTS public.estabelecimentos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nome TEXT NOT NULL,
-  dono_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE RESTRICT,
+  dono_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
   dono_nome TEXT,
   dono_email TEXT,
   nicho TEXT NOT NULL DEFAULT 'outro' CHECK (nicho IN ('barbearia', 'salao', 'estetica', 'manicure', 'outro')),
-  plano TEXT,
+  plano TEXT NOT NULL DEFAULT 'Trial',
   link_personalizado TEXT NOT NULL UNIQUE,
   endereco TEXT,
   documento TEXT,
   telefone TEXT,
   status TEXT NOT NULL DEFAULT 'ativa' CHECK (status IN ('ativa', 'inativa')),
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
   foto_url TEXT,
   instagram_url TEXT,
   whatsapp_url TEXT,
   hero_image_url TEXT,
   hero_title TEXT,
   hero_subtitle TEXT,
-  services_title TEXT DEFAULT 'Nossos Serviços',
-  social_title TEXT DEFAULT 'Siga-nos nas Redes',
+  services_title TEXT,
+  social_title TEXT,
   social_subtitle TEXT,
-  operating_days INT[] DEFAULT '{1,2,3,4,5,6}',
-  start_time TIME DEFAULT '09:00',
-  end_time TIME DEFAULT '18:00',
+  operating_days INT[] DEFAULT '{1,2,3,4,5,6}', -- 0 = Domingo, 1 = Segunda, etc.
+  start_time TIME DEFAULT '08:00',
+  end_time TIME DEFAULT '19:00',
   comissao_padrao NUMERIC(5, 2) DEFAULT 0.00,
-  trial_started_at TIMESTAMPTZ,
-  trial_expires_at TIMESTAMPTZ,
-  criado_em TIMESTAMPTZ DEFAULT NOW()
+  trial_started_at TIMESTAMPTZ DEFAULT NOW(),
+  trial_expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '7 days')
 );
 
--- 2.4 Tipos de Profissional (Categorias e comissões por cargo)
+-- 2.4 Tipos de Profissional (Cargos / Categorias de Comissão)
 CREATE TABLE IF NOT EXISTS public.tipos_profissional (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   estabelecimento_id UUID NOT NULL REFERENCES public.estabelecimentos(id) ON DELETE CASCADE,
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS public.tipos_profissional (
 -- 2.5 Profissionais
 CREATE TABLE IF NOT EXISTS public.profissionais (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL, -- NULL quando profissional sem login
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   estabelecimento_id UUID NOT NULL REFERENCES public.estabelecimentos(id) ON DELETE CASCADE,
   nome TEXT NOT NULL,
   email TEXT,
@@ -91,12 +91,12 @@ CREATE TABLE IF NOT EXISTS public.profissionais (
   criado_em TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2.6 Catálogo de Serviços
+-- 2.6 Serviços
 CREATE TABLE IF NOT EXISTS public.servicos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   estabelecimento_id UUID NOT NULL REFERENCES public.estabelecimentos(id) ON DELETE CASCADE,
   nome TEXT NOT NULL,
-  preco NUMERIC(10, 2) NOT NULL,
+  preco NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
   duracao INT NOT NULL CHECK (duracao BETWEEN 1 AND 600), -- minutos
   imagem_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -217,8 +217,10 @@ EXCLUDE USING gist (
 WHERE (status IN ('pendente', 'confirmado'));
 
 -- ==============================================================================
--- 4. VIEW PÚBLICA SEGURA (Sem dados sensíveis como CPF ou email do dono)
+-- 4. VIEWS PÚBLICAS SEGURAS (Acesso anônimo controlado)
 -- ==============================================================================
+
+-- 4.1 Dados públicos do estabelecimento para a página de agendamento
 CREATE OR REPLACE VIEW public.estabelecimentos_publico AS
 SELECT 
   id,
@@ -244,6 +246,19 @@ FROM public.estabelecimentos
 WHERE status = 'ativa';
 
 GRANT SELECT ON public.estabelecimentos_publico TO anon, authenticated;
+
+-- 4.2 Horários ocupados para calendário público (sem ID do agendamento nem dados de cliente)
+CREATE OR REPLACE VIEW public.agendamentos_ocupados AS
+SELECT 
+  estabelecimento_id,
+  profissional_id,
+  data,
+  hora,
+  duracao_minutos
+FROM public.agendamentos
+WHERE status IN ('pendente', 'confirmado');
+
+GRANT SELECT ON public.agendamentos_ocupados TO anon, authenticated;
 
 -- ==============================================================================
 -- 5. ROW LEVEL SECURITY (RLS)
@@ -279,10 +294,9 @@ CREATE POLICY "system_settings_admin_all" ON public.system_settings FOR ALL USIN
 CREATE POLICY "planos_select_all" ON public.planos FOR SELECT USING (ativo = true OR public.is_admin());
 CREATE POLICY "planos_admin_all" ON public.planos FOR ALL USING (public.is_admin());
 
--- 5.3 estabelecimentos: dono vê o seu, admin vê tudo. (Anon lê pela view!)
+-- 5.3 estabelecimentos: dono vê o seu, admin vê tudo. (Edições do dono são via Edge Function update-establishment; Anon lê pela view)
 CREATE POLICY "estabelecimentos_admin_all" ON public.estabelecimentos FOR ALL USING (public.is_admin());
 CREATE POLICY "estabelecimentos_owner_select" ON public.estabelecimentos FOR SELECT USING (dono_id = auth.uid());
-CREATE POLICY "estabelecimentos_owner_update" ON public.estabelecimentos FOR UPDATE USING (dono_id = auth.uid());
 
 -- 5.4 tipos_profissional: dono gerencia do seu estabelecimento, admin tudo
 CREATE POLICY "tipos_prof_admin_all" ON public.tipos_profissional FOR ALL USING (public.is_admin());
@@ -342,4 +356,105 @@ CREATE POLICY "disp_owner_all" ON public.profissional_disponibilidade FOR ALL US
 
 -- 5.10 gastos_saas: exclusivo admin
 CREATE POLICY "gastos_admin_all" ON public.gastos_saas FOR ALL USING (public.is_admin());
+
+-- ==============================================================================
+-- 6. STORAGE BUCKETS
+-- ==============================================================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES 
+  ('fotos-estabelecimentos', 'fotos-estabelecimentos', true),
+  ('fotos-profissionais', 'fotos-profissionais', true),
+  ('system-assets', 'system-assets', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+CREATE POLICY "Public Read fotos-estabelecimentos" ON storage.objects FOR SELECT USING (bucket_id = 'fotos-estabelecimentos');
+CREATE POLICY "Public Read fotos-profissionais" ON storage.objects FOR SELECT USING (bucket_id = 'fotos-profissionais');
+CREATE POLICY "Public Read system-assets" ON storage.objects FOR SELECT USING (bucket_id = 'system-assets');
+
+CREATE POLICY "Auth Upload fotos-estabelecimentos" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'fotos-estabelecimentos');
+CREATE POLICY "Auth Update fotos-estabelecimentos" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'fotos-estabelecimentos');
+CREATE POLICY "Auth Delete fotos-estabelecimentos" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'fotos-estabelecimentos');
+
+CREATE POLICY "Auth Upload fotos-profissionais" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'fotos-profissionais');
+CREATE POLICY "Auth Update fotos-profissionais" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'fotos-profissionais');
+CREATE POLICY "Auth Delete fotos-profissionais" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'fotos-profissionais');
+
+CREATE POLICY "Admin All system-assets" ON storage.objects FOR ALL TO authenticated USING (
+  bucket_id = 'system-assets' AND (COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin')
+);
+
+-- ==============================================================================
+-- 7. REALTIME
+-- ==============================================================================
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.agendamentos;
+
+-- ==============================================================================
+-- 8. DADOS INICIAIS (SEED)
+-- ==============================================================================
+
+INSERT INTO public.system_settings (id, system_name, support_email, contact_email, tos_link, logo_url)
+VALUES (
+  1,
+  'Marcadô',
+  'suporte@marcado.app',
+  'contato@marcado.app',
+  '/termos-de-uso',
+  '/landing/images/logo.png'
+)
+ON CONFLICT (id) DO UPDATE SET
+  system_name = EXCLUDED.system_name,
+  support_email = EXCLUDED.support_email,
+  contact_email = EXCLUDED.contact_email;
+
+INSERT INTO public.planos (nome, preco, features, ativo, popular, limite_profissionais)
+VALUES
+  (
+    'Básico',
+    47.00,
+    ARRAY[
+      'Até 2 profissionais cadastrados',
+      'Agendamentos online ilimitados',
+      'Página exclusiva de agendamento',
+      'Controle financeiro diário e mensal',
+      'Notificações no WhatsApp (manual)'
+    ],
+    true,
+    false,
+    2
+  ),
+  (
+    'Profissional',
+    97.00,
+    ARRAY[
+      'Profissionais ilimitados',
+      'Acesso individual ao painel para profissionais',
+      'Gestão de comissões por categoria de cargo',
+      'Relatórios detalhados de desempenho de 30 dias',
+      'Página exclusiva e personalizada com sua marca',
+      'Suporte prioritário via WhatsApp'
+    ],
+    true,
+    true,
+    NULL
+  ),
+  (
+    'Trial',
+    0.00,
+    ARRAY[
+      'Período de teste gratuito por 7 dias',
+      'Até 2 profissionais',
+      'Agendamentos online'
+    ],
+    false,
+    false,
+    2
+  )
+ON CONFLICT (nome) DO UPDATE SET
+  preco = EXCLUDED.preco,
+  features = EXCLUDED.features,
+  ativo = EXCLUDED.ativo,
+  popular = EXCLUDED.popular,
+  limite_profissionais = EXCLUDED.limite_profissionais;
 

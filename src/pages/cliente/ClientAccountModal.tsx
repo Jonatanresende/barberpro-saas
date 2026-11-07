@@ -9,9 +9,10 @@ interface ClientAccountModalProps {
   onClose: () => void;
   onAppointmentFound: (appointment: Agendamento, phone: string) => void;
   onHistoryFound: (clientName: string, appointments: Agendamento[]) => void;
+  estabelecimentoId: string;
 }
 
-const ClientAccountModal = ({ isOpen, onClose, onAppointmentFound, onHistoryFound }: ClientAccountModalProps) => {
+const ClientAccountModal = ({ isOpen, onClose, onAppointmentFound, onHistoryFound, estabelecimentoId }: ClientAccountModalProps) => {
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
@@ -40,7 +41,7 @@ const ClientAccountModal = ({ isOpen, onClose, onAppointmentFound, onHistoryFoun
 
     try {
       // 1. Tenta buscar o próximo agendamento (para gerenciar)
-      const nextAppointment = await api.getClientAppointment(phone.trim());
+      const nextAppointment = await api.getClientAppointment(phone.trim(), estabelecimentoId);
       
       if (nextAppointment) {
         onAppointmentFound(nextAppointment, phone.trim());
@@ -49,7 +50,7 @@ const ClientAccountModal = ({ isOpen, onClose, onAppointmentFound, onHistoryFoun
       }
 
       // 2. Se não houver agendamento futuro, busca o histórico completo
-      const historyData = await api.getClientAppointmentsHistory(phone.trim());
+      const historyData = await api.getClientAppointmentsHistory(phone.trim(), estabelecimentoId);
 
       if (historyData && historyData.appointments.length > 0) {
         setClientName(historyData.clientName);
@@ -71,7 +72,7 @@ const ClientAccountModal = ({ isOpen, onClose, onAppointmentFound, onHistoryFoun
     if (!phone.trim()) return;
     setIsSubmitting(true);
     try {
-        const historyData = await api.getClientAppointmentsHistory(phone.trim());
+        const historyData = await api.getClientAppointmentsHistory(phone.trim(), estabelecimentoId);
         if (historyData) {
             onHistoryFound(historyData.clientName, historyData.appointments);
             onClose();

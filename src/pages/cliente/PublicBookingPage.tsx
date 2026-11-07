@@ -195,15 +195,10 @@ const PublicBookingPage = () => {
         try {
             const agendamentoPayload = {
                 estabelecimento_id: estabelecimento.id,
-                // Alias para compatibilidade com banco ainda não migrado
-                barbearia_id: estabelecimento.id,
                 servico_id: selectedServico.id,
                 servico_nome: selectedServico.nome,
                 profissional_id: selectedProfissional.id,
                 profissional_nome: selectedProfissional.nome,
-                // Alias para compatibilidade
-                barbeiro_id: selectedProfissional.id,
-                barbeiro_nome: selectedProfissional.nome,
                 data: selectedDate.toISOString().split('T')[0],
                 hora: selectedTime,
                 cliente_nome: clienteNome,

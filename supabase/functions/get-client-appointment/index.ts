@@ -6,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const normalizarTelefone = (t: string) => {
+  const d = (t || '').replace(/\D/g, '');
+  return d.length === 10 || d.length === 11 ? '55' + d : d;
+};
+
 const getTodayISOInFortaleza = () => {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Fortaleza',
@@ -26,6 +31,7 @@ serve(async (req) => {
     const { telefone } = body;
     const estId = body.estabelecimento_id || body.barbearia_id;
 
+    if (!estId) throw new Error('estabelecimento_id é obrigatório.');
     if (!telefone) throw new Error('Telefone é obrigatório.');
 
     const supabaseAdmin = createClient(
@@ -33,8 +39,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    const telNormalizado = normalizarTelefone(telefone);
+
     // 1. Encontra o cliente pelo telefone (e estabelecimento se fornecido)
-    let clientQuery = supabaseAdmin.from('clientes').select('id').eq('telefone', telefone);
+    let clientQuery = supabaseAdmin.from('clientes').select('id').eq('telefone', telNormalizado);
     if (estId) {
       clientQuery = clientQuery.eq('estabelecimento_id', estId);
     }

@@ -6,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const normalizarTelefone = (t: string) => {
+  const d = (t || '').replace(/\D/g, '');
+  return d.length === 10 || d.length === 11 ? '55' + d : d;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -16,16 +21,19 @@ serve(async (req) => {
     const { nome, telefone } = body;
     const estabelecimento_id = body.estabelecimento_id || body.barbearia_id;
 
+    if (!estabelecimento_id) throw new Error('estabelecimento_id é obrigatório.');
     if (!nome || !telefone) {
       throw new Error('Nome e telefone são obrigatórios.');
     }
+
+    const telNormalizado = normalizarTelefone(telefone);
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    let query = supabaseAdmin.from('clientes').select('*').eq('telefone', telefone);
+    let query = supabaseAdmin.from('clientes').select('*').eq('telefone', telNormalizado);
     if (estabelecimento_id) {
       query = query.eq('estabelecimento_id', estabelecimento_id);
     }
@@ -42,7 +50,7 @@ serve(async (req) => {
       });
     }
 
-    const insertPayload: any = { nome, telefone };
+    const insertPayload: any = { nome, telefone: telNormalizado };
     if (estabelecimento_id) {
       insertPayload.estabelecimento_id = estabelecimento_id;
     }

@@ -186,6 +186,7 @@ const PublicProfilePage = () => {
                 onClose={() => setIsAccountModalOpen(false)}
                 onAppointmentFound={handleAppointmentFound}
                 onHistoryFound={handleHistoryFound}
+                estabelecimentoId={estabelecimento?.id || ''}
             />
             {estabelecimento && (
                 <ClientAppointmentModal

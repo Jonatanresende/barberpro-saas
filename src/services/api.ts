@@ -606,7 +606,7 @@ export const api = {
   // PUBLIC/CLIENTE
   getEstabelecimentoBySlug: async (slug: string): Promise<Estabelecimento | null> => {
     const { data, error } = await supabase
-      .from('estabelecimentos')
+      .from('estabelecimentos_publico')
       .select('*')
       .eq('link_personalizado', slug)
       .limit(1);
@@ -615,7 +615,7 @@ export const api = {
       throw new Error(error.message);
     }
     
-    return data && data.length > 0 ? data[0] : null;
+    return data && data.length > 0 ? (data[0] as unknown as Estabelecimento) : null;
   },
 
   getBookingDataForMonth: async (estabelecimentoId: string, year: number, month: number) => {
@@ -624,7 +624,7 @@ export const api = {
 
     const [agendamentos, disponibilidades] = await Promise.all([
       supabase
-        .from('agendamentos')
+        .from('agendamentos_ocupados')
         .select('data, hora, profissional_id')
         .eq('estabelecimento_id', estabelecimentoId)
         .gte('data', startDate)
@@ -651,25 +651,25 @@ export const api = {
     return data;
   },
 
-  getClientAppointment: async (telefone: string): Promise<Agendamento | null> => {
+  getClientAppointment: async (telefone: string, estabelecimentoId: string): Promise<Agendamento | null> => {
     const { data, error } = await supabase.functions.invoke('get-client-appointment', {
-      body: { telefone },
+      body: { telefone, estabelecimento_id: estabelecimentoId },
     });
     if (error) throw new Error(data?.message || data?.error || error.message);
     return data;
   },
 
-  getClientAppointmentsHistory: async (telefone: string): Promise<{ clientName: string, appointments: Agendamento[] } | null> => {
+  getClientAppointmentsHistory: async (telefone: string, estabelecimentoId: string): Promise<{ clientName: string, appointments: Agendamento[] } | null> => {
     const { data, error } = await supabase.functions.invoke('get-client-appointments-history', {
-      body: { telefone },
+      body: { telefone, estabelecimento_id: estabelecimentoId },
     });
     if (error) throw new Error(data?.message || data?.error || error.message);
     return data;
   },
 
-  cancelClientAppointment: async (appointmentId: string, telefone: string): Promise<boolean> => {
+  cancelClientAppointment: async (appointmentId: string, telefone: string, estabelecimentoId: string): Promise<boolean> => {
     const { data, error } = await supabase.functions.invoke('cancel-client-appointment', {
-      body: { appointmentId, telefone },
+      body: { appointmentId, telefone, estabelecimento_id: estabelecimentoId },
     });
     if (error) throw new Error(data?.error || error.message);
     return data.success;
