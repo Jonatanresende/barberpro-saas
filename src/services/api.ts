@@ -422,13 +422,19 @@ export const api = {
     return data;
   },
 
-  updateProfissional: async (id: string, userId: string | undefined, profissionalData: any, photoFile?: File): Promise<Profissional> => {
+  updateProfissional: async (id: string, userId: string | undefined, profissionalData: any, photoFile?: File, password?: string): Promise<Profissional> => {
     let finalUpdates = { ...profissionalData };
     if (photoFile) {
       finalUpdates.foto_url = await uploadPhoto(photoFile, 'fotos-profissionais');
     }
     const { data, error } = await supabase.functions.invoke('update-professional-user', {
-      body: { profissionalId: id, userId, updates: finalUpdates },
+      body: { 
+        profissionalId: id, 
+        userId, 
+        updates: finalUpdates,
+        password: password || undefined,
+        senha: password || undefined,
+      },
     });
     if (error) {
       const errorMessage = data?.error || error.message;

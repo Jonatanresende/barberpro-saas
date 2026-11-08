@@ -192,7 +192,7 @@ const ManageProfissionais = ({ estabelecimentoPlan, nicho }: ManageProfissionais
         
         let promise;
         if (profissionalToEdit) {
-            promise = api.updateProfissional(profissionalToEdit.id, profissionalToEdit.user_id, profissionalData, photoFile);
+            promise = api.updateProfissional(profissionalToEdit.id, profissionalToEdit.user_id, profissionalData, photoFile, password);
         } else {
             if (hasProfessionalPlan) {
                 promise = api.createProfissional(profissionalData, estId, password!, photoFile);
@@ -272,16 +272,14 @@ const ManageProfissionais = ({ estabelecimentoPlan, nicho }: ManageProfissionais
                     </div>
                 )}
             </div>
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={profissionalToEdit ? `Editar ${vocab.profissional.singular}` : `Adicionar ${vocab.profissional.singular}`}>
-                <ProfissionalModal 
-                    isOpen={isModalOpen} 
-                    onClose={() => setIsModalOpen(false)} 
-                    onSave={handleSave} 
-                    profissionalToEdit={profissionalToEdit} 
-                    hasProfessionalPanelFeature={hasProfessionalPlan} 
-                    tiposProfissional={types} 
-                />
-            </Modal>
+            <ProfissionalModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                onSave={handleSave} 
+                profissionalToEdit={profissionalToEdit} 
+                hasProfessionalPanelFeature={hasProfessionalPlan} 
+                tiposProfissional={types} 
+            />
             <ProfissionalDesempenhoModal
                 isOpen={isPerformanceModalOpen}
                 onClose={() => setIsPerformanceModalOpen(false)}

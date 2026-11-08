@@ -31,6 +31,7 @@ const ProfissionalModal = ({
   const itemToEdit = profissionalToEdit || barberToEdit;
   const hasPanelFeature = hasProfessionalPanelFeature ?? hasBarberPanelFeature ?? false;
   const typesList = tiposProfissional || professionalTypes || [];
+  const hasLogin = Boolean(itemToEdit?.user_id);
 
   const { slug } = useParams<{ slug: string }>();
   const [nome, setNome] = useState('');
@@ -125,6 +126,14 @@ const ProfissionalModal = ({
         toast.error("A senha é obrigatória para criar um novo profissional com acesso ao painel.");
         return;
       }
+      if (itemToEdit && !hasLogin && email && !password) {
+        toast.error("A senha é obrigatória para criar o acesso ao painel.");
+        return;
+      }
+      if (password && password.length < 6) {
+        toast.error("A senha deve ter no mínimo 6 caracteres.");
+        return;
+      }
       
       profissionalData.email = email;
       profissionalData.tipo_profissional_id = tipoProfissionalId;
@@ -142,7 +151,7 @@ const ProfissionalModal = ({
     }
 
     setIsSaving(true);
-    await onSave(profissionalData, password, photoFile || undefined);
+    await onSave(profissionalData, password || undefined, photoFile || undefined);
     setIsSaving(false);
   };
 
@@ -214,12 +223,25 @@ const ProfissionalModal = ({
                   <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">E-mail de Acesso</label>
                   <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required={hasPanelFeature} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
                 </div>
-                {!itemToEdit && (
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
-                        <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required={hasPanelFeature} className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white" />
-                    </div>
-                )}
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                    {!itemToEdit
+                      ? 'Senha'
+                      : (!hasLogin
+                        ? 'Senha (cria o acesso ao painel)'
+                        : 'Nova senha (deixe em branco para não alterar)')}
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required={!itemToEdit || (!hasLogin && Boolean(email.trim()))}
+                    placeholder={hasLogin ? '••••••••' : undefined}
+                    minLength={6}
+                    className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+                  />
+                </div>
               </>
             ) : (
               <div className="bg-brand-dark p-4 rounded-lg border border-gray-700">
