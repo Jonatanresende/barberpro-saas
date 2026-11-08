@@ -6,10 +6,10 @@ Documentação técnica do schema PostgreSQL gerenciado no Supabase para o **Mar
 
 ## 📌 Sumário
 1. [Convenções & Decisões Arquiteturais](#1-convenções--decisões-arquiteturais)
-2. [Execução da Migração](#2-execução-da-migração)
+2. [Execução e Regras de Migração](#2-execução-e-regras-de-migração)
 3. [Dicionário de Tabelas](#3-dicionário-de-tabelas)
 4. [Triggers e Integridade de Negócio](#4-triggers-e-integridade-de-negócio)
-5. [Funções Auxiliares de Segurança (SECURITY DEFINER)](#5-funções-auxiliares-de-segurança-security-definer)
+5. [Funções Auxiliares de Segurança](#5-funções-auxiliares-de-segurança)
 6. [Views Públicas de Segurança](#6-views-públicas-de-segurança)
 7. [Segurança e Row Level Security (RLS)](#7-segurança-e-row-level-security-rls)
 8. [Storage Buckets & Realtime](#8-storage-buckets--realtime)
@@ -21,21 +21,26 @@ Documentação técnica do schema PostgreSQL gerenciado no Supabase para o **Mar
 ## 1. Convenções & Decisões Arquiteturais
 
 - **Identificadores internos neutros**: `estabelecimentos` (em vez de barbearias) e `profissionais` (em vez de barbeiros). Suporte aos nichos: `'barbearia'`, `'salao'`, `'estetica'`, `'manicure'`, `'outro'`.
-- **Multi-tenancy com isolamento**: Todas as entidades pertencem diretamente a um `estabelecimento_id` com exclusão em cascata (`ON DELETE CASCADE`), exceto clientes e serviços em agendamentos que usam `NO ACTION` para proteger o histórico financeiro.
+- **Multi-tenancy com isolamento**: Todas as entidades pertencem diretamente a um `estabelecimento_id` com exclusão em cascata (`ON DELETE CASCADE`), exceto clientes e serviços em agendamentos que usam `NO ACTION` para proteger o histórico.
+- **Proteção do histórico financeiro e operacional**: Um serviço ou cliente que já possui agendamentos vinculados **não pode ser apagado** (`ON DELETE NO ACTION` em `agendamentos.cliente_id` e `agendamentos.servico_id`). Isso impede que exclusões acidentais quebrem métricas de faturamento ou relatórios passados. Apenas a exclusão da conta inteira do estabelecimento (`DELETE FROM estabelecimentos`) apaga todos os registros em cascata.
+- **Leitura pública de e-mail e telefone de profissionais ativos**: O e-mail e o telefone dos profissionais ativos (`ativo = true`) são legíveis pelo público através da política `prof_public_read`. A página pública de agendamento precisa realizar `SELECT *` na listagem de profissionais para permitir a seleção de agenda e comunicação com o cliente.
 - **Clientes isolados por estabelecimento**: Chave única `UNIQUE (estabelecimento_id, telefone)`. O mesmo cliente pode agendar em múltiplos estabelecimentos sem conflitos ou vazamento de dados.
 - **Normalização canônica de telefone**: Trigger `normalize_cliente_phone` padroniza o telefone dos clientes em formato estritamente numérico com DDI 55 (`5585999991111`), garantindo integridade de busca e unicidade.
 - **Anti-duplo agendamento no banco**: Extensão `btree_gist` com restrição de exclusão `no_overlapping_appointments` (`EXCLUDE USING gist`) sobre `(profissional_id, tstzrange(inicio_ts, fim_ts))` para status `pendente` e `confirmado`. A tentativa gera erro PostgreSQL `23P01` (convertido em HTTP 409 pela Edge Function).
 - **Proteção do plano contra adulteração**: O dono não possui permissão de `UPDATE` direto na tabela `estabelecimentos`. Todas as edições de perfil passam pela Edge Function `update-establishment`, que impõe uma lista estrita de campos permitidos, impedindo a adulteração de `plano`, `status` ou `trial_*`.
-- **Preservação de histórico financeiro**: `agendamentos` grava snapshot de `preco_cobrado` e `duracao_minutos` no momento da criação pelo trigger `prepare_agendamento`.
+- **Preservação de snapshots no agendamento**: `agendamentos` grava snapshot imutável de `preco_cobrado` e `duracao_minutos` no momento da criação pelo trigger `prepare_agendamento`.
 - **Autenticação e Papéis**: Papel (`role`) verificado exclusivamente em `app_metadata.role` (`'admin'`, `'estabelecimento'`, `'profissional'`). Nunca em `user_metadata`.
 
 ---
 
-## 2. Execução da Migração
+## 2. Execução e Regras de Migração
 
 O banco é criado executando o arquivo consolidado:
 
 * **`supabase/migrations/0001_schema_completo.sql`** — Contém todas as extensões, tabelas, índices, triggers, funções auxiliares, views públicas, políticas RLS, buckets de Storage, publicação Realtime e dados iniciais (Seed).
+
+> [!IMPORTANT]
+> **Imutabilidade da migração 0001**: O arquivo `0001_schema_completo.sql` é a foto consolidada de criação do banco e **não deve mais ser editado** após ser rodado no Supabase. Qualquer alteração, evolução de estrutura ou ajuste futuro no banco deve ser feito criando uma nova migração sequencial (por exemplo: `supabase/migrations/0002_nome_da_alteracao.sql`).
 
 ---
 
@@ -86,9 +91,11 @@ Entidade central multi-tenant (clientes da plataforma SaaS).
 | `instagram_url` | TEXT | Sim | NULL | Link do Instagram |
 | `whatsapp_url` | TEXT | Sim | NULL | Link do WhatsApp |
 | `hero_image_url` | TEXT | Sim | NULL | Imagem banner da página |
-| `hero_title` / `hero_subtitle` | TEXT | Sim | NULL | Textos principais do topo da página |
+| `hero_title` | TEXT | Sim | NULL | Título principal no topo da página |
+| `hero_subtitle` | TEXT | Sim | NULL | Subtítulo no topo da página |
 | `services_title` | TEXT | Sim | 'Nossos Serviços' | Título da seção de serviços |
-| `social_title` / `social_subtitle` | TEXT | Sim | 'Siga-nos nas Redes' | Seção de redes sociais |
+| `social_title` | TEXT | Sim | 'Siga-nos nas Redes' | Título da seção de redes sociais |
+| `social_subtitle` | TEXT | Sim | NULL | Subtítulo da seção de redes sociais |
 | `operating_days` | INT[] | Sim | '{1,2,3,4,5,6}' | Dias de funcionamento (0 = Dom, 1 = Seg, ...) |
 | `start_time` / `end_time` | TIME | Sim | '09:00' / '18:00' | Horários de funcionamento |
 | `comissao_padrao` | NUMERIC(5,2)| Sim | 0.00 | Percentual de comissão padrão |
@@ -114,7 +121,7 @@ Profissionais vinculados a um estabelecimento.
 | `user_id` | UUID | Sim | FK `auth.users` (`ON DELETE SET NULL`, UNIQUE) — NULL = sem login |
 | `estabelecimento_id`| UUID | Não | FK `estabelecimentos` (`ON DELETE CASCADE`) |
 | `nome` | TEXT | Não | Nome do profissional |
-| `email` / `telefone` | TEXT | Sim | Contato direto |
+| `email` / `telefone` | TEXT | Sim | Contato direto (legíveis publicamente para ativos) |
 | `especialidade` | TEXT | Sim | Especialidade |
 | `foto_url` | TEXT | Sim | Foto de perfil |
 | `ativo` | BOOLEAN | Não | `true` se disponível na página de agendamento |
@@ -219,18 +226,24 @@ WHERE (status IN ('pendente', 'confirmado'));
 
 ---
 
-## 5. Funções Auxiliares de Segurança (SECURITY DEFINER)
+## 5. Funções Auxiliares de Segurança
 
-Para evitar erros de recursão infinita (`infinite recursion detected in policy`) entre políticas RLS que se referenciam mutuamente, as seguintes funções auxiliares executam com privilégios de sistema (`SECURITY DEFINER`) com `search_path = public`:
+### 5.1 Função de Leitura do Papel (SQL Comum)
+- **`is_admin()`**: Função SQL padrão (`LANGUAGE sql STABLE`), sem privilégios elevados. Lê com segurança o JWT decodificado da requisição:
+  ```sql
+  SELECT COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin';
+  ```
 
-| Função | Retorno | Descrição |
-|---|---|---|
-| `is_admin()` | `BOOLEAN` | Lê com segurança `auth.jwt() -> 'app_metadata' ->> 'role' = 'admin'` |
-| `owner_estabelecimento_id()` | `UUID` | Retorna o `id` do estabelecimento cujo `dono_id = auth.uid()` |
-| `meu_profissional_id()` | `UUID` | Retorna o `id` do profissional cujo `user_id = auth.uid()` |
-| `meu_profissional_estabelecimento_id()`| `UUID` | Retorna o `estabelecimento_id` do profissional associado ao usuário atual |
+### 5.2 Funções de Consulta de Contexto (SECURITY DEFINER)
+Para evitar erros de recursão infinita (`infinite recursion detected in policy`) entre políticas RLS que se referenciam mutuamente, as seguintes **3 funções** executam com privilégios de sistema (`SECURITY DEFINER`) com `search_path = public`:
 
-> **Permissões**: O acesso a essas 3 funções foi revogado de `PUBLIC` e `anon`, ficando restrito exclusivamente a usuários com papel `authenticated`.
+| Função | Retorno | Modo | Descrição |
+|---|---|---|---|
+| `owner_estabelecimento_id()` | `UUID` | `SECURITY DEFINER` | Retorna o `id` do estabelecimento cujo `dono_id = auth.uid()` |
+| `meu_profissional_id()` | `UUID` | `SECURITY DEFINER` | Retorna o `id` do profissional cujo `user_id = auth.uid()` |
+| `meu_profissional_estabelecimento_id()`| `UUID` | `SECURITY DEFINER` | Retorna o `estabelecimento_id` do profissional associado ao usuário atual |
+
+> **Permissões**: O acesso a essas 3 funções `SECURITY DEFINER` foi expressamente revogado de `PUBLIC` e `anon`, ficando restrito exclusivamente a usuários autenticados (`TO authenticated`).
 
 ---
 
@@ -259,9 +272,9 @@ Todas as 10 tabelas têm `ROW LEVEL SECURITY` estritamente habilitada:
 - `planos`: Leitura aberta para planos ativos (`ativo = true`), gerenciamento exclusivo de administradores.
 - `estabelecimentos`: Leitura permitida ao dono (`dono_id = auth.uid()`) e profissionais vinculados. Modificações passam obrigatoriamente por Edge Function com credenciais de serviço.
 - `tipos_profissional`: Dono gerencia os tipos do seu estabelecimento; profissionais vinculados podem consultar.
-- `profissionais`: Público lê os profissionais ativos (`ativo = true`). Dono gerencia; profissional lê seu próprio registro.
-- `servicos`: Público lê; dono gerencia os do seu estabelecimento.
-- `clientes`: Dono gerencia; profissional lê apenas os clientes de sua unidade. Não há leitura anônima.
+- `profissionais`: Público lê os profissionais ativos (`ativo = true`), incluindo e-mail e telefone necessários para a tela de agendamento. Dono gerencia; profissional lê seu próprio registro.
+- `servicos`: Público lê; dono gerencia os do seu estabelecimento. Serviços vinculados a agendamentos não podem ser excluídos (`ON DELETE NO ACTION`).
+- `clientes`: Dono gerencia; profissional lê apenas os clientes de sua unidade. Não há leitura anônima. Clientes com agendamentos não podem ser excluídos (`ON DELETE NO ACTION`).
 - `agendamentos`: Dono gerencia; profissional lê e atualiza os seus próprios; público não tem acesso direto (usa `agendamentos_ocupados`).
 - `profissional_disponibilidade`: Público lê para cálculo de grade; profissional e dono gerenciam.
 - `gastos_saas`: Acesso e gerenciamento restritos a administradores.
@@ -271,8 +284,8 @@ Todas as 10 tabelas têm `ROW LEVEL SECURITY` estritamente habilitada:
 ## 8. Storage Buckets & Realtime
 
 ### Buckets
-1. **`fotos-estabelecimentos`**: Imagens e logos dos estabelecimentos (público para leitura, upload por autenticados, alteração/exclusão pelo proprietário do arquivo ou admin).
-2. **`fotos-profissionais`**: Fotos de perfil de profissionais (público para leitura, upload por autenticados).
+1. **`fotos-estabelecimentos`**: Imagens e logos dos estabelecimentos (público para leitura; upload por autenticados; alteração/exclusão restrita ao dono do arquivo ou admin).
+2. **`fotos-profissionais`**: Fotos de perfil de profissionais (público para leitura; upload por autenticados; alteração/exclusão restrita ao dono do arquivo ou admin).
 3. **`system-assets`**: Imagens do sistema gerenciadas exclusivamente por administradores.
 
 ### Realtime
