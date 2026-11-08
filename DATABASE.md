@@ -9,23 +9,25 @@ Documentação técnica do schema PostgreSQL gerenciado no Supabase para o **Mar
 2. [Execução da Migração](#2-execução-da-migração)
 3. [Dicionário de Tabelas](#3-dicionário-de-tabelas)
 4. [Triggers e Integridade de Negócio](#4-triggers-e-integridade-de-negócio)
-5. [Views Públicas de Segurança](#5-views-públicas-de-segurança)
-6. [Segurança e Row Level Security (RLS)](#6-segurança-e-row-level-security-rls)
-7. [Storage Buckets](#7-storage-buckets)
-8. [Criação do Primeiro Administrador](#8-criação-do-primeiro-administrador)
-9. [Consultas de Verificação](#9-consultas-de-verificação)
+5. [Funções Auxiliares de Segurança (SECURITY DEFINER)](#5-funções-auxiliares-de-segurança-security-definer)
+6. [Views Públicas de Segurança](#6-views-públicas-de-segurança)
+7. [Segurança e Row Level Security (RLS)](#7-segurança-e-row-level-security-rls)
+8. [Storage Buckets & Realtime](#8-storage-buckets--realtime)
+9. [Criação do Primeiro Administrador](#9-criação-do-primeiro-administrador)
+10. [Consultas de Verificação](#10-consultas-de-verificação)
 
 ---
 
 ## 1. Convenções & Decisões Arquiteturais
 
-- **Identificadores internos neutros**: `estabelecimentos` (em vez de barbearias) e `profissionais` (em vez de barbeiros).
-- **Multi-tenancy com isolamento**: Todas as entidades pertencem diretamente a um `estabelecimento_id` com exclusão em cascata (`ON DELETE CASCADE`).
-- **Clientes isolados por estabelecimento**: Chave única `UNIQUE (estabelecimento_id, telefone)`. O mesmo cliente pode agendar em múltiplos estabelecimentos sem misturar dados ou históricos.
-- **Prevenção de agendamento duplo a nível de banco**: Usando extensão `btree_gist` e constraint `EXCLUDE USING gist` sobre `(profissional_id, tstzrange(inicio_ts, fim_ts))` para status `pendente` ou `confirmado`. A violação gera erro `23P01` tratado como HTTP 409 pelas Edge Functions.
-- **Proteção do plano contra adulteração**: O dono do estabelecimento não possui permissão de `UPDATE` direto na tabela `estabelecimentos`. Todas as edições do perfil são processadas pela Edge Function `update-establishment`, que impõe uma lista estrita de campos permitidos (nome, endereço, telefone, nicho, horários, imagens), impedindo a alteração de `plano`, `status` ou `trial_*` por não-administradores.
-- **Preservação de histórico financeiro**: `agendamentos` grava snapshot de `preco_cobrado` e `duracao_minutos` no momento da criação.
-- **Autenticação e Papéis**: Papel (`role`) gravado **exclusivamente** em `app_metadata.role` (`'admin'`, `'estabelecimento'`, `'profissional'`). Nunca em `user_metadata`.
+- **Identificadores internos neutros**: `estabelecimentos` (em vez de barbearias) e `profissionais` (em vez de barbeiros). Suporte aos nichos: `'barbearia'`, `'salao'`, `'estetica'`, `'manicure'`, `'outro'`.
+- **Multi-tenancy com isolamento**: Todas as entidades pertencem diretamente a um `estabelecimento_id` com exclusão em cascata (`ON DELETE CASCADE`), exceto clientes e serviços em agendamentos que usam `NO ACTION` para proteger o histórico financeiro.
+- **Clientes isolados por estabelecimento**: Chave única `UNIQUE (estabelecimento_id, telefone)`. O mesmo cliente pode agendar em múltiplos estabelecimentos sem conflitos ou vazamento de dados.
+- **Normalização canônica de telefone**: Trigger `normalize_cliente_phone` padroniza o telefone dos clientes em formato estritamente numérico com DDI 55 (`5585999991111`), garantindo integridade de busca e unicidade.
+- **Anti-duplo agendamento no banco**: Extensão `btree_gist` com restrição de exclusão `no_overlapping_appointments` (`EXCLUDE USING gist`) sobre `(profissional_id, tstzrange(inicio_ts, fim_ts))` para status `pendente` e `confirmado`. A tentativa gera erro PostgreSQL `23P01` (convertido em HTTP 409 pela Edge Function).
+- **Proteção do plano contra adulteração**: O dono não possui permissão de `UPDATE` direto na tabela `estabelecimentos`. Todas as edições de perfil passam pela Edge Function `update-establishment`, que impõe uma lista estrita de campos permitidos, impedindo a adulteração de `plano`, `status` ou `trial_*`.
+- **Preservação de histórico financeiro**: `agendamentos` grava snapshot de `preco_cobrado` e `duracao_minutos` no momento da criação pelo trigger `prepare_agendamento`.
+- **Autenticação e Papéis**: Papel (`role`) verificado exclusivamente em `app_metadata.role` (`'admin'`, `'estabelecimento'`, `'profissional'`). Nunca em `user_metadata`.
 
 ---
 
@@ -33,203 +35,281 @@ Documentação técnica do schema PostgreSQL gerenciado no Supabase para o **Mar
 
 O banco é criado executando o arquivo consolidado:
 
-* **`supabase/migrations/0001_schema_completo.sql`** — Contém todas as extensões, tabelas, triggers, views públicas, políticas RLS, buckets de Storage, publicação Realtime e dados iniciais (Seed).
+* **`supabase/migrations/0001_schema_completo.sql`** — Contém todas as extensões, tabelas, índices, triggers, funções auxiliares, views públicas, políticas RLS, buckets de Storage, publicação Realtime e dados iniciais (Seed).
 
 ---
 
 ## 3. Dicionário de Tabelas
 
 ### `system_settings`
-Configurações da plataforma SaaS. Garante uma única linha via constraint `id = 1`.
+Configurações globais da plataforma SaaS. Garante uma única linha via constraint `CHECK (id = 1)`.
 | Coluna | Tipo | Nulo | Padrão | Descrição |
 |---|---|---|---|---|
 | `id` | INT | Não | 1 | Chave primária singleton |
 | `system_name` | TEXT | Não | 'Marcadô' | Nome da plataforma |
-| `support_email` | TEXT | Sim | NULL | E-mail de suporte |
-| `contact_email` | TEXT | Sim | NULL | E-mail de contato |
+| `support_email` | TEXT | Sim | 'suporte@marcado.app' | E-mail de suporte |
+| `contact_email` | TEXT | Sim | 'contato@marcado.app' | E-mail de contato |
 | `tos_link` | TEXT | Sim | NULL | Link dos termos de serviço |
 | `logo_url` | TEXT | Sim | NULL | Logotipo global |
-| `updated_at` | TIMESTAMPTZ | Sim | NOW() | Última alteração |
+| `updated_at` | TIMESTAMPTZ | Sim | NOW() | Data de atualização |
 
 ### `planos`
-Planos de assinatura disponíveis para os estabelecimentos.
+Planos de assinatura do SaaS.
 | Coluna | Tipo | Nulo | Padrão | Descrição |
 |---|---|---|---|---|
-| `id` | UUID | Não | uuid_generate_v4() | ID do plano |
-| `nome` | TEXT | Não | UNIQUE | Nome (Básico, Profissional, etc.) |
+| `id` | UUID | Não | `gen_random_uuid()` | Chave primária |
+| `nome` | TEXT | Não | UNIQUE | Nome do plano (Básico, Profissional, etc.) |
 | `preco` | NUMERIC(10,2)| Não | 0.00 | Valor da mensalidade |
-| `features` | TEXT[] | Sim | '{}' | Lista de recursos |
-| `ativo` | BOOLEAN | Não | true | Se está visível |
+| `features` | TEXT[] | Sim | '{}' | Lista de benefícios |
+| `ativo` | BOOLEAN | Não | true | Se está ativo para contratação |
 | `popular` | BOOLEAN | Não | false | Destaque visual |
 | `limite_profissionais`| INT | Sim | NULL | Limite de profissionais (NULL = ilimitado) |
+| `created_at` | TIMESTAMPTZ | Sim | NOW() | Data de criação |
 
 ### `estabelecimentos`
-Entidade central multi-tenant.
+Entidade central multi-tenant (clientes da plataforma SaaS).
 | Coluna | Tipo | Nulo | Padrão | Descrição |
 |---|---|---|---|---|
-| `id` | UUID | Não | uuid_generate_v4() | ID do estabelecimento |
+| `id` | UUID | Não | `gen_random_uuid()` | Chave primária |
 | `nome` | TEXT | Não | | Nome comercial |
-| `dono_id` | UUID | Não | UNIQUE, FK `auth.users` | Dono do estabelecimento |
-| `nicho` | TEXT | Não | 'outro' | `CHECK ('barbearia', 'salao', 'estetica', 'manicure', 'outro')` |
-| `plano` | TEXT | Não | 'Trial' | Plano ativo |
+| `dono_id` | UUID | Sim | UNIQUE, FK `auth.users` (`ON DELETE RESTRICT`) | Dono da conta |
+| `dono_nome` | TEXT | Sim | NULL | Nome do responsável |
+| `dono_email` | TEXT | Sim | NULL | E-mail do responsável |
+| `nicho` | TEXT | Não | 'outro' | `CHECK (nicho IN ('barbearia', 'salao', 'estetica', 'manicure', 'outro'))` |
+| `plano` | TEXT | Sim | NULL | Plano atual do estabelecimento |
 | `link_personalizado` | TEXT | Não | UNIQUE | Slug da página pública (`/slug`) |
-| `status` | TEXT | Não | 'ativa' | `CHECK ('ativa', 'inativa')` |
-| `comissao_padrao` | NUMERIC(5,2)| Não | 0.00 | Percentual de comissão padrão |
-| `operating_days` | INT[] | Sim | '{1,2,3,4,5,6}' | Dias de funcionamento (0=Dom, 1=Seg) |
-| `start_time` / `end_time` | TIME | Sim | '08:00' / '19:00' | Horários padrão de abertura e fechamento |
-| `trial_started_at` | TIMESTAMPTZ | Sim | NOW() | Início do teste |
-| `trial_expires_at` | TIMESTAMPTZ | Sim | NOW() + 7 days | Expiração do teste |
+| `endereco` | TEXT | Sim | NULL | Endereço físico |
+| `documento` | TEXT | Sim | NULL | CPF ou CNPJ |
+| `telefone` | TEXT | Sim | NULL | Telefone do local |
+| `status` | TEXT | Não | 'ativa' | `CHECK (status IN ('ativa', 'inativa'))` |
+| `foto_url` | TEXT | Sim | NULL | Foto do estabelecimento |
+| `instagram_url` | TEXT | Sim | NULL | Link do Instagram |
+| `whatsapp_url` | TEXT | Sim | NULL | Link do WhatsApp |
+| `hero_image_url` | TEXT | Sim | NULL | Imagem banner da página |
+| `hero_title` / `hero_subtitle` | TEXT | Sim | NULL | Textos principais do topo da página |
+| `services_title` | TEXT | Sim | 'Nossos Serviços' | Título da seção de serviços |
+| `social_title` / `social_subtitle` | TEXT | Sim | 'Siga-nos nas Redes' | Seção de redes sociais |
+| `operating_days` | INT[] | Sim | '{1,2,3,4,5,6}' | Dias de funcionamento (0 = Dom, 1 = Seg, ...) |
+| `start_time` / `end_time` | TIME | Sim | '09:00' / '18:00' | Horários de funcionamento |
+| `comissao_padrao` | NUMERIC(5,2)| Sim | 0.00 | Percentual de comissão padrão |
+| `trial_started_at` | TIMESTAMPTZ | Sim | NULL | Início do período de teste |
+| `trial_expires_at` | TIMESTAMPTZ | Sim | NULL | Término do período de teste |
+| `criado_em` | TIMESTAMPTZ | Sim | NOW() | Data de cadastro |
 
 ### `tipos_profissional`
-Categorias e cargos de profissionais vinculados a comissões diferenciadas.
+Cargos e categorias de comissão de profissionais.
 | Coluna | Tipo | Nulo | Descrição |
 |---|---|---|---|
-| `id` | UUID | Não | ID do tipo |
-| `estabelecimento_id`| UUID | Não | FK estabelecimentos (CASCADE) |
-| `nome` | TEXT | Não | Ex.: Barbeiro Sênior, Manicure Master |
-| `percentual_comissao`| NUMERIC(5,2)| Não | Percentual de comissão |
+| `id` | UUID | Não | Chave primária (`gen_random_uuid()`) |
+| `estabelecimento_id`| UUID | Não | FK `estabelecimentos` (`ON DELETE CASCADE`) |
+| `nome` | TEXT | Não | Nome da categoria (ex: Barbeiro Sênior, Manicure Master) |
+| `percentual_comissao`| NUMERIC(5,2)| Não | Percentual de comissão associado (padrão 0.00) |
+| `created_at` | TIMESTAMPTZ | Sim | Data de criação |
 
 ### `profissionais`
-Profissionais que prestam serviços.
+Profissionais vinculados a um estabelecimento.
 | Coluna | Tipo | Nulo | Descrição |
 |---|---|---|---|
-| `id` | UUID | Não | ID do profissional |
-| `user_id` | UUID | Sim | FK `auth.users` (NULL se não tiver login no app) |
-| `estabelecimento_id`| UUID | Não | FK estabelecimentos (CASCADE) |
+| `id` | UUID | Não | Chave primária (`gen_random_uuid()`) |
+| `user_id` | UUID | Sim | FK `auth.users` (`ON DELETE SET NULL`, UNIQUE) — NULL = sem login |
+| `estabelecimento_id`| UUID | Não | FK `estabelecimentos` (`ON DELETE CASCADE`) |
 | `nome` | TEXT | Não | Nome do profissional |
-| `ativo` | BOOLEAN | Não | `true` para exibir na página de agendamento |
-| `tipo_profissional_id`| UUID | Sim | FK tipos_profissional |
+| `email` / `telefone` | TEXT | Sim | Contato direto |
+| `especialidade` | TEXT | Sim | Especialidade |
+| `foto_url` | TEXT | Sim | Foto de perfil |
+| `ativo` | BOOLEAN | Não | `true` se disponível na página de agendamento |
+| `tipo_profissional_id`| UUID | Sim | FK `tipos_profissional` (`ON DELETE SET NULL`) |
+| `criado_em` | TIMESTAMPTZ | Sim | Data de criação |
 
 ### `servicos`
-Catálogo de serviços oferecidos.
+Catálogo de serviços oferecidos pelo estabelecimento.
 | Coluna | Tipo | Nulo | Descrição |
 |---|---|---|---|
-| `id` | UUID | Não | ID do serviço |
-| `estabelecimento_id`| UUID | Não | FK estabelecimentos (CASCADE) |
+| `id` | UUID | Não | Chave primária (`gen_random_uuid()`) |
+| `estabelecimento_id`| UUID | Não | FK `estabelecimentos` (`ON DELETE CASCADE`) |
 | `nome` | TEXT | Não | Nome do serviço |
-| `preco` | NUMERIC(10,2)| Não | Preço sugerido |
-| `duracao` | INT | Não | Duração em minutos (`CHECK 1..600`) |
+| `preco` | NUMERIC(10,2)| Não | Preço atual do serviço |
+| `duracao` | INT | Não | Duração em minutos (`CHECK (duracao BETWEEN 1 AND 600)`) |
+| `imagem_url` | TEXT | Sim | Imagem ilustrativa |
+| `created_at` | TIMESTAMPTZ | Sim | Data de criação |
 
 ### `clientes`
-Clientes cadastrados por estabelecimento.
+Clientes cadastrados, isolados por estabelecimento.
 | Coluna | Tipo | Nulo | Descrição |
 |---|---|---|---|
-| `id` | UUID | Não | ID do cliente |
-| `estabelecimento_id`| UUID | Não | FK estabelecimentos (CASCADE) |
+| `id` | UUID | Não | Chave primária (`gen_random_uuid()`) |
+| `estabelecimento_id`| UUID | Não | FK `estabelecimentos` (`ON DELETE CASCADE`) |
 | `nome` | TEXT | Não | Nome do cliente |
-| `telefone` | TEXT | Não | Telefone normalizado com DDI |
-| Constraint | UNIQUE (`estabelecimento_id`, `telefone`) |
+| `telefone` | TEXT | Não | Telefone normalizado com DDI 55 (`55...`) |
+| `criado_em` | TIMESTAMPTZ | Sim | Data de cadastro |
+| **Constraint** | UNIQUE | | `UNIQUE (estabelecimento_id, telefone)` |
 
 ### `agendamentos`
-Reservas e agendamentos realizados.
+Registro de horários agendados.
 | Coluna | Tipo | Nulo | Descrição |
 |---|---|---|---|
-| `id` | UUID | Não | ID do agendamento |
-| `estabelecimento_id`| UUID | Não | FK estabelecimentos (CASCADE) |
-| `cliente_id` | UUID | Não | FK clientes (RESTRICT) |
-| `profissional_id` | UUID | Não | FK profissionais (CASCADE) |
-| `servico_id` | UUID | Não | FK servicos (RESTRICT) |
-| `data` | DATE | Não | Data da reserva (YYYY-MM-DD) |
+| `id` | UUID | Não | Chave primária (`gen_random_uuid()`) |
+| `estabelecimento_id`| UUID | Não | FK `estabelecimentos` (`ON DELETE CASCADE`) |
+| `cliente_id` | UUID | Não | FK `clientes` (`ON DELETE NO ACTION` — protege histórico) |
+| `cliente_nome` / `cliente_telefone` | TEXT | Não | Dados do cliente no agendamento |
+| `cliente_email` | TEXT | Sim | E-mail opcional do cliente |
+| `profissional_id` | UUID | Não | FK `profissionais` (`ON DELETE CASCADE`) |
+| `profissional_nome` | TEXT | Sim | Nome snapshot do profissional |
+| `servico_id` | UUID | Não | FK `servicos` (`ON DELETE NO ACTION` — protege histórico) |
+| `servico_nome` | TEXT | Não | Nome snapshot do serviço |
+| `data` | DATE | Não | Data da sessão (`YYYY-MM-DD`) |
 | `hora` | TIME | Não | Horário de início |
-| `status` | TEXT | Não | `CHECK ('pendente', 'confirmado', 'concluido', 'cancelado')` |
-| `preco_cobrado` | NUMERIC(10,2)| Sim | Snapshot do valor |
-| `duracao_minutos`| INT | Sim | Snapshot da duração |
-| `inicio_ts` | TIMESTAMPTZ | Sim | Calculado por trigger |
-| `fim_ts` | TIMESTAMPTZ | Sim | Calculado por trigger |
+| `status` | TEXT | Não | `CHECK (status IN ('pendente', 'confirmado', 'concluido', 'cancelado'))` |
+| `preco_cobrado` | NUMERIC(10,2)| Sim | Snapshot financeiro preenchido por trigger |
+| `duracao_minutos` | INT | Sim | Duração efetiva preenchida por trigger |
+| `inicio_ts` / `fim_ts` | TIMESTAMPTZ | Sim | Timestamps com timezone 'America/Fortaleza' calculados por trigger |
+| `criado_em` | TIMESTAMPTZ | Sim | Data de registro |
 
 ### `profissional_disponibilidade`
-Disponibilidade e folgas pontuais por profissional e data.
+Bloqueios, folgas e escalas especiais de profissionais.
 | Coluna | Tipo | Nulo | Descrição |
 |---|---|---|---|
-| `id` | UUID | Não | ID do registro |
-| `profissional_id` | UUID | Não | FK profissionais (CASCADE) |
-| `data` | DATE | Não | Data específica |
-| `disponivel` | BOOLEAN | Não | `false` indica dia de folga |
-| Constraint | UNIQUE (`profissional_id`, `data`) |
+| `id` | UUID | Não | Chave primária (`gen_random_uuid()`) |
+| `profissional_id` | UUID | Não | FK `profissionais` (`ON DELETE CASCADE`) |
+| `data` | DATE | Não | Data da regra |
+| `hora_inicio` / `hora_fim`| TIME | Sim | Faixa horária da disponibilidade/folga |
+| `disponivel` | BOOLEAN | Não | `true` se dia livre, `false` se folga/bloqueio (padrão true) |
+| **Constraint** | UNIQUE | | `UNIQUE (profissional_id, data)` para suporte a upsert |
+
+### `gastos_saas`
+Controle de despesas operacionais da plataforma SaaS (acesso restrito a administradores).
+| Coluna | Tipo | Nulo | Descrição |
+|---|---|---|---|
+| `id` | UUID | Não | Chave primária (`gen_random_uuid()`) |
+| `descricao` | TEXT | Não | Descrição da despesa |
+| `valor` | NUMERIC(10,2)| Não | Valor em R$ |
+| `data` | DATE | Não | Data do gasto |
+| `user_id` | UUID | Sim | FK `auth.users` (`ON DELETE SET NULL`) |
+| `created_at` | TIMESTAMPTZ | Sim | Data de registro |
 
 ---
 
 ## 4. Triggers e Integridade de Negócio
 
-1. **`trg_normalize_phone`**: Remove caracteres não numéricos antes de salvar clientes e estabelecimentos.
-2. **`trg_calculate_appointment_range`**:
-   - Salva snapshot de `preco_cobrado` e `duracao_minutos` a partir do serviço selecionado.
-   - Calcula os instantes `inicio_ts` e `fim_ts` com fuso de Fortaleza (`America/Fortaleza`).
-3. **`no_overlapping_appointments`**: Constraint de exclusão GIST que rejeita automaticamente sobreposição de horários para o mesmo profissional quando o status for `pendente` ou `confirmado`.
+### 4.1 `trg_normalize_cliente_phone` (`normalize_cliente_phone`)
+- **Evento**: `BEFORE INSERT OR UPDATE OF telefone ON clientes`
+- **Comportamento**: Remove todos os caracteres não-dígitos (`\D`). Se o resultado tiver 10 ou 11 dígitos (formato padrão brasileiro com DDD), prefixa com `'55'`.
+- **Efeito**: Garante que `(85) 99999-1111`, `85999991111` e `5585999991111` sejam unificados canonicamente para `5585999991111`, eliminando falsos duplicados e falhas de consulta no modal "Minha Conta".
+
+### 4.2 `trg_prepare_agendamento` (`prepare_agendamento`)
+- **Evento**: `BEFORE INSERT OR UPDATE ON agendamentos`
+- **Comportamento**:
+  1. Valida se `profissional_id`, `servico_id` e `cliente_id` pertencem comprovadamente ao mesmo `estabelecimento_id` (lança erro `23514` caso contrário).
+  2. Grava snapshots imutáveis de `duracao_minutos` e `preco_cobrado` a partir de `servicos` (caso não venham especificados).
+  3. Calcula `inicio_ts` a partir de `(NEW.data + NEW.hora) AT TIME ZONE 'America/Fortaleza'` e `fim_ts` somando o intervalo de `duracao_minutos`.
+
+### 4.3 Restrição Anti-Duplo Agendamento (`no_overlapping_appointments`)
+```sql
+ALTER TABLE public.agendamentos
+ADD CONSTRAINT no_overlapping_appointments
+EXCLUDE USING gist (
+  profissional_id WITH =,
+  tstzrange(inicio_ts, fim_ts) WITH &&
+)
+WHERE (status IN ('pendente', 'confirmado'));
+```
+- Impede sobreposição temporal para o mesmo profissional.
+- Agendamentos com status `cancelado` ou `concluido` não bloqueiam a grade.
+- Violações disparam erro `23P01` (exclusion violation) traduzido em HTTP 409 pelas Edge Functions.
 
 ---
 
-## 5. Views Públicas de Segurança
+## 5. Funções Auxiliares de Segurança (SECURITY DEFINER)
 
-### `estabelecimentos_publico`
-Expõe apenas os campos visuais públicos para a página de agendamento do cliente, protegendo documentos, e-mails de faturamento e dados administrativos.
-```sql
-SELECT * FROM public.estabelecimentos_publico WHERE link_personalizado = 'meu-salao';
-```
+Para evitar erros de recursão infinita (`infinite recursion detected in policy`) entre políticas RLS que se referenciam mutuamente, as seguintes funções auxiliares executam com privilégios de sistema (`SECURITY DEFINER`) com `search_path = public`:
 
-### `agendamentos_ocupados`
-Expõe apenas os horários ocupados para o calendário de reserva pública, sem expor `id` do agendamento, nomes, telefones ou e-mails de clientes.
-```sql
-SELECT data, hora, profissional_id FROM public.agendamentos_ocupados WHERE estabelecimento_id = 'uuid';
-```
-
----
-
-## 6. Segurança e Row Level Security (RLS)
-
-O papel é verificado via função segura:
-```sql
-CREATE OR REPLACE FUNCTION public.jwt_role()
-RETURNS TEXT AS $$
-  SELECT COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '');
-$$ LANGUAGE sql STABLE;
-```
-- **Admin (`role = 'admin'`)**: Acesso irrestrito a todas as tabelas.
-- **Estabelecimento (`role = 'estabelecimento'`)**: Acessa e gerencia exclusivamente registros onde `dono_id = auth.uid()`.
-- **Profissional (`role = 'profissional'`)**: Acessa seus próprios agendamentos e horários onde `user_id = auth.uid()`.
-- **Anon**: Somente leitura nas views `estabelecimentos_publico` e `agendamentos_ocupados`, e nas tabelas `servicos`, `profissionais` (ativos) e `profissional_disponibilidade`. Mutações e agendamentos de clientes são processados via Edge Functions protegidas com `service_role`.
-
----
-
-## 7. Storage Buckets
-
-| Bucket | Acesso | Descrição |
+| Função | Retorno | Descrição |
 |---|---|---|
-| `fotos-estabelecimentos` | Público (Leitura) / Auth (Escrita) | Logotipos e fotos de capa |
-| `fotos-profissionais` | Público (Leitura) / Auth (Escrita) | Fotos de perfil dos profissionais |
-| `system-assets` | Público (Leitura) / Admin (Escrita) | Logotipo global da plataforma |
+| `is_admin()` | `BOOLEAN` | Lê com segurança `auth.jwt() -> 'app_metadata' ->> 'role' = 'admin'` |
+| `owner_estabelecimento_id()` | `UUID` | Retorna o `id` do estabelecimento cujo `dono_id = auth.uid()` |
+| `meu_profissional_id()` | `UUID` | Retorna o `id` do profissional cujo `user_id = auth.uid()` |
+| `meu_profissional_estabelecimento_id()`| `UUID` | Retorna o `estabelecimento_id` do profissional associado ao usuário atual |
+
+> **Permissões**: O acesso a essas 3 funções foi revogado de `PUBLIC` e `anon`, ficando restrito exclusivamente a usuários com papel `authenticated`.
 
 ---
 
-## 8. Criação do Primeiro Administrador
+## 6. Views Públicas de Segurança
 
-No painel do Supabase novo:
-1. Vá em **Authentication** → **Users** → **Add User** (marcando *Auto Confirm User*).
-2. No **SQL Editor**, execute:
+As páginas públicas de agendamento não consultam diretamente as tabelas `estabelecimentos` nem `agendamentos`, operando exclusivamente através de duas views públicas:
+
+### 6.1 `estabelecimentos_publico`
+- **Finalidade**: Consumida por `api.getEstabelecimentoBySlug(slug)`.
+- **Filtro**: Apenas registros com `status = 'ativa'`.
+- **Privacidade**: Oculta dados sensíveis como `documento`, `dono_email`, `dono_nome`, `plano` e datas de `trial`.
+
+### 6.2 `agendamentos_ocupados`
+- **Finalidade**: Consumida por `api.getBookingDataForMonth(estabelecimentoId, year, month)`.
+- **Filtro**: Apenas agendamentos com `status IN ('pendente', 'confirmado')`.
+- **Campos expostos**: Estritamente `estabelecimento_id`, `profissional_id`, `data`, `hora`, `duracao_minutos`.
+- **Privacidade**: **Não expõe a coluna `id` do agendamento** nem dados pessoais dos clientes (`cliente_nome`, `cliente_telefone`, `cliente_email`), eliminando o risco de exposição ou tentativas anônimas de cancelamento.
+
+---
+
+## 7. Segurança e Row Level Security (RLS)
+
+Todas as 10 tabelas têm `ROW LEVEL SECURITY` estritamente habilitada:
+
+- `system_settings`: Leitura aberta (`anon`, `authenticated`), escrita exclusiva de administradores.
+- `planos`: Leitura aberta para planos ativos (`ativo = true`), gerenciamento exclusivo de administradores.
+- `estabelecimentos`: Leitura permitida ao dono (`dono_id = auth.uid()`) e profissionais vinculados. Modificações passam obrigatoriamente por Edge Function com credenciais de serviço.
+- `tipos_profissional`: Dono gerencia os tipos do seu estabelecimento; profissionais vinculados podem consultar.
+- `profissionais`: Público lê os profissionais ativos (`ativo = true`). Dono gerencia; profissional lê seu próprio registro.
+- `servicos`: Público lê; dono gerencia os do seu estabelecimento.
+- `clientes`: Dono gerencia; profissional lê apenas os clientes de sua unidade. Não há leitura anônima.
+- `agendamentos`: Dono gerencia; profissional lê e atualiza os seus próprios; público não tem acesso direto (usa `agendamentos_ocupados`).
+- `profissional_disponibilidade`: Público lê para cálculo de grade; profissional e dono gerenciam.
+- `gastos_saas`: Acesso e gerenciamento restritos a administradores.
+
+---
+
+## 8. Storage Buckets & Realtime
+
+### Buckets
+1. **`fotos-estabelecimentos`**: Imagens e logos dos estabelecimentos (público para leitura, upload por autenticados, alteração/exclusão pelo proprietário do arquivo ou admin).
+2. **`fotos-profissionais`**: Fotos de perfil de profissionais (público para leitura, upload por autenticados).
+3. **`system-assets`**: Imagens do sistema gerenciadas exclusivamente por administradores.
+
+### Realtime
+- A tabela `agendamentos` opera com `REPLICA IDENTITY FULL` e está registrada na publicação `supabase_realtime` para atualização instantânea dos painéis do dono e do profissional.
+
+---
+
+## 9. Criação do Primeiro Administrador
+
+1. Crie o usuário em **Authentication > Users > Add User** (marque *Auto Confirm User*).
+2. No **SQL Editor**, execute com o e-mail cadastrado:
 ```sql
 UPDATE auth.users
-SET raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}'::jsonb
-WHERE email = 'seu_email_admin@exemplo.com';
+SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
+WHERE email = 'seu_email@dominio.com';
 ```
 
 ---
 
-## 9. Consultas de Verificação
+## 10. Consultas de Verificação
 
-Execute para certificar a integridade do banco instalado:
-
+### 10.1 Checar tabelas criadas (esperado: 10)
 ```sql
--- 1. Contagem de tabelas públicas (deve retornar 10)
-SELECT count(*) FROM information_schema.tables 
-WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY 1;
+```
 
--- 2. Testar que anon não tem acesso direto à tabela de estabelecimentos
-SET ROLE anon;
-SELECT * FROM public.estabelecimentos; -- Deve retornar 0 linhas ou erro de RLS
-SELECT count(*) FROM public.estabelecimentos_publico; -- Deve funcionar normalmente
-SELECT * FROM public.agendamentos_ocupados; -- Sem coluna ID, apenas ocupação
-RESET ROLE;
+### 10.2 Checar se todas as tabelas têm RLS ativada
+```sql
+SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public' ORDER BY 1;
+```
 
--- 3. Confirmar que a publicação do Realtime inclui agendamentos
-SELECT * FROM pg_publication_tables WHERE pubname = 'supabase_realtime';
+### 10.3 Teste de leitura anônima (esperado: 0 em ambas)
+```sql
+BEGIN;
+SET LOCAL ROLE anon;
+SELECT count(*) AS estabelecimentos_visiveis FROM public.estabelecimentos;
+SELECT count(*) AS agendamentos_visiveis FROM public.agendamentos;
+ROLLBACK;
 ```
