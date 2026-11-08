@@ -3,7 +3,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import { Estabelecimento, Profissional, Plano, Nicho } from '@/types';
 import toast from 'react-hot-toast';
-import { KIWIFY_PLAN_LINKS } from '@/utils/constants';
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -13,7 +12,6 @@ const ProfilePage = () => {
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSavingPlan, setIsSavingPlan] = useState(false);
 
   useEffect(() => {
     const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
@@ -64,72 +62,7 @@ const ProfilePage = () => {
     ).finally(() => setIsSaving(false));
   };
 
-  const handleSavePlan = async () => {
-    const estId = user?.estabelecimentoId || (user as any)?.barbeariaId;
-    if (!estId || !user?.id || !profile.plano) return;
 
-    const targetPlan = availablePlans.find(p => p.nome === profile.plano);
-    const currentPlan = availablePlans.find(p => p.nome === initialProfile.plano);
-    const activeProfCount = profissionais.filter(b => b.ativo).length;
-
-    if (!targetPlan || !currentPlan) {
-        toast.error("Não foi possível verificar os detalhes do plano.");
-        return;
-    }
-
-    const isProblematicDowngrade = 
-        (targetPlan.limite_profissionais !== null && targetPlan.limite_profissionais !== undefined && activeProfCount > targetPlan.limite_profissionais) &&
-        (currentPlan.limite_profissionais === null || currentPlan.limite_profissionais === undefined || targetPlan.limite_profissionais < currentPlan.limite_profissionais);
-
-    if (isProblematicDowngrade) {
-        const excessCount = activeProfCount - targetPlan.limite_profissionais!;
-        const confirmation = window.confirm(
-            `Atenção! Seu novo plano suporta apenas ${targetPlan.limite_profissionais} profissionais, mas você tem ${activeProfCount} ativos. ` +
-            `Ao confirmar, ${excessCount} profissional(is) serão removidos permanentemente. Deseja continuar?`
-        );
-
-        if (!confirmation) {
-            setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
-            return;
-        }
-    }
-    
-    const checkoutLink = KIWIFY_PLAN_LINKS[targetPlan.nome];
-
-    if (!checkoutLink) {
-        toast.error("Link de checkout não encontrado para este plano.");
-        setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
-        return;
-    }
-
-    const confirmationMessage = 
-        `Você está prestes a mudar para o plano ${targetPlan.nome}. ` +
-        `Você será redirecionado para a plataforma de pagamento. ` +
-        `Após a assinatura, seu painel será atualizado. Deseja continuar?`;
-
-    if (window.confirm(confirmationMessage)) {
-        if (isProblematicDowngrade) {
-            setIsSavingPlan(true);
-            try {
-                await api.updateEstabelecimentoPlan(estId, profile.plano);
-                toast.success('Profissionais em excesso removidos. Redirecionando para o checkout...');
-            } catch (err: any) {
-                toast.error(`Falha na pré-validação: ${err.message}`);
-                setIsSavingPlan(false);
-                setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
-                return;
-            } finally {
-                setIsSavingPlan(false);
-            }
-        }
-        
-        window.open(checkoutLink, '_blank');
-        toast.success("Redirecionando para o checkout. Após a compra, seu painel será atualizado automaticamente.");
-        setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
-    } else {
-        setProfile(prev => ({ ...prev, plano: initialProfile.plano }));
-    }
-  };
 
   if (loading) return <p className="text-center text-gray-400">Carregando perfil...</p>;
 
