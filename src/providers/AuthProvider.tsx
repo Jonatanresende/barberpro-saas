@@ -99,16 +99,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      await fetchUserAndEstablishment(session);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn("Sessão inválida ou expirada:", error.message);
+          try {
+            await supabase.auth.signOut();
+          } catch {}
+          await fetchUserAndEstablishment(null);
+          return;
+        }
+        await fetchUserAndEstablishment(data?.session || null);
+      } catch (err: any) {
+        console.warn("Erro ao recuperar sessão:", err?.message);
+        try {
+          await supabase.auth.signOut();
+        } catch {}
+        await fetchUserAndEstablishment(null);
+      }
     };
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setTimeout(() => {
-        fetchUserAndEstablishment(session);
-      }, 100);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setLoading(false);
+      } else {
+        setTimeout(() => {
+          fetchUserAndEstablishment(session);
+        }, 100);
+      }
     });
 
     return () => {

@@ -14,12 +14,40 @@ import PublicProfilePage from '@/pages/cliente/PublicProfilePage';
 import ToastProvider from '@/components/ToastProvider';
 import TrialExpiredPage from '@/pages/TrialExpired';
 import InitialSetupPage from '@/pages/estabelecimento/InitialSetupPage';
+import { useAuth } from '@/hooks/useAuth';
+
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-brand-dark">
+        <div className="text-brand-gold text-xl">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  switch (user.role) {
+    case UserRole.ADMIN:
+      return <Navigate to="/admin/dashboard" replace />;
+    case UserRole.ESTABELECIMENTO:
+      return <Navigate to={`/${user.link_personalizado || 'estabelecimento'}/dashboard`} replace />;
+    case UserRole.PROFISSIONAL:
+      return <Navigate to="/profissional/appointments" replace />;
+    default:
+      return <Navigate to="/login" replace />;
+  }
+};
 
 const AppRoutes = () => {
   return (
      <Routes>
-        {/* Rota para a raiz que não renderiza nada, mantendo a landing page estática visível */}
-        <Route path="/" element={null} />
+        {/* Redirecionamento inteligente na raiz do app para o painel correspondente ou login */}
+        <Route path="/" element={<RootRedirect />} />
 
         {/* A rota "/" agora é tratada pelo HTML estático. O React assume as rotas com hash. */}
         <Route path="/login" element={<Login />} />
