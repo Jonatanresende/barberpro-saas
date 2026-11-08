@@ -269,7 +269,7 @@ As páginas públicas de agendamento não consultam diretamente as tabelas `esta
 Todas as 10 tabelas têm `ROW LEVEL SECURITY` estritamente habilitada:
 
 - `system_settings`: Leitura aberta (`anon`, `authenticated`), escrita exclusiva de administradores.
-- `planos`: Leitura aberta para planos ativos (`ativo = true`), gerenciamento exclusivo de administradores.
+- `planos`: anônimo lê os planos ativos; usuários logados leem todos; só o admin escreve.
 - `estabelecimentos`: Leitura permitida ao dono (`dono_id = auth.uid()`) e profissionais vinculados. Modificações passam obrigatoriamente por Edge Function com credenciais de serviço.
 - `tipos_profissional`: Dono gerencia os tipos do seu estabelecimento; profissionais vinculados podem consultar.
 - `profissionais`: Público lê os profissionais ativos (`ativo = true`), incluindo e-mail e telefone necessários para a tela de agendamento. Dono gerencia; profissional lê seu próprio registro.
