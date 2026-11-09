@@ -40,7 +40,7 @@ serve(async (req) => {
     // 2. PARSE BODY
     const body = await req.json()
     const profissionalId = body.profissionalId || body.barberId
-    const { userId, updates } = body
+    const { updates } = body
     const password = body.password || body.senha
 
     if (!profissionalId || !updates) {
@@ -103,7 +103,7 @@ serve(async (req) => {
       }
     }
 
-    const currentUserId = profRecord.user_id || userId || null;
+    const currentUserId = profRecord.user_id || null;
 
     // 5. GESTÃO DE ACESSO / AUTENTICAÇÃO
     if (currentUserId) {
