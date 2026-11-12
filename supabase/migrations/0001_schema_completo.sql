@@ -340,6 +340,14 @@ WHERE status IN ('pendente', 'confirmado');
 GRANT SELECT ON public.estabelecimentos_publico TO anon, authenticated;
 GRANT SELECT ON public.agendamentos_ocupados    TO anon, authenticated;
 
+CREATE VIEW public.profissionais_publico AS
+SELECT p.id, p.estabelecimento_id, p.nome, p.especialidade, p.foto_url
+FROM public.profissionais p
+JOIN public.estabelecimentos e ON e.id = p.estabelecimento_id
+WHERE p.ativo = true AND e.status = 'ativa';
+
+GRANT SELECT ON public.profissionais_publico TO anon, authenticated;
+
 
 -- ==============================================================================
 -- 7. ROW LEVEL SECURITY
@@ -389,7 +397,7 @@ CREATE POLICY tipos_prof_read  ON public.tipos_profissional FOR SELECT TO authen
   USING (estabelecimento_id = public.meu_profissional_estabelecimento_id());
 
 -- profissionais: o público vê os ativos (precisa para escolher o profissional)
-CREATE POLICY prof_public_read ON public.profissionais FOR SELECT TO anon, authenticated USING (ativo = true);
+
 CREATE POLICY prof_admin       ON public.profissionais FOR ALL TO authenticated
   USING (public.is_admin()) WITH CHECK (public.is_admin());
 CREATE POLICY prof_owner       ON public.profissionais FOR ALL TO authenticated
