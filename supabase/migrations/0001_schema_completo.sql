@@ -287,7 +287,8 @@ RETURNS UUID
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT id FROM public.estabelecimentos WHERE dono_id = auth.uid() LIMIT 1;
+  SELECT id FROM public.estabelecimentos
+  WHERE dono_id = auth.uid() AND status = 'ativa' LIMIT 1;
 $$;
 
 CREATE OR REPLACE FUNCTION public.meu_profissional_id()
@@ -295,7 +296,9 @@ RETURNS UUID
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT id FROM public.profissionais WHERE user_id = auth.uid() LIMIT 1;
+  SELECT p.id FROM public.profissionais p
+  JOIN public.estabelecimentos e ON e.id = p.estabelecimento_id
+  WHERE p.user_id = auth.uid() AND e.status = 'ativa' LIMIT 1;
 $$;
 
 CREATE OR REPLACE FUNCTION public.meu_profissional_estabelecimento_id()
@@ -303,9 +306,10 @@ RETURNS UUID
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT estabelecimento_id FROM public.profissionais WHERE user_id = auth.uid() LIMIT 1;
+  SELECT p.estabelecimento_id FROM public.profissionais p
+  JOIN public.estabelecimentos e ON e.id = p.estabelecimento_id
+  WHERE p.user_id = auth.uid() AND e.status = 'ativa' LIMIT 1;
 $$;
-
 REVOKE ALL ON FUNCTION public.owner_estabelecimento_id()            FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.meu_profissional_id()                 FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.meu_profissional_estabelecimento_id() FROM PUBLIC, anon;
@@ -385,7 +389,7 @@ CREATE POLICY estab_admin      ON public.estabelecimentos FOR ALL TO authenticat
 CREATE POLICY estab_owner_read ON public.estabelecimentos FOR SELECT TO authenticated
   USING (dono_id = auth.uid());
 CREATE POLICY estab_prof_read  ON public.estabelecimentos FOR SELECT TO authenticated
-  USING (id = public.meu_profissional_estabelecimento_id());
+  USING (id IN (SELECT estabelecimento_id FROM public.profissionais WHERE user_id = auth.uid()));
 
 -- tipos_profissional
 CREATE POLICY tipos_admin      ON public.tipos_profissional FOR ALL TO authenticated
@@ -396,7 +400,7 @@ CREATE POLICY tipos_owner      ON public.tipos_profissional FOR ALL TO authentic
 CREATE POLICY tipos_prof_read  ON public.tipos_profissional FOR SELECT TO authenticated
   USING (estabelecimento_id = public.meu_profissional_estabelecimento_id());
 
--- profissionais: o público vê os ativos (precisa para escolher o profissional)
+-- profissionais: o público lê pela view profissionais_publico
 
 CREATE POLICY prof_admin       ON public.profissionais FOR ALL TO authenticated
   USING (public.is_admin()) WITH CHECK (public.is_admin());
