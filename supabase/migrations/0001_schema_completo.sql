@@ -383,13 +383,13 @@ CREATE POLICY planos_admin ON public.planos FOR ALL TO authenticated
 
 -- estabelecimentos: admin tudo; dono e profissional só LEEM o seu.
 -- Não existe UPDATE para o dono: quem edita é a Edge Function update-establishment,
+-- que tem a lista de campos permitidos (impede o dono de trocar plano, status ou trial).
+CREATE POLICY estab_admin      ON public.estabelecimentos FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 CREATE POLICY estab_owner_read ON public.estabelecimentos FOR SELECT TO authenticated
   USING (dono_id = auth.uid());
 CREATE POLICY estab_prof_read  ON public.estabelecimentos FOR SELECT TO authenticated
   USING (id IN (SELECT estabelecimento_id FROM public.profissionais WHERE user_id = auth.uid()));
-  CREATE POLICY estab_prof_read  ON public.estabelecimentos FOR SELECT TO authenticated
-  USING (id IN (SELECT estabelecimento_id FROM public.profissionais WHERE user_id = auth.uid()));
-  USING (id = public.meu_profissional_estabelecimento_id());
 
 -- tipos_profissional
 CREATE POLICY tipos_admin      ON public.tipos_profissional FOR ALL TO authenticated
