@@ -50,16 +50,19 @@ serve(async (req) => {
     if (profileError || !profProfile || profProfile.id !== profissionalId) {
       return new Response(JSON.stringify({ error: 'Você não tem permissão para ver este dashboard.' }), { status: 403, headers: corsHeaders });
     }
-    
+
     const profissional = profProfile;
 
     // 4. FETCH ESTABELECIMENTO INFO (for default commission if type is missing)
     const { data: estabelecimento, error: estError } = await supabaseAdmin
       .from('estabelecimentos')
-      .select('comissao_padrao')
+      .select('comissao_padrao, status')
       .eq('id', profissional.estabelecimento_id)
       .single();
     if (estError) throw estError;
+    if (estabelecimento?.status !== 'ativa') {
+      return new Response(JSON.stringify({ error: 'Estabelecimento suspenso.' }), { status: 403, headers: corsHeaders });
+    }
 
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
@@ -77,7 +80,7 @@ serve(async (req) => {
     const tipoProf = (profissional.tipos_profissional as any);
     const commissionRate = tipoProf?.percentual_comissao ?? estabelecimento?.comissao_padrao;
     const comissaoPercentual = (commissionRate || 0) / 100;
-    
+
     let comissaoDoMes = 0;
     let totalGeradoNoMes = 0;
     let agendamentosConcluidos = 0;

@@ -39,6 +39,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    const { data: est } = await supabaseAdmin
+      .from('estabelecimentos').select('status').eq('id', estId).maybeSingle();
+    if (!est || est.status !== 'ativa') {
+      return new Response(JSON.stringify({ error: 'Este estabelecimento não está aceitando agendamentos.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Validação: profissional e serviço devem pertencer ao mesmo estabelecimento
     if (profId) {
       const { data: profCheck } = await supabaseAdmin
@@ -130,7 +139,7 @@ serve(async (req) => {
     }
 
     if (!newAppointment.data || !newAppointment.hora) {
-        throw new Error("Falha interna: Agendamento criado, mas data/hora ausentes no retorno.");
+      throw new Error("Falha interna: Agendamento criado, mas data/hora ausentes no retorno.");
     }
 
     return new Response(JSON.stringify(newAppointment), {

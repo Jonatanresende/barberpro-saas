@@ -43,10 +43,10 @@ const PublicBookingPage = () => {
                 if (data) {
                     setEstabelecimento(data);
                     const [profissionaisData, servicosData] = await Promise.all([
-                        api.getProfissionaisByEstabelecimento(data.id),
+                        api.getProfissionaisPublicos(data.id),
                         api.getServicosByEstabelecimento(data.id)
                     ]);
-                    setProfissionais(profissionaisData.filter(p => p.ativo));
+                    setProfissionais(profissionaisData);
                     setServicos(servicosData);
                 }
             } catch (error) {
@@ -86,7 +86,7 @@ const PublicBookingPage = () => {
 
         const dateString = selectedDate.toISOString().split('T')[0];
         const dayOfWeek = selectedDate.getDay();
-        
+
         // 1. Verificar se o dia é de funcionamento do estabelecimento
         if (!estabelecimento.operating_days?.includes(dayOfWeek)) {
             return [];
@@ -99,7 +99,7 @@ const PublicBookingPage = () => {
 
         // 3. Determinar horários de início e fim (priorizando a disponibilidade específica do profissional)
         const availability = getProfissionalAvailabilityForDate(selectedProfissional.id, selectedDate);
-        
+
         const startTime = availability?.hora_inicio || estabelecimento.start_time || '09:00';
         const endTime = availability?.hora_fim || estabelecimento.end_time || '18:00';
         const serviceDuration = selectedServico.duracao;
@@ -107,10 +107,10 @@ const PublicBookingPage = () => {
         const times: string[] = [];
         const [startHour, startMinute] = startTime.split(':').map(Number);
         const [endHour, endMinute] = endTime.split(':').map(Number);
-        
+
         let currentTime = new Date(selectedDate);
         currentTime.setHours(startHour, startMinute, 0, 0);
-        
+
         let endDateTime = new Date(selectedDate);
         endDateTime.setHours(endHour, endMinute, 0, 0);
 
@@ -133,7 +133,7 @@ const PublicBookingPage = () => {
     const bookedTimes = useMemo(() => {
         if (!selectedProfissional || !selectedDate) return [];
         const dateString = selectedDate.toISOString().split('T')[0];
-        
+
         return (agendamentosDoMes as any[])
             .filter(ag => {
                 const agProfissionalId = ag.profissional_id || ag.barbeiro_id;
@@ -207,7 +207,7 @@ const PublicBookingPage = () => {
             };
 
             const agendamento = await api.createAgendamento(agendamentoPayload);
-            
+
             if (!agendamento || !agendamento.data || !agendamento.hora) {
                 throw new Error("O agendamento foi criado, mas os dados de data/hora estão faltando no retorno.");
             }
@@ -252,7 +252,7 @@ const PublicBookingPage = () => {
                                 {profissionais.map(profissional => {
                                     const availabilityRecord = selectedDate ? getProfissionalAvailabilityForDate(profissional.id, selectedDate) : null;
                                     const isAvailable = availabilityRecord ? availabilityRecord.disponivel === true : true;
-                                    
+
                                     const handleProfissionalClick = () => {
                                         if (isAvailable) {
                                             setSelectedProfissional(profissional);
@@ -263,7 +263,7 @@ const PublicBookingPage = () => {
 
                                     return (
                                         <button key={profissional.id} type="button" onClick={handleProfissionalClick} className={`flex-shrink-0 p-3 rounded-lg text-center border-2 transition ${selectedProfissional?.id === profissional.id ? 'border-brand-gold bg-brand-gray' : 'border-gray-600 bg-brand-dark'} ${!isAvailable ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-500'}`}>
-                                            <img src={profissional.foto_url} alt={profissional.nome} className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"/>
+                                            <img src={profissional.foto_url} alt={profissional.nome} className="w-20 h-20 rounded-full mx-auto mb-2 object-cover" />
                                             <p className="font-semibold text-sm">{profissional.nome}</p>
                                         </button>
                                     );
@@ -277,9 +277,9 @@ const PublicBookingPage = () => {
                     <div className="space-y-8">
                         <section>
                             <h3 className="text-xl font-bold text-brand-gold mb-4">Escolha a Data</h3>
-                            <Calendar 
-                                selectedDate={selectedDate} 
-                                onDateSelect={handleDateSelect} 
+                            <Calendar
+                                selectedDate={selectedDate}
+                                onDateSelect={handleDateSelect}
                                 operatingDays={estabelecimento.operating_days || []}
                                 fullyBookedDays={profissionalDaysOff}
                                 onMonthChange={setCurrentMonth}
@@ -328,7 +328,7 @@ const PublicBookingPage = () => {
             <div className="w-full max-w-2xl bg-brand-gray rounded-xl shadow-lg p-8 border border-gray-700">
                 <h2 className="text-3xl font-bold text-center mb-2">{estabelecimento.nome}</h2>
                 <h3 className="text-xl font-semibold text-brand-gold text-center mb-8">{getStepTitle()}</h3>
-                
+
                 <div className="min-h-[300px]">
                     {renderStep()}
                 </div>

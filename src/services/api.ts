@@ -21,7 +21,7 @@ const uploadPhoto = async (photoFile: File, bucket: string): Promise<string | nu
   const { data: urlData } = supabase.storage
     .from(bucket)
     .getPublicUrl(filePath);
-  
+
   return urlData.publicUrl;
 };
 
@@ -30,7 +30,7 @@ const uploadSystemAsset = async (assetFile: File): Promise<string | null> => {
   if (!assetFile) return null;
 
   const fileExtension = assetFile.name.split('.').pop();
-  const filePath = `public/logo.${fileExtension}`; 
+  const filePath = `public/logo.${fileExtension}`;
 
   const { error: uploadError } = await supabase.storage
     .from('system-assets')
@@ -44,7 +44,7 @@ const uploadSystemAsset = async (assetFile: File): Promise<string | null> => {
   const { data: urlData } = supabase.storage
     .from('system-assets')
     .getPublicUrl(filePath);
-  
+
   return `${urlData.publicUrl}?t=${new Date().getTime()}`;
 };
 
@@ -62,12 +62,12 @@ export const api = {
     return data;
   },
 
-  updateSystemSettings: async (updates: { 
-      system_name?: string; 
-      support_email?: string;
-      contact_email?: string;
-      tos_link?: string;
-    }, logoFile?: File) => {
+  updateSystemSettings: async (updates: {
+    system_name?: string;
+    support_email?: string;
+    contact_email?: string;
+    tos_link?: string;
+  }, logoFile?: File) => {
     let logo_url;
     if (logoFile) {
       logo_url = await uploadSystemAsset(logoFile);
@@ -77,7 +77,7 @@ export const api = {
     if (logo_url) {
       finalUpdates.logo_url = logo_url;
     }
-    
+
     finalUpdates.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -86,7 +86,7 @@ export const api = {
       .eq('id', 1)
       .select()
       .single();
-    
+
     if (error) throw new Error(error.message);
     return data;
   },
@@ -148,13 +148,13 @@ export const api = {
       console.warn(`Plano com nome "${nome}" não encontrado.`);
       return null;
     }
-    
+
     const { data, error } = await supabase
       .from('planos')
       .select('*')
       .eq('nome', nome)
       .single();
-    
+
     if (error) {
       if (error.code === 'PGRST116') {
         console.warn(`Plano com nome "${nome}" não encontrado.`);
@@ -270,7 +270,7 @@ export const api = {
     }
 
     const { data, error } = await supabase.functions.invoke('update-establishment', {
-      body: { 
+      body: {
         estabelecimentoId: id,
         ownerId: dono_id,
         updates: finalUpdates
@@ -311,12 +311,12 @@ export const api = {
 
   getAdminDashboardData: async () => {
     const { data, error } = await supabase.functions.invoke('get-admin-dashboard');
-    
+
     if (error) {
       const errorMessage = data?.error || error.message;
       throw new Error(errorMessage);
     }
-    
+
     return data;
   },
 
@@ -428,9 +428,9 @@ export const api = {
       finalUpdates.foto_url = await uploadPhoto(photoFile, 'fotos-profissionais');
     }
     const { data, error } = await supabase.functions.invoke('update-professional-user', {
-      body: { 
-        profissionalId: id, 
-        userId, 
+      body: {
+        profissionalId: id,
+        userId,
         updates: finalUpdates,
         password: password || undefined,
         senha: password || undefined,
@@ -620,8 +620,17 @@ export const api = {
     if (error) {
       throw new Error(error.message);
     }
-    
+
     return data && data.length > 0 ? (data[0] as unknown as Estabelecimento) : null;
+  },
+
+  getProfissionaisPublicos: async (estabelecimentoId: string): Promise<Profissional[]> => {
+    const { data, error } = await supabase
+      .from('profissionais_publico')
+      .select('*')
+      .eq('estabelecimento_id', estabelecimentoId);
+    if (error) throw new Error(error.message);
+    return (data || []) as unknown as Profissional[];
   },
 
   getBookingDataForMonth: async (estabelecimentoId: string, year: number, month: number) => {
@@ -638,11 +647,11 @@ export const api = {
       supabase
         .from('profissional_disponibilidade')
         .select('*')
-        .in('profissional_id', (await supabase.from('profissionais').select('id').eq('estabelecimento_id', estabelecimentoId)).data?.map(b => b.id) || [])
+        .in('profissional_id', (await supabase.from('profissionais_publico').select('id').eq('estabelecimento_id', estabelecimentoId)).data?.map(b => b.id) || [])
         .gte('data', startDate)
         .lte('data', endDate)
     ]);
-      
+
     if (agendamentos.error) throw new Error(agendamentos.error.message);
     if (disponibilidades.error) throw new Error(disponibilidades.error.message);
 

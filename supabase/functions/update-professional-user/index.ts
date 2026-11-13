@@ -58,12 +58,18 @@ serve(async (req) => {
     // 3. OWNERSHIP CHECK
     const { data: ownerEstabelecimento, error: ownerError } = await supabaseAdmin
       .from('estabelecimentos')
-      .select('id, plano')
+      .select('id, plano, status')
       .eq('dono_id', user.id)
       .single();
 
     if (ownerError || !ownerEstabelecimento) {
       return new Response(JSON.stringify({ error: 'Estabelecimento do proprietário não encontrado.' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (ownerEstabelecimento.status !== 'ativa') {
+      return new Response(JSON.stringify({ error: 'Estabelecimento suspenso.' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

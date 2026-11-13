@@ -46,12 +46,15 @@ serve(async (req) => {
       }
       const { data: ownerEstabelecimento, error: ownerError } = await supabaseAdmin
         .from('estabelecimentos')
-        .select('id')
+        .select('id, status')
         .eq('id', estabelecimentoId)
         .eq('dono_id', user.id)
         .single();
       if (ownerError || !ownerEstabelecimento) {
         return new Response(JSON.stringify({ error: 'Você não tem permissão para editar este estabelecimento.' }), { status: 403, headers: corsHeaders });
+      }
+      if (ownerEstabelecimento.status !== 'ativa') {
+        return new Response(JSON.stringify({ error: 'Estabelecimento suspenso.' }), { status: 403, headers: corsHeaders });
       }
     }
 
@@ -107,13 +110,13 @@ serve(async (req) => {
     }
 
     if (dbUpdates.dono_nome) {
-        const { error: authNameError } = await supabaseAdmin.auth.admin.updateUserById(
-            ownerId,
-            { user_metadata: { full_name: dbUpdates.dono_nome } }
-        );
-        if (authNameError) {
-            console.error('Erro ao atualizar nome do usuário no Auth:', authNameError);
-        }
+      const { error: authNameError } = await supabaseAdmin.auth.admin.updateUserById(
+        ownerId,
+        { user_metadata: { full_name: dbUpdates.dono_nome } }
+      );
+      if (authNameError) {
+        console.error('Erro ao atualizar nome do usuário no Auth:', authNameError);
+      }
     }
 
     const { data, error: dbError } = await supabaseAdmin
@@ -122,7 +125,7 @@ serve(async (req) => {
       .eq('id', estabelecimentoId)
       .select()
       .single();
-      
+
     if (dbError) {
       console.error('Erro ao atualizar estabelecimento:', dbError);
       throw new Error(`Falha ao atualizar detalhes do estabelecimento: ${dbError.message}`);

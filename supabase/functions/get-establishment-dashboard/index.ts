@@ -63,15 +63,19 @@ serve(async (req) => {
     if (role !== 'admin') {
       const { data: ownerEstabelecimento, error: ownerError } = await supabaseAdmin
         .from('estabelecimentos')
-        .select('id')
+        .select('id, status')
         .eq('dono_id', user.id)
         .single();
 
       if (ownerError || !ownerEstabelecimento || ownerEstabelecimento.id !== estabelecimentoId) {
         return new Response(JSON.stringify({ error: 'Você não tem permissão para ver este dashboard.' }), { status: 403, headers: corsHeaders });
       }
+
+      if (ownerEstabelecimento.status !== 'ativa') {
+        return new Response(JSON.stringify({ error: 'Estabelecimento suspenso.' }), { status: 403, headers: corsHeaders });
+      }
     }
-    
+
     // 4. EXECUTION
     const todayISO = getTodayISOInFortaleza();
 
@@ -96,7 +100,7 @@ serve(async (req) => {
     if (dispError) throw dispError;
 
     const servicePriceMap = new Map((servicos || []).map((s: any) => [s.id, s.preco]));
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -107,11 +111,11 @@ serve(async (req) => {
     let rendaDiaria = 0;
     let rendaSemanal = 0;
     let rendaMensal = 0;
-    
+
     const comissaoPercentual = (estData?.comissao_padrao || 0) / 100;
     const comissoesPorProfissional: { [key: string]: { nome: string, valor: number } } = {};
     (profissionais || []).forEach((p: any) => {
-        comissoesPorProfissional[p.id] = { nome: p.nome, valor: 0 };
+      comissoesPorProfissional[p.id] = { nome: p.nome, valor: 0 };
     });
 
     for (const ag of (agendamentos || [])) {
@@ -122,10 +126,10 @@ serve(async (req) => {
         if (ag.data === todayISO) rendaDiaria += price;
         if (appointmentDate >= startOfWeek) rendaSemanal += price;
         if (appointmentDate >= startOfMonth) {
-            rendaMensal += price;
-            if (ag.profissional_id && comissoesPorProfissional[ag.profissional_id]) {
-                comissoesPorProfissional[ag.profissional_id].valor += price * comissaoPercentual;
-            }
+          rendaMensal += price;
+          if (ag.profissional_id && comissoesPorProfissional[ag.profissional_id]) {
+            comissoesPorProfissional[ag.profissional_id].valor += price * comissaoPercentual;
+          }
         }
       }
     }
@@ -135,10 +139,10 @@ serve(async (req) => {
 
     const availabilityMap = new Map((disponibilidadesHoje || []).map((d: any) => [d.profissional_id, d.disponivel]));
     const professionalStatusList = (profissionais || []).map((prof: any) => ({
-        id: prof.id,
-        nome: prof.nome,
-        foto_url: prof.foto_url,
-        isAvailableToday: availabilityMap.has(prof.id) ? availabilityMap.get(prof.id) : true,
+      id: prof.id,
+      nome: prof.nome,
+      foto_url: prof.foto_url,
+      isAvailableToday: availabilityMap.has(prof.id) ? availabilityMap.get(prof.id) : true,
     }));
 
     const response = {

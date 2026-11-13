@@ -36,7 +36,7 @@ serve(async (req) => {
     const estId = profissionalData?.estabelecimento_id || profissionalData?.barbearia_id;
 
     if (!profissionalData?.email || !password || !estId) {
-        throw new Error('Dados essenciais (e-mail, senha, ID do estabelecimento) estão faltando.');
+      throw new Error('Dados essenciais (e-mail, senha, ID do estabelecimento) estão faltando.');
     }
 
     const supabaseAdmin = createClient(
@@ -47,15 +47,18 @@ serve(async (req) => {
     // 3. OWNERSHIP CHECK
     const { data: ownerEstabelecimento, error: ownerError } = await supabaseAdmin
       .from('estabelecimentos')
-      .select('id, plano')
+      .select('id, plano, status')
       .eq('dono_id', user.id)
       .single();
 
     if (ownerError || !ownerEstabelecimento) {
-        return new Response(JSON.stringify({ error: 'Estabelecimento do proprietário não encontrado.' }), { status: 403, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Estabelecimento do proprietário não encontrado.' }), { status: 403, headers: corsHeaders });
+    }
+    if (ownerEstabelecimento.status !== 'ativa') {
+      return new Response(JSON.stringify({ error: 'Estabelecimento suspenso.' }), { status: 403, headers: corsHeaders });
     }
     if (ownerEstabelecimento.id !== estId) {
-        return new Response(JSON.stringify({ error: 'Você não tem permissão para adicionar profissionais a este estabelecimento.' }), { status: 403, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para adicionar profissionais a este estabelecimento.' }), { status: 403, headers: corsHeaders });
     }
 
     // --- VALIDAÇÃO DO LIMITE DE PROFISSIONAIS ---
@@ -126,7 +129,7 @@ serve(async (req) => {
       .insert([dbPayload])
       .select()
       .single();
-      
+
     if (dbError) {
       console.error('Erro de banco de dados ao criar profissional:', dbError)
       await supabaseAdmin.auth.admin.deleteUser(userId)
