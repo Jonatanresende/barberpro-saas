@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    let effectiveUser: SupabaseUser = session.user;
+    const effectiveUser: SupabaseUser = session.user;
 
     if (effectiveUser.email === 'jonne.obr@gmail.com' && !effectiveUser.user_metadata.full_name) {
       const { data: updatedUserData, error } = await supabase.auth.updateUser({
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.warn("Sessão inválida ou expirada:", error.message);
           try {
             await supabase.auth.signOut();
-          } catch {}
+          } catch { }
           await fetchUserAndEstablishment(null);
           return;
         }
@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.warn("Erro ao recuperar sessão:", err?.message);
         try {
           await supabase.auth.signOut();
-        } catch {}
+        } catch { }
         await fetchUserAndEstablishment(null);
       }
     };
