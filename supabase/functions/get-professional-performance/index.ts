@@ -51,7 +51,7 @@ serve(async (req) => {
 
     if (profError || !profRecord) throw new Error(`Profissional não encontrado: ${profError?.message || ''}`);
 
-    if (isProf && profRecord.user_id && user.id !== profRecord.user_id) {
+    if (isProf && user.id !== profRecord.user_id) {
       return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste profissional.' }), { status: 403, headers: corsHeaders });
     }
     if (!profRecord.estabelecimento_id) throw new Error('ID do estabelecimento ausente no perfil do profissional.');
@@ -70,7 +70,7 @@ serve(async (req) => {
     ] = await Promise.all([
       supabaseAdmin
         .from('estabelecimentos')
-        .select('comissao_padrao')
+        .select('comissao_padrao, status, dono_id')
         .eq('id', profRecord.estabelecimento_id)
         .single(),
       supabaseAdmin
@@ -85,6 +85,13 @@ serve(async (req) => {
 
     if (estError) throw estError;
     if (agendamentosError) throw agendamentosError;
+
+    if (role !== 'admin' && estabelecimento?.status !== 'ativa') {
+      return new Response(JSON.stringify({ error: 'Estabelecimento suspenso.' }), { status: 403, headers: corsHeaders });
+    }
+    if (isOwner && estabelecimento?.dono_id !== user.id) {
+      return new Response(JSON.stringify({ error: 'Você não tem permissão para ver o desempenho deste profissional.' }), { status: 403, headers: corsHeaders });
+    }
 
     // 6. CALCULATE PERFORMANCE
     const tipoProf = (profRecord.tipos_profissional as any);
