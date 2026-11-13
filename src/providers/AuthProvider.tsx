@@ -22,18 +22,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const effectiveUser: SupabaseUser = session.user;
 
-    if (effectiveUser.email === 'jonne.obr@gmail.com' && !effectiveUser.user_metadata.full_name) {
-      const { data: updatedUserData, error } = await supabase.auth.updateUser({
-        data: { full_name: 'Jonathan Resende de Sousa' }
-      });
-
-      if (error) {
-        console.error("Failed to update admin name:", error);
-      } else if (updatedUserData?.user) {
-        effectiveUser = updatedUserData.user;
-      }
-    }
-
     const metadata = effectiveUser.user_metadata || {};
     const baseUser: User = {
       id: effectiveUser.id,
