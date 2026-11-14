@@ -11,21 +11,20 @@ interface ClientAppointmentModalProps {
   estabelecimento: Estabelecimento;
   clientPhone: string;
   onAppointmentUpdate: () => void;
-  // Alias transitório
-  barbearia?: Estabelecimento;
+
 }
 
-const ClientAppointmentModal = ({ isOpen, onClose, appointment, estabelecimento, barbearia, clientPhone, onAppointmentUpdate }: ClientAppointmentModalProps) => {
+const ClientAppointmentModal = ({ isOpen, onClose, appointment, estabelecimento, clientPhone, onAppointmentUpdate }: ClientAppointmentModalProps) => {
   const [isCancelling, setIsCancelling] = useState(false);
 
   if (!appointment) return null;
 
-  const local = estabelecimento || barbearia;
+  const local = estabelecimento;
 
   const [year, month, day] = appointment.data.split('-').map(Number);
   const [hour, minute] = appointment.hora.split(':').map(Number);
   const bookingDate = new Date(year, month - 1, day, hour, minute);
-  
+
   const formattedDate = bookingDate.toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: '2-digit',
@@ -55,15 +54,15 @@ const ClientAppointmentModal = ({ isOpen, onClose, appointment, estabelecimento,
 
   const getStatusClass = (status: AppointmentStatus) => {
     switch (status) {
-        case AppointmentStatus.CONFIRMADO: return 'bg-blue-500/20 text-blue-400';
-        case AppointmentStatus.CONCLUIDO: return 'bg-green-500/20 text-green-400';
-        case AppointmentStatus.CANCELADO: return 'bg-red-500/20 text-red-400';
-        case AppointmentStatus.PENDENTE: default: return 'bg-yellow-500/20 text-yellow-400';
+      case AppointmentStatus.CONFIRMADO: return 'bg-blue-500/20 text-blue-400';
+      case AppointmentStatus.CONCLUIDO: return 'bg-green-500/20 text-green-400';
+      case AppointmentStatus.CANCELADO: return 'bg-red-500/20 text-red-400';
+      case AppointmentStatus.PENDENTE: default: return 'bg-yellow-500/20 text-yellow-400';
     }
   };
 
-  // Suporta tanto novo campo quanto alias antigo
-  const profissionalNome = (appointment as any).profissional_nome || (appointment as any).barbeiro_nome;
+
+  const profissionalNome = appointment.profissional_nome;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Seu Próximo Agendamento">

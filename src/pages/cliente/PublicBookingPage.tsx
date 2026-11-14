@@ -16,7 +16,7 @@ const PublicBookingPage = () => {
     const vocab = useVocabulario(estabelecimento?.nicho);
     const [profissionais, setProfissionais] = useState<Profissional[]>([]);
     const [servicos, setServicos] = useState<Servico[]>([]);
-    // any[] para suportar tanto profissional_id quanto o alias legado barbeiro_id
+    // Agendamentos ocupados do mês
     const [agendamentosDoMes, setAgendamentosDoMes] = useState<any[]>([]);
     const [disponibilidadesDoMes, setDisponibilidadesDoMes] = useState<ProfissionalDisponibilidade[]>([]);
 
@@ -136,7 +136,7 @@ const PublicBookingPage = () => {
 
         return (agendamentosDoMes as any[])
             .filter(ag => {
-                const agProfissionalId = ag.profissional_id || ag.barbeiro_id;
+                const agProfissionalId = ag.profissional_id;
                 return agProfissionalId === selectedProfissional.id && ag.data === dateString;
             })
             .map((ag: any) => ag.hora.slice(0, 5));
