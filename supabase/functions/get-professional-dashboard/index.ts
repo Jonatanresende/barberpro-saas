@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const getTodayISOInFortaleza = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Fortaleza',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -64,9 +72,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Estabelecimento suspenso.' }), { status: 403, headers: corsHeaders });
     }
 
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+    const todayISO = getTodayISOInFortaleza();
+    const [ano, mes] = todayISO.split('-').map(Number);
+    const startOfMonth = `${ano}-${String(mes).padStart(2, '0')}-01`;
+    const ultimoDia = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+    const endOfMonth = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
     // 5. FETCH APPOINTMENTS
     const { data: agendamentos, error: agendamentosError } = await supabaseAdmin
