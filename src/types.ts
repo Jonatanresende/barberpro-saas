@@ -154,7 +154,5 @@ export interface GastoSaas {
 }
 
 // Aliases transitórios para facilitar as fases 4 e 5
-export type Barbearia = Estabelecimento;
-export type Barbeiro = Profissional;
-export type BarbeiroDisponibilidade = ProfissionalDisponibilidade;
+
 export type ProfessionalType = TipoProfissional;

@@ -9,25 +9,25 @@ export interface EstabelecimentoModalProps {
   onClose: () => void;
   onSave: (estabelecimento: any, password?: string, photoFile?: File) => Promise<void>;
   estabelecimentoToEdit?: Estabelecimento | null;
-  barbeariaToEdit?: Estabelecimento | null;
+
 }
 
 const InputField = ({ id, label, value, onChange, type = 'text', required = false }: any) => (
-    <div>
-        <label htmlFor={id} className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
-        <input
-            type={type}
-            id={id}
-            value={value}
-            onChange={onChange}
-            required={required}
-            className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
-        />
-    </div>
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
+    <input
+      type={type}
+      id={id}
+      value={value}
+      onChange={onChange}
+      required={required}
+      className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white"
+    />
+  </div>
 );
 
-const EstabelecimentoModal = ({ isOpen, onClose, onSave, estabelecimentoToEdit, barbeariaToEdit }: EstabelecimentoModalProps) => {
-  const itemToEdit = estabelecimentoToEdit || barbeariaToEdit;
+const EstabelecimentoModal = ({ isOpen, onClose, onSave, estabelecimentoToEdit }: EstabelecimentoModalProps) => {
+  const itemToEdit = estabelecimentoToEdit;
   const [nome, setNome] = useState('');
   const [donoNome, setDonoNome] = useState('');
   const [donoEmail, setDonoEmail] = useState('');
@@ -46,18 +46,18 @@ const EstabelecimentoModal = ({ isOpen, onClose, onSave, estabelecimentoToEdit, 
 
   useEffect(() => {
     const fetchPlans = async () => {
-        try {
-            const plans = await api.getPlanos();
-            setAvailablePlans(plans);
-            if (!itemToEdit && plans.length > 0) {
-                setPlano(plans[0].nome);
-            }
-        } catch (error) {
-            toast.error("Falha ao carregar os planos disponíveis.");
+      try {
+        const plans = await api.getPlanos();
+        setAvailablePlans(plans);
+        if (!itemToEdit && plans.length > 0) {
+          setPlano(plans[0].nome);
         }
+      } catch (error) {
+        toast.error("Falha ao carregar os planos disponíveis.");
+      }
     };
     if (isOpen) {
-        fetchPlans();
+      fetchPlans();
     }
   }, [isOpen, itemToEdit]);
 
@@ -106,12 +106,12 @@ const EstabelecimentoModal = ({ isOpen, onClose, onSave, estabelecimentoToEdit, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!itemToEdit && !password) {
-        alert("A senha é obrigatória para cadastrar um novo estabelecimento.");
-        return;
+      alert("A senha é obrigatória para cadastrar um novo estabelecimento.");
+      return;
     }
     if (!plano) {
-        toast.error("O plano é obrigatório.");
-        return;
+      toast.error("O plano é obrigatório.");
+      return;
     }
     setIsSaving(true);
     const estabelecimentoData = {
@@ -148,7 +148,7 @@ const EstabelecimentoModal = ({ isOpen, onClose, onSave, estabelecimentoToEdit, 
             </button>
           </div>
         </div>
-        
+
         <InputField id="nome" label="Nome do Estabelecimento" value={nome} onChange={(e: any) => setNome(e.target.value)} required />
         <InputField id="dono_nome" label="Nome do Proprietário" value={donoNome} onChange={(e: any) => setDonoNome(e.target.value)} required />
         <InputField id="dono_email" label="E-mail do Proprietário" value={donoEmail} onChange={(e: any) => setDonoEmail(e.target.value)} type="email" required />
@@ -175,7 +175,7 @@ const EstabelecimentoModal = ({ isOpen, onClose, onSave, estabelecimentoToEdit, 
           <select id="plano" value={plano} onChange={e => setPlano(e.target.value)} required className="bg-brand-gray w-full px-3 py-2 rounded-md border border-gray-600 focus:ring-brand-gold focus:border-brand-gold text-white">
             <option value="" disabled>Selecione um plano</option>
             {availablePlans.map(p => (
-                <option key={p.id} value={p.nome}>{p.nome} - R${p.preco.toFixed(2)}</option>
+              <option key={p.id} value={p.nome}>{p.nome} - R${p.preco.toFixed(2)}</option>
             ))}
           </select>
         </div>

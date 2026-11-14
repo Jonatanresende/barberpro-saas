@@ -5,8 +5,7 @@ import { Agendamento, Estabelecimento } from '@/types';
 type LocationState = {
   agendamento?: Agendamento;
   estabelecimento?: Estabelecimento;
-  // Alias transitório para compatibilidade com código antigo
-  barbearia?: Estabelecimento;
+
 };
 
 const BookingSuccessPage = () => {
@@ -15,7 +14,7 @@ const BookingSuccessPage = () => {
   const state = (location.state as LocationState) || {};
 
   const agendamento = state.agendamento;
-  const estabelecimento = state.estabelecimento || state.barbearia;
+  const estabelecimento = state.estabelecimento;
 
   useEffect(() => {
     if (!agendamento || !estabelecimento) {
@@ -36,8 +35,8 @@ const BookingSuccessPage = () => {
     minute: '2-digit',
   });
 
-  // Suporta tanto o novo campo quanto o alias antigo
-  const profissionalNome = (agendamento as any).profissional_nome || (agendamento as any).barbeiro_nome;
+
+  const profissionalNome = agendamento.profissional_nome;
 
   const backToProfilePath = `/${estabelecimento.link_personalizado || ''}`;
 
