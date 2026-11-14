@@ -6,22 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const getTodayISOInFortaleza = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Fortaleza',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
 const aggregateByMonth = (items: any[], dateField: string, valueField?: string, valueMap?: { [key: string]: number }) => {
   const monthlyData: { [key: string]: { value: number, date: Date } } = {};
 
   items.forEach(item => {
-    const date = new Date(item[dateField]);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; 
-    
+    const diaFortaleza = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date(item[dateField]));
+    const monthKey = diaFortaleza.slice(0, 7);
+
     if (!monthlyData[monthKey]) {
-      monthlyData[monthKey] = { value: 0, date: new Date(date.getFullYear(), date.getMonth(), 1) };
+      monthlyData[monthKey] = { value: 0, date: new Date(`${monthKey}-01T12:00:00Z`) };
     }
-    
+
     let valueToAdd = 1;
     if (valueField && valueMap && item[valueField]) {
       valueToAdd = valueMap[item[valueField]] || 0;
     }
-    
+
     monthlyData[monthKey].value += valueToAdd;
   });
 
@@ -60,8 +70,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    const startOfMonth = `${getTodayISOInFortaleza().slice(0, 7)}-01`;
 
     const [
       { data: estabelecimentos, error: estError },

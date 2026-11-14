@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const getTodayISOInFortaleza = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Fortaleza',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -57,11 +65,10 @@ serve(async (req) => {
     if (!profRecord.estabelecimento_id) throw new Error('ID do estabelecimento ausente no perfil do profissional.');
 
     // 4. DATE RANGE (Last 30 days)
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-    const endDate = today.toISOString().split('T')[0];
+    const endDate = getTodayISOInFortaleza();
+    const inicio = new Date(`${endDate}T00:00:00Z`);
+    inicio.setUTCDate(inicio.getUTCDate() - 30);
+    const startDate = inicio.toISOString().split('T')[0];
 
     // 5. FETCH DEPENDENT DATA
     const [

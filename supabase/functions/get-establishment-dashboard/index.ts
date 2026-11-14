@@ -16,14 +16,12 @@ const getTodayISOInFortaleza = () => {
   return formatter.format(new Date());
 };
 
-const getStartOfWeek = (date: Date) => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
+const getStartOfWeekISO = (todayISO: string) => {
+  const d = new Date(`${todayISO}T00:00:00Z`);
+  const day = d.getUTCDay();
+  d.setUTCDate(d.getUTCDate() - (day === 0 ? 6 : day - 1)); // segunda-feira
+  return d.toISOString().split('T')[0];
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -101,12 +99,8 @@ serve(async (req) => {
 
     const servicePriceMap = new Map((servicos || []).map((s: any) => [s.id, s.preco]));
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const startOfWeek = getStartOfWeek(new Date());
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const startOfWeek = getStartOfWeekISO(todayISO);
+    const startOfMonth = `${todayISO.slice(0, 7)}-01`;
 
     let rendaDiaria = 0;
     let rendaSemanal = 0;
@@ -119,13 +113,12 @@ serve(async (req) => {
     });
 
     for (const ag of (agendamentos || [])) {
-      const appointmentDate = new Date(`${ag.data}T00:00:00`);
       const price = servicePriceMap.get(ag.servico_id) || 0;
 
       if (ag.status === 'concluido') {
         if (ag.data === todayISO) rendaDiaria += price;
-        if (appointmentDate >= startOfWeek) rendaSemanal += price;
-        if (appointmentDate >= startOfMonth) {
+        if (ag.data >= startOfWeek) rendaSemanal += price;
+        if (ag.data >= startOfMonth) {
           rendaMensal += price;
           if (ag.profissional_id && comissoesPorProfissional[ag.profissional_id]) {
             comissoesPorProfissional[ag.profissional_id].valor += price * comissaoPercentual;
